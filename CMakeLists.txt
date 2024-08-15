@@ -7,24 +7,33 @@ project(DungeonEngine VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Añade la ruta donde se encuentra SDL2
+set(SDL2_DIR "${CMAKE_SOURCE_DIR}/SDL2-2.30.6/x86_64-w64-mingw32/lib/cmake/SDL2")
+
 # Busca SDL2 en el sistema
 find_package(SDL2 REQUIRED)
 
-# Agrega los archivos fuente de tu proyecto
-set(SOURCES
-    src/main.cpp
-    src/otro_archivo.cpp
-    # Agrega más archivos aquí
-)
+# Recursivamente busca todos los archivos .cpp dentro del directorio src/
+file(GLOB_RECURSE SOURCES game/src/*.cpp)
+
+# Crea el ejecutable en la carpeta _bin
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 # Crea el ejecutable
-add_executable(MiProyectoSDL ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Enlaza SDL2 a tu proyecto
-target_link_libraries(MiProyectoSDL SDL2::SDL2)
+target_link_libraries(${PROJECT_NAME} SDL2::SDL2)
 
-# Opcional: Configurar directorios de inclusión
-target_include_directories(MiProyectoSDL PRIVATE ${SDL2_INCLUDE_DIRS})
+# Configura los directorios de inclusión, incluyendo SDL2 y tu proyecto
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${SDL2_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/game/include
+)
 
-# Si utilizas otros directorios de cabeceras
-include_directories(${CMAKE_SOURCE_DIR}/game/include)
+# Copia el archivo SDL2.dll a la carpeta _bin
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_SOURCE_DIR}/SDL2-2.30.6/x86_64-w64-mingw32/bin/SDL2.dll
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>
+)
