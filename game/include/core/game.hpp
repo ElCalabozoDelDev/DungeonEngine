@@ -12,7 +12,8 @@ private:
     SDL_Window* window;
     SDL_Renderer* renderer;
     entt::registry registry;
-
+    int m_fps;
+    int m_frameDelay;
     Game();
     ~Game();
 
@@ -26,7 +27,7 @@ public:
         return s_pInstance;
     }
 
-    void init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen);
+    void init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen, int fps, int frameDelay);
     void handleEvents();
     void update();
     void render();

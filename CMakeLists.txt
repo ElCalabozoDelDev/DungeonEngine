@@ -16,6 +16,18 @@ find_package(SDL2 REQUIRED)
 # Recursivamente busca todos los archivos .cpp dentro del directorio src/
 file(GLOB_RECURSE SOURCES game/src/*.cpp)
 
+# Añadir las fuentes de ImGui
+set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/imgui")
+
+file(GLOB IMGUI_SOURCES
+    "${IMGUI_DIR}/*.cpp"
+    "${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp"
+    "${IMGUI_DIR}/backends/imgui_impl_sdlrenderer2.cpp"
+)
+
+# Añadir las fuentes de ImGui al proyecto
+list(APPEND SOURCES ${IMGUI_SOURCES})
+
 # Crea el ejecutable en la carpeta _bin
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
@@ -28,8 +40,10 @@ target_link_libraries(${PROJECT_NAME} SDL2::SDL2)
 # Configura los directorios de inclusión, incluyendo SDL2 y tu proyecto
 target_include_directories(${PROJECT_NAME} PRIVATE 
     ${SDL2_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/game/include
     ${CMAKE_SOURCE_DIR}/entt
+    ${IMGUI_DIR}
+    ${CMAKE_SOURCE_DIR}/game/include
+    ${IMGUI_DIR}/backends  # Incluir el directorio de backends de ImGui
 )
 
 # Copia el archivo SDL2.dll a la carpeta _bin
