@@ -29,6 +29,7 @@ target_link_libraries(${PROJECT_NAME} SDL2::SDL2)
 target_include_directories(${PROJECT_NAME} PRIVATE 
     ${SDL2_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/game/include
+    ${CMAKE_SOURCE_DIR}/entt
 )
 
 # Copia el archivo SDL2.dll a la carpeta _bin
