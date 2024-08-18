@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 
+# Especifica Clang como compilador
+set(CMAKE_C_COMPILER "clang")
+set(CMAKE_CXX_COMPILER "clang++")
+
 # Nombre del proyecto
 project(DungeonEngine VERSION 1.0 LANGUAGES CXX)
+
+# Configuración de CMake
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Configuración de C++ estándar
 set(CMAKE_CXX_STANDARD 17)

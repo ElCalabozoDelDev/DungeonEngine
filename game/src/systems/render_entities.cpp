@@ -4,9 +4,6 @@
 
 void render_entities(SDL_Renderer* renderer, entt::registry& registry) {
     auto view = registry.view<Position>();
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderClear(renderer);
-
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     for (auto entity : view) {
         auto& pos = view.get<Position>(entity);
