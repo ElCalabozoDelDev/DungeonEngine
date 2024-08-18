@@ -115,11 +115,9 @@ void Game::run() {
       ImGui::Text("Y: %.2f", pos.y);
       ImGui::End();
     }
-    // Finalizar el frame de ImGui y renderizar los datos de ImGui
-    ImGui::Render();
-    // Renderizar elementos del juego (escena)
 
     SDL_RenderClear(gRenderer);
+    ImGui::Render();
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), gRenderer);
     render();
     SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 255);
