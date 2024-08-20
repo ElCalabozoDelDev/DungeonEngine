@@ -1,12 +1,12 @@
+#include <iostream>
+#include "imgui.h"
+#include "core/game.hpp"
 #include "backends/imgui_impl_sdl2.h"
 #include "backends/imgui_impl_sdlrenderer2.h"
-#include "imgui.h"
 
 #include "components/player_component.hpp"
 #include "components/position_component.hpp"
 #include "components/velocity_component.hpp"
-#include "core/game.hpp"
-#include <iostream>
 
 Game *Game::s_pInstance = nullptr;
 
@@ -55,6 +55,11 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height,
     running = false;
   }
 
+  createEntities();
+}
+
+void Game::createEntities()
+{
   // Aquí puedes inicializar tu juego, como la creación de la bola controlada
   // por el jugador
   auto ball = registry.create();
@@ -109,7 +114,9 @@ void Game::render()
   SDL_RenderClear(gRenderer);
   ImGui::Render();
   ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), gRenderer);
+
   m_renderSystem.render(gRenderer, registry);
+  
   SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 255);
 
   // Mostrar el contenido renderizado en la pantalla
@@ -130,13 +137,18 @@ void Game::clean()
 
 void Game::run()
 {
-  Uint32 frameStart;
-  int frameTime;
+  Uint32 frameStart, frameTime;
   while (isRunning())
   {
+    frameStart = SDL_GetTicks();
     handleEvents();
     update();
     render();
+    frameTime = SDL_GetTicks() - frameStart;
+    if (frameTime < m_frameDelay)
+    {
+      SDL_Delay(m_frameDelay - frameTime);
+    }
   }
 
   clean();

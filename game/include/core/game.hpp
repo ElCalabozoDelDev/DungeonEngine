@@ -1,7 +1,6 @@
 #ifndef GAME_HPP
 #define GAME_HPP
 
-#include "SDL.h"
 #include "entt.hpp"
 #include "systems/movement_system.hpp"
 #include "systems/render_system.hpp"
@@ -21,6 +20,12 @@ private:
   MovementSystem m_movementSystem;
   RenderSystem m_renderSystem;
   TransformSystem m_transformSystem;
+  void handleEvents();
+  void update();
+  void render();
+  void clean();
+  bool isRunning() const { return running; }
+  void createEntities();
 public:
   static Game *Instance() {
     if (s_pInstance == nullptr) {
@@ -31,12 +36,7 @@ public:
 
   void init(const char *title, int xpos, int ypos, int width, int height,
             bool fullscreen, int fps, int frameDelay);
-  void handleEvents();
-  void update();
-  void render();
-  void clean();
   void run();
-  bool isRunning() const { return running; }
 };
 
 #endif // GAME_HPP

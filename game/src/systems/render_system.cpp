@@ -1,4 +1,3 @@
-#include "SDL.h"
 #include "systems/render_system.hpp"
 #include "components/position_component.hpp"
 
