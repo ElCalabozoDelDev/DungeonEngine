@@ -1,13 +1,13 @@
 #include "SDL.h"
-#include "systems/handle_input.hpp"
-#include "components/velocity.hpp"
-#include "components/player_controlled.hpp"
+#include "systems/movement_system.hpp"
+#include "components/velocity_component.hpp"
+#include "components/player_component.hpp"
 
-void handle_input(entt::registry& registry) {
-    auto view = registry.view<Velocity, PlayerControlled>();
+void MovementSystem::handle(entt::registry& registry) {
+    auto view = registry.view<VelocityComponent, PlayerComponent>();
 
     for (auto entity : view) {
-        auto& vel = view.get<Velocity>(entity);
+        auto& vel = view.get<VelocityComponent>(entity);
 
         const Uint8* state = SDL_GetKeyboardState(nullptr);
 

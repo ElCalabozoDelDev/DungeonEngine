@@ -3,6 +3,8 @@
 
 #include "entt.hpp"
 
-void update_position(entt::registry& registry, float deltaTime);
-
+class TransformSystem {
+public:
+    void update(entt::registry& registry, float deltaTime);
+};
 #endif // UPDATE_POSITION_HPP

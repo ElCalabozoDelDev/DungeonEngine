@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(VENDOR_DIR "${CMAKE_SOURCE_DIR}/vendor")
 
 # Añade la ruta donde se encuentra SDL2
-set(SDL2_DIR "${VENDOR_DIR}/SDL2-2.30.6/x86_64-w64-mingw32/lib/cmake/SDL2")
+set(SDL2_DIR "${VENDOR_DIR}/SDL2/x86_64-w64-mingw32/lib/cmake/SDL2")
 
 # Busca SDL2 en el sistema
 find_package(SDL2 REQUIRED)
@@ -62,6 +62,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 # Copia el archivo SDL2.dll a la carpeta _bin
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${VENDOR_DIR}/SDL2-2.30.6/x86_64-w64-mingw32/bin/SDL2.dll
+    ${VENDOR_DIR}/SDL2/x86_64-w64-mingw32/bin/SDL2.dll
     $<TARGET_FILE_DIR:${PROJECT_NAME}>
 )

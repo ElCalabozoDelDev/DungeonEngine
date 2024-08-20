@@ -2,7 +2,9 @@
 #define HANDLE_INPUT_HPP
 
 #include "entt.hpp"
-
-void handle_input(entt::registry& registry);
+class MovementSystem {
+    public:
+        void handle(entt::registry& registry);
+};
 
 #endif // HANDLE_INPUT_HPP

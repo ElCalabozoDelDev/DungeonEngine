@@ -3,6 +3,9 @@
 
 #include "SDL.h"
 #include "entt.hpp"
+#include "systems/movement_system.hpp"
+#include "systems/render_system.hpp"
+#include "systems/transform_system.hpp"
 
 class Game {
 private:
@@ -15,7 +18,9 @@ private:
   int m_frameDelay;
   Game();
   ~Game();
-
+  MovementSystem m_movementSystem;
+  RenderSystem m_renderSystem;
+  TransformSystem m_transformSystem;
 public:
   static Game *Instance() {
     if (s_pInstance == nullptr) {

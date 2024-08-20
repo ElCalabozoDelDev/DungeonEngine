@@ -2,13 +2,10 @@
 #include "backends/imgui_impl_sdlrenderer2.h"
 #include "imgui.h"
 
-#include "components/player_controlled.hpp"
-#include "components/position.hpp"
-#include "components/velocity.hpp"
+#include "components/player_component.hpp"
+#include "components/position_component.hpp"
+#include "components/velocity_component.hpp"
 #include "core/game.hpp"
-#include "systems/handle_input.hpp"
-#include "systems/render_entities.hpp"
-#include "systems/update_position.hpp"
 #include <iostream>
 
 Game *Game::s_pInstance = nullptr;
@@ -18,16 +15,20 @@ Game::Game() : running(false), gWindow(nullptr), gRenderer(nullptr) {}
 Game::~Game() {}
 
 void Game::init(const char *title, int xpos, int ypos, int width, int height,
-                bool fullscreen, int fps, int frameDelay) {
+                bool fullscreen, int fps, int frameDelay)
+{
   int flags = fullscreen ? SDL_WINDOW_FULLSCREEN : 0;
   m_fps = fps;
   m_frameDelay = frameDelay;
-  if (SDL_Init(SDL_INIT_VIDEO) == 0) {
+  if (SDL_Init(SDL_INIT_VIDEO) == 0)
+  {
     gWindow = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
-    if (gWindow) {
+    if (gWindow)
+    {
       gRenderer = SDL_CreateRenderer(
           gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-      if (gRenderer) {
+      if (gRenderer)
+      {
         running = true;
 
         // Configuración de ImGui
@@ -47,7 +48,9 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height,
         ImGui_ImplSDLRenderer2_Init(gRenderer);
       }
     }
-  } else {
+  }
+  else
+  {
     std::cerr << "Error al inicializar SDL: " << SDL_GetError() << std::endl;
     running = false;
   }
@@ -55,34 +58,66 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height,
   // Aquí puedes inicializar tu juego, como la creación de la bola controlada
   // por el jugador
   auto ball = registry.create();
-  registry.emplace<Position>(ball, 390.0f, 290.0f);
-  registry.emplace<Velocity>(ball, 0.0f, 0.0f);
-  registry.emplace<PlayerControlled>(ball);
+  registry.emplace<PositionComponent>(ball, 390.0f, 290.0f);
+  registry.emplace<VelocityComponent>(ball, 0.0f, 0.0f);
+  registry.emplace<PlayerComponent>(ball);
 }
 
-void Game::handleEvents() {
+void Game::handleEvents()
+{
   SDL_Event event;
-  while (SDL_PollEvent(&event)) {
+  while (SDL_PollEvent(&event))
+  {
     ImGui_ImplSDL2_ProcessEvent(&event);
-    if (event.type == SDL_QUIT) {
+    if (event.type == SDL_QUIT)
+    {
       running = false;
     }
   }
+  m_movementSystem.handle(registry); // Maneja el movimiento
 }
 
-void Game::update() {
+void Game::update()
+{
   Uint32 currentTime = SDL_GetTicks();
   static Uint32 lastTime = currentTime;
   float deltaTime = (currentTime - lastTime) / 1000.0f;
   lastTime = currentTime;
 
-  handle_input(registry);               // Maneja la entrada del teclado
-  update_position(registry, deltaTime); // Actualiza la posición
+  m_transformSystem.update(registry, deltaTime); // Actualiza la posición
 }
 
-void Game::render() { render_entities(gRenderer, registry); }
+void Game::render()
+{
+  // Iniciar un nuevo frame de ImGui
+  ImGui_ImplSDL2_NewFrame();
+  ImGui_ImplSDLRenderer2_NewFrame();
+  ImGui::NewFrame();
 
-void Game::clean() {
+  // Crear una ventana de ImGui para mostrar la posición de la esfera roja
+  auto view = registry.view<PositionComponent>();
+  for (auto entity : view)
+  {
+    auto &pos = view.get<PositionComponent>(entity);
+
+    ImGui::Begin("Posición de la Esfera Roja");
+    ImGui::Text("X: %.2f", pos.x);
+    ImGui::Text("Y: %.2f", pos.y);
+    ImGui::End();
+  }
+
+  SDL_RenderClear(gRenderer);
+  ImGui::Render();
+  ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), gRenderer);
+  m_renderSystem.render(gRenderer, registry);
+  SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 255);
+
+  // Mostrar el contenido renderizado en la pantalla
+  SDL_RenderPresent(gRenderer);
+}
+
+void Game::clean()
+{
   // Limpieza de ImGui
   ImGui_ImplSDLRenderer2_Shutdown();
   ImGui_ImplSDL2_Shutdown();
@@ -93,37 +128,15 @@ void Game::clean() {
   SDL_Quit();
 }
 
-void Game::run() {
+void Game::run()
+{
   Uint32 frameStart;
   int frameTime;
-  while (isRunning()) {
+  while (isRunning())
+  {
     handleEvents();
     update();
-
-    // Iniciar un nuevo frame de ImGui
-    ImGui_ImplSDL2_NewFrame();
-    ImGui_ImplSDLRenderer2_NewFrame();
-    ImGui::NewFrame();
-
-    // Crear una ventana de ImGui para mostrar la posición de la esfera roja
-    auto view = registry.view<Position>();
-    for (auto entity : view) {
-      auto &pos = view.get<Position>(entity);
-
-      ImGui::Begin("Posición de la Esfera Roja");
-      ImGui::Text("X: %.2f", pos.x);
-      ImGui::Text("Y: %.2f", pos.y);
-      ImGui::End();
-    }
-
-    SDL_RenderClear(gRenderer);
-    ImGui::Render();
-    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), gRenderer);
     render();
-    SDL_SetRenderDrawColor(gRenderer, 0, 255, 0, 255);
-
-    // Mostrar el contenido renderizado en la pantalla
-    SDL_RenderPresent(gRenderer);
   }
 
   clean();

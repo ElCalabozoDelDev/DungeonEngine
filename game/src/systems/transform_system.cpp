@@ -1,12 +1,12 @@
-#include "systems/update_position.hpp"
-#include "components/position.hpp"
-#include "components/velocity.hpp"
+#include "systems/transform_system.hpp"
+#include "components/position_component.hpp"
+#include "components/velocity_component.hpp"
 
-void update_position(entt::registry& registry, float deltaTime) {
-    auto view = registry.view<Position, Velocity>();
+void TransformSystem::update(entt::registry& registry, float deltaTime) {
+    auto view = registry.view<PositionComponent, VelocityComponent>();
     for (auto entity : view) {
-        auto& pos = view.get<Position>(entity);
-        auto& vel = view.get<Velocity>(entity);
+        auto& pos = view.get<PositionComponent>(entity);
+        auto& vel = view.get<VelocityComponent>(entity);
 
         pos.x += vel.vx * deltaTime;
         pos.y += vel.vy * deltaTime;
