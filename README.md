@@ -21,7 +21,7 @@ Create build folder
 mkdir build
 cd build
 ```
-Generate compilers files and compile
+Generate compiler files and compile
 ```
 cmake .. -G "MinGW Makefiles"
 make
