@@ -40,10 +40,6 @@ build/
 #VS Code files
 .vscode/
 
-# include SDL2
-!vendor/SDL2/x86_64-w64-mingw32/bin/*.dll
-!vendor/SDL2/i686-w64-mingw32/bin/*.dll
-!vendor/SDL2/x86_64-w64-mingw32/lib/*.a
-!vendor/SDL2/i686-w64-mingw32/lib/*.a
-!vendor/SDL2/x86_64-w64-mingw32/lib/*.la
-!vendor/SDL2/i686-w64-mingw32/lib/*.la
+# vcpkg files
+vcpkg_installed/
+.vcpkg-root

@@ -1,7 +1,7 @@
 #ifndef UPDATE_POSITION_HPP
 #define UPDATE_POSITION_HPP
 
-#include "entt.hpp"
+#include "entt/entt.hpp"
 
 class TransformSystem {
 public:

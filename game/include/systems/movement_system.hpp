@@ -1,7 +1,7 @@
 #ifndef HANDLE_INPUT_HPP
 #define HANDLE_INPUT_HPP
 
-#include "entt.hpp"
+#include "entt/entt.hpp"
 class MovementSystem {
     public:
         void handle(entt::registry& registry);

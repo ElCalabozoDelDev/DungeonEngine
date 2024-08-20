@@ -2,7 +2,7 @@
 #define RENDER_HPP
 
 #include "SDL.h"
-#include "entt.hpp"
+#include "entt/entt.hpp"
 
 class RenderSystem {
     public:

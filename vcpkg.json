@@ -1,0 +1,11 @@
+{
+  "dependencies": [
+    "entt",
+    "imgui",
+    "sdl2",
+    "sdl2-image",
+    "sdl2-mixer",
+    "zlib",
+    "libpng"
+  ]
+}

@@ -1,7 +1,7 @@
 #ifndef GAME_HPP
 #define GAME_HPP
 
-#include "entt.hpp"
+#include "entt/entt.hpp"
 #include "systems/movement_system.hpp"
 #include "systems/render_system.hpp"
 #include "systems/transform_system.hpp"
