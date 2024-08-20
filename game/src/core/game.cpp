@@ -1,8 +1,8 @@
 #include <iostream>
 #include "imgui.h"
 #include "core/game.hpp"
-#include "backends/imgui_impl_sdl2.h"
-#include "backends/imgui_impl_sdlrenderer2.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdlrenderer2.h"
 
 #include "components/player_component.hpp"
 #include "components/position_component.hpp"

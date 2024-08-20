@@ -1,4 +1,5 @@
 #define SDL_MAIN_HANDLED
+#include "SDL.h"
 #include "core/game.hpp"
 
 const int width = 800;

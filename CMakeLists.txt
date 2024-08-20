@@ -25,6 +25,15 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 # Crea el ejecutable
 add_executable(${PROJECT_NAME} ${SOURCES})
 
+# Añadir el directorio de third_party a los include directories
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/game/third_party)
+
+# Busca recursivamente todos los archivos .cpp en third_party y agrégalos a las fuentes del proyecto
+file(GLOB_RECURSE THIRD_PARTY_SOURCES ${CMAKE_SOURCE_DIR}/game/third_party/*.cpp)
+
+# Agrega los archivos de implementación de third_party al proyecto
+target_sources(${PROJECT_NAME} PRIVATE ${THIRD_PARTY_SOURCES})
+
 # Definir rutas para ZLIB
 find_path(ZLIB_INCLUDE_DIR zlib.h HINTS "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/include")
 
