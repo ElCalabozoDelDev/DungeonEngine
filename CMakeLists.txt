@@ -4,8 +4,9 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_CXX_COMPILER "clang++")
 
-# Integración con vcpkg
-set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/share")
+# # Integración con vcpkg
+# set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/vcpkg_installed/x64-windows/share")
+
 # Nombre del proyecto
 project(DungeonEngine VERSION 1.0 LANGUAGES CXX)
 
@@ -34,40 +35,22 @@ file(GLOB_RECURSE THIRD_PARTY_SOURCES ${CMAKE_SOURCE_DIR}/third_party/*.cpp)
 # Agrega los archivos de implementación de third_party al proyecto
 target_sources(${PROJECT_NAME} PRIVATE ${THIRD_PARTY_SOURCES})
 
-# Definir rutas para ZLIB
-find_path(ZLIB_INCLUDE_DIR zlib.h HINTS "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/include")
-if(NOT ZLIB_INCLUDE_DIR)
-    message(FATAL_ERROR "Could not find ZLIB include directory")
-endif()
-
-find_library(ZLIB_LIBRARY NAMES zlib PATHS "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/lib")
-if(NOT ZLIB_LIBRARY)
-    message(FATAL_ERROR "Could not find ZLIB library")
-endif()
-
-# Definir rutas para PNG
-find_path(PNG_PNG_INCLUDE_DIR png.h HINTS "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/include/libpng16")
-if(NOT PNG_PNG_INCLUDE_DIR)
-    message(FATAL_ERROR "Could not find PNG include directory")
-endif()
-find_library(PNG_LIBRARY NAMES libpng16 PATHS "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/lib")
-if(NOT PNG_LIBRARY)
-    message(FATAL_ERROR "Could not find PNG library")
-endif()
-
 # Busca e incluye las dependencias desde vcpkg
 find_package(SDL2 CONFIG REQUIRED)
 find_package(sdl2_image CONFIG REQUIRED)
 find_package(sdl2_mixer CONFIG REQUIRED)
-find_package(imgui CONFIG REQUIRED)
 find_package(entt CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 
-# Enlaza las librerías necesarias a tu proyecto
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2::SDL2main SDL2_image::SDL2_image SDL2_mixer::SDL2_mixer imgui::imgui)
-target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIR} ${PNG_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARY} ${PNG_LIBRARY})
+# Enlaza las dependencias
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2::SDL2main)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_image::SDL2_image)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_mixer::SDL2_mixer)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui::imgui)
+target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
+target_link_libraries(${PROJECT_NAME} PRIVATE PNG::PNG)
 
 # Configura los directorios de inclusión
 target_include_directories(${PROJECT_NAME} PRIVATE 
