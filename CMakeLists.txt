@@ -26,28 +26,33 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Añadir el directorio de third_party a los include directories
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/game/third_party)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/third_party)
 
 # Busca recursivamente todos los archivos .cpp en third_party y agrégalos a las fuentes del proyecto
-file(GLOB_RECURSE THIRD_PARTY_SOURCES ${CMAKE_SOURCE_DIR}/game/third_party/*.cpp)
+file(GLOB_RECURSE THIRD_PARTY_SOURCES ${CMAKE_SOURCE_DIR}/third_party/*.cpp)
 
 # Agrega los archivos de implementación de third_party al proyecto
 target_sources(${PROJECT_NAME} PRIVATE ${THIRD_PARTY_SOURCES})
 
 # Definir rutas para ZLIB
 find_path(ZLIB_INCLUDE_DIR zlib.h HINTS "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/include")
-
 if(NOT ZLIB_INCLUDE_DIR)
     message(FATAL_ERROR "Could not find ZLIB include directory")
 endif()
-set(ZLIB_LIBRARY "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/lib")
+
+find_library(ZLIB_LIBRARY NAMES zlib PATHS "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/lib")
+if(NOT ZLIB_LIBRARY)
+    message(FATAL_ERROR "Could not find ZLIB library")
+endif()
 
 # Definir rutas para PNG
 find_path(PNG_PNG_INCLUDE_DIR png.h HINTS "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/include/libpng16")
-set(PNG_LIBRARY "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/lib")
-
 if(NOT PNG_PNG_INCLUDE_DIR)
     message(FATAL_ERROR "Could not find PNG include directory")
+endif()
+find_library(PNG_LIBRARY NAMES libpng16 PATHS "${CMAKE_SOURCE_DIR}/vcpkg_installed/x64-windows/lib")
+if(NOT PNG_LIBRARY)
+    message(FATAL_ERROR "Could not find PNG library")
 endif()
 
 # Busca e incluye las dependencias desde vcpkg
