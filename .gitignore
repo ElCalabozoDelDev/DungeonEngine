@@ -43,3 +43,6 @@ build/
 # vcpkg files
 vcpkg_installed/
 .vcpkg-root
+
+# imgui files
+imgui.ini

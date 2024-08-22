@@ -43,6 +43,7 @@ find_package(entt CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
+find_package(tinyxml2 CONFIG REQUIRED)
 
 # Enlaza las dependencias
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2::SDL2main)
@@ -51,6 +52,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_mixer::SDL2_mixer)
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui::imgui)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
 target_link_libraries(${PROJECT_NAME} PRIVATE PNG::PNG)
+target_link_libraries(${PROJECT_NAME} PRIVATE tinyxml2::tinyxml2)
 
 # Configura los directorios de inclusión
 target_include_directories(${PROJECT_NAME} PRIVATE 
