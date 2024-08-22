@@ -33,3 +33,16 @@
 
 # CMake files
 build/
+
+# Visual Studio files
+.vs/
+
+#VS Code files
+.vscode/
+
+# vcpkg files
+vcpkg_installed/
+.vcpkg-root
+
+# imgui files
+imgui.ini

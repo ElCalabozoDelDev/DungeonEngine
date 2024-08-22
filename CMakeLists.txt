@@ -1,17 +1,21 @@
 cmake_minimum_required(VERSION 3.10)
 
+# Especifica Clang como compilador
+set(CMAKE_C_COMPILER "clang")
+set(CMAKE_CXX_COMPILER "clang++")
+
+# # Integración con vcpkg
+# set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/vcpkg_installed/x64-windows/share")
+
 # Nombre del proyecto
 project(DungeonEngine VERSION 1.0 LANGUAGES CXX)
+
+# Configuración de CMake
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Configuración de C++ estándar
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-# Añade la ruta donde se encuentra SDL2
-set(SDL2_DIR "${CMAKE_SOURCE_DIR}/SDL2-2.30.6/x86_64-w64-mingw32/lib/cmake/SDL2")
-
-# Busca SDL2 en el sistema
-find_package(SDL2 REQUIRED)
 
 # Recursivamente busca todos los archivos .cpp dentro del directorio src/
 file(GLOB_RECURSE SOURCES game/src/*.cpp)
@@ -22,18 +26,43 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 # Crea el ejecutable
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-# Enlaza SDL2 a tu proyecto
-target_link_libraries(${PROJECT_NAME} SDL2::SDL2)
+# Añadir el directorio de third_party a los include directories
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/third_party)
 
-# Configura los directorios de inclusión, incluyendo SDL2 y tu proyecto
+# Busca recursivamente todos los archivos .cpp en third_party y agrégalos a las fuentes del proyecto
+file(GLOB_RECURSE THIRD_PARTY_SOURCES ${CMAKE_SOURCE_DIR}/third_party/*.cpp)
+
+# Agrega los archivos de implementación de third_party al proyecto
+target_sources(${PROJECT_NAME} PRIVATE ${THIRD_PARTY_SOURCES})
+
+# Busca e incluye las dependencias desde vcpkg
+find_package(SDL2 CONFIG REQUIRED)
+find_package(sdl2_image CONFIG REQUIRED)
+find_package(sdl2_mixer CONFIG REQUIRED)
+find_package(entt CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(PNG REQUIRED)
+find_package(tinyxml2 CONFIG REQUIRED)
+
+# Enlaza las dependencias
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2::SDL2main)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_image::SDL2_image)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_mixer::SDL2_mixer)
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui::imgui)
+target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
+target_link_libraries(${PROJECT_NAME} PRIVATE PNG::PNG)
+target_link_libraries(${PROJECT_NAME} PRIVATE tinyxml2::tinyxml2)
+
+# Configura los directorios de inclusión
 target_include_directories(${PROJECT_NAME} PRIVATE 
-    ${SDL2_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/game/include
 )
 
-# Copia el archivo SDL2.dll a la carpeta _bin
+# Copia el archivo SDL2.dll y otras DLL necesarias a la carpeta _bin
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_SOURCE_DIR}/SDL2-2.30.6/x86_64-w64-mingw32/bin/SDL2.dll
+    $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}>
     $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    COMMAND_EXPAND_LISTS
 )
