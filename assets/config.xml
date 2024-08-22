@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<Assets>
+    <Player>
+        <Texture path="../assets/Player/1-Heroes-Animated.png" 
+            spriteWidth="16"
+            spriteHeight="16"
+            spriteRow="1"
+            spriteCol="4"/>
+        <Animation totalFrames="3"
+            animationTime="0.3"/>
+        <Position x="390" y="290" />
+        <Speed x="0" y="0" />
+    </Player>
+</Assets>

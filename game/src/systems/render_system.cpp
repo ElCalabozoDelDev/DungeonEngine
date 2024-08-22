@@ -1,22 +1,24 @@
 #include "systems/render_system.hpp"
 #include "components/position_component.hpp"
 #include "components/texture_component.hpp"
+#include "components/animation_component.hpp"
 
 void RenderSystem::render(SDL_Renderer *renderer, entt::registry &registry) {
   // Obtener la vista de entidades que tienen tanto PositionComponent como
   // TextureComponent
-  auto view = registry.view<PositionComponent, TextureComponent>();
+  auto view = registry.view<PositionComponent, TextureComponent, AnimationComponent>();
 
   for (auto entity : view) {
     auto &pos = view.get<PositionComponent>(entity);
     auto &tex = view.get<TextureComponent>(entity);
+    auto &ani = view.get<AnimationComponent>(entity);
 
-    int spriteWidth = 16;
-    int spriteHeight = 16;
+    int spriteWidth = tex.spriteWidth;
+    int spriteHeight = tex.spriteHeight;
 
     // Calcular las coordenadas de origen basadas en el frame actual
     SDL_Rect srcRect;
-    srcRect.x = tex.currentSprite * spriteWidth;
+    srcRect.x = ani.currentSprite * spriteWidth;
     srcRect.y = tex.spriteRow * spriteHeight;
     srcRect.w = spriteWidth;
     srcRect.h = spriteHeight;

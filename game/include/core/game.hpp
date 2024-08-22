@@ -29,7 +29,6 @@ private:
   void clean();
   bool isRunning() const { return running; }
   void createEntities();
-  SDL_Texture *loadTexture(const std::string& path, SDL_Renderer* renderer);
 public:
   static Game *Instance() {
     if (s_pInstance == nullptr) {

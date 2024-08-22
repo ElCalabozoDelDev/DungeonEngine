@@ -11,7 +11,9 @@
 #include "components/position_component.hpp"
 #include "components/texture_component.hpp"
 #include "components/velocity_component.hpp"
+#include "components/animation_component.hpp"
 
+#include "scene/entity_loader.hpp"
 
 Game *Game::s_pInstance = nullptr;
 
@@ -57,28 +59,9 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height,
   createEntities();
 }
 
-
-SDL_Texture *Game::loadTexture(const std::string &path,
-                               SDL_Renderer *renderer) {
-  SDL_Texture *newTexture = IMG_LoadTexture(renderer, path.c_str());
-  if (newTexture == nullptr) {
-    std::cerr << "Failed to load texture: " << IMG_GetError() << std::endl;
-  }
-  return newTexture;
-}
-
 void Game::createEntities() {
-  // Aquí puedes inicializar tu juego, como la creación de la bola controlada
-  // por el jugador
-  SDL_Texture *playerTexture = loadTexture("../assets/Player/1-Heroes-Animated.png", gRenderer);
-  auto player = registry.create();
-  registry.emplace<PositionComponent>(player, 390.0f, 290.0f);
-  registry.emplace<VelocityComponent>(player, 0.0f, 0.0f);
-  registry.emplace<PlayerComponent>(player);
-  registry.emplace<TextureComponent>(player, playerTexture, 2, 4, 0, 0, 3, 0.3, 0);
-  if (player == entt::null) {
-    std::cerr << "Error al crear la entidad del jugador" << std::endl;
-  }
+  // Carga entidades desde un archivo XML
+  EntityLoader::loadPlayerDataFromXML("../assets/config.xml", registry, gRenderer);
 }
 
 // # GAME LOOP
@@ -110,18 +93,19 @@ void Game::render() {
   ImGui::NewFrame();
 
   // Crear una ventana de ImGui para mostrar la posición de la esfera roja
-  auto view = registry.view<TextureComponent>();
+  auto view = registry.view<AnimationComponent, TextureComponent>();
   for (auto entity : view) {
-    auto &texture = view.get<TextureComponent>(entity);
+    auto &animation = view.get<AnimationComponent>(entity);
+    auto &texture = registry.get<TextureComponent>(entity);
 
     ImGui::Begin("Estado de la textura");
     ImGui::Text("spriteRow: %.2d", texture.spriteRow);
     ImGui::Text("spriteCol: %.2d", texture.spriteCol);
-    ImGui::Text("currentSprite: %.2d", texture.currentSprite);
-    ImGui::Text("currentFrame: %.2d", texture.currentFrame);
-    ImGui::Text("totalFrames: %.2d", texture.totalFrames);
-    ImGui::Text("animationTime: %.2f", texture.animationTime);
-    ImGui::Text("timeSinceLastFrame: %.2f", texture.timeSinceLastFrame);
+    ImGui::Text("currentSprite: %.2d", animation.currentSprite);
+    ImGui::Text("currentFrame: %.2d", animation.currentFrame);
+    ImGui::Text("totalFrames: %.2d", animation.totalFrames);
+    ImGui::Text("animationTime: %.2f", animation.animationTime);
+    ImGui::Text("timeSinceLastFrame: %.2f", animation.timeSinceLastFrame);
     ImGui::End();
   }
 
