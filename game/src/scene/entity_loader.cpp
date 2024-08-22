@@ -15,7 +15,7 @@ bool EntityLoader::loadPlayerDataFromXML(const std::string &path, entt::registry
         std::cerr << "Failed to load XML file: " << path << std::endl;
         return false;
     }
-    tinyxml2::XMLElement *root = doc.FirstChildElement("Assets")->FirstChildElement("Player");
+    tinyxml2::XMLElement *root = doc.FirstChildElement("Game")->FirstChildElement("Assets")->FirstChildElement("Player");
     if (root == nullptr)
     {
         std::cerr << "Failed to load player data from XML" << std::endl;
@@ -55,7 +55,7 @@ bool EntityLoader::loadPlayerDataFromXML(const std::string &path, entt::registry
 
     int x = position->IntAttribute("x");
     int y = position->IntAttribute("y");
-    
+
     int vx = velocity->IntAttribute("vx");
     int vy = velocity->IntAttribute("vy");
 
