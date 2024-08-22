@@ -11,10 +11,11 @@
 class Game {
 private:
   static Game *s_pInstance;
-  bool running;
-  SDL_Window *gWindow;
-  SDL_Renderer *gRenderer;
-  entt::registry registry;
+  std::string m_xmlGamePath;
+  bool m_running;
+  SDL_Window *m_gWindow;
+  SDL_Renderer *m_gRenderer;
+  entt::registry m_registry;
   int m_fps;
   int m_frameDelay;
   Game();
@@ -27,7 +28,7 @@ private:
   void update();
   void render();
   void clean();
-  bool isRunning() const { return running; }
+  bool isRunning() const { return m_running; }
   void createEntities();
 public:
   static Game *Instance() {

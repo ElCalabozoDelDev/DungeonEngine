@@ -13,4 +13,13 @@
             <Speed x="0" y="0" />
         </Player>
     </Assets>
+    <Config>
+        <Init>
+            <Title>DungeonEngine</Title>
+            <Fullscreen>false</Fullscreen>
+            <Screen width="800" height="600" />
+            <Background color="0x000000" />
+            <FPS value="60" />
+        </Init>
+    </Config>
 </Game>
