@@ -4,7 +4,7 @@
 
 int main( int argc, char* args[] )
 {
-    Game::Instance()->init();
+    Game::Instance()->init("../assets/game.xml");
     Game::Instance()->run();
     return 0;
 }

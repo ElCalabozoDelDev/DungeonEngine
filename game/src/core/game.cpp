@@ -1,25 +1,21 @@
 #include "core/game.hpp"
-#include "imgui.h"
-#include "imgui/imgui_impl_sdl2.h"
-#include "imgui/imgui_impl_sdlrenderer2.h"
 #include <SDL.h>
 #include <SDL_render.h>
 #include <iostream>
 #include <windows.h>
 
-#include "components/texture_component.hpp"
-#include "components/animation_component.hpp"
 #include "core/config_loader.hpp"
 #include "scene/entity_loader.hpp"
 
 Game *Game::s_pInstance = nullptr;
 
-Game::Game() : m_running(false), m_gWindow(nullptr), m_gRenderer(nullptr), m_xmlGamePath("../assets/game.xml") {}
+Game::Game() : m_running(false), m_gWindow(nullptr), m_gRenderer(nullptr) {}
 
 Game::~Game() {}
 
-void Game::init()
+void Game::init(const char *xmlGamePath)
 {
+  m_xmlGamePath = xmlGamePath;
   // Cargar la configuración del juego desde un archivo XML
   ConfigLoader::loadConfigFromXML(m_xmlGamePath.c_str(), m_config);
 
@@ -37,20 +33,7 @@ void Game::init()
         m_running = true;
 
         // Configuración de ImGui
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO &io = ImGui::GetIO();
-        (void)io;
-        io.ConfigFlags |=
-            ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-        io.ConfigFlags |=
-            ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-        // Estilo
-        ImGui::StyleColorsDark();
-
-        // Configuración para SDL2
-        ImGui_ImplSDL2_InitForSDLRenderer(m_gWindow, m_gRenderer);
-        ImGui_ImplSDLRenderer2_Init(m_gRenderer);
+        m_imguiSystem.init(m_gWindow, m_gRenderer);
       }
     }
   }
@@ -74,7 +57,7 @@ void Game::handleEvents()
   SDL_Event event;
   while (SDL_PollEvent(&event))
   {
-    ImGui_ImplSDL2_ProcessEvent(&event);
+    m_imguiSystem.handleEvents(event);
     if (event.type == SDL_QUIT)
     {
       m_running = false;
@@ -97,31 +80,10 @@ void Game::update()
 void Game::render()
 {
   // Iniciar un nuevo frame de ImGui
-  ImGui_ImplSDL2_NewFrame();
-  ImGui_ImplSDLRenderer2_NewFrame();
-  ImGui::NewFrame();
-
-  // Crear una ventana de ImGui para mostrar la posición de la esfera roja
-  auto view = m_registry.view<AnimationComponent, TextureComponent>();
-  for (auto entity : view)
-  {
-    auto &animation = view.get<AnimationComponent>(entity);
-    auto &texture = m_registry.get<TextureComponent>(entity);
-
-    ImGui::Begin("Estado de la textura");
-    ImGui::Text("spriteRow: %.2d", texture.spriteRow);
-    ImGui::Text("spriteCol: %.2d", texture.spriteCol);
-    ImGui::Text("currentSprite: %.2d", animation.currentSprite);
-    ImGui::Text("currentFrame: %.2d", animation.currentFrame);
-    ImGui::Text("totalFrames: %.2d", animation.totalFrames);
-    ImGui::Text("animationTime: %.2f", animation.animationTime);
-    ImGui::Text("timeSinceLastFrame: %.2f", animation.timeSinceLastFrame);
-    ImGui::End();
-  }
+  m_imguiSystem.newFrame();
 
   SDL_RenderClear(m_gRenderer);
-  ImGui::Render();
-  ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), m_gRenderer);
+  m_imguiSystem.render(m_registry, m_gRenderer);
 
   m_renderSystem.render(m_gRenderer, m_registry);
 
@@ -134,9 +96,7 @@ void Game::render()
 void Game::clean()
 {
   // Limpieza de ImGui
-  ImGui_ImplSDLRenderer2_Shutdown();
-  ImGui_ImplSDL2_Shutdown();
-  ImGui::DestroyContext();
+  m_imguiSystem.shutdown();
 
   SDL_DestroyRenderer(m_gRenderer);
   SDL_DestroyWindow(m_gWindow);

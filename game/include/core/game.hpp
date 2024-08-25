@@ -6,6 +6,7 @@
 #include "systems/render_system.hpp"
 #include "systems/transform_system.hpp"
 #include "systems/update_animation_system.hpp"
+#include "systems/imgui_system.hpp"
 #include "core/config.hpp"
 #include <SDL_render.h>
 
@@ -24,6 +25,7 @@ private:
   RenderSystem m_renderSystem;
   TransformSystem m_transformSystem;
   UpdateAnimationSystem m_updateAnimationSystem;
+  ImGuiSystem m_imguiSystem;
   Config m_config;
   void handleEvents();
   void update();
@@ -39,7 +41,7 @@ public:
     return s_pInstance;
   }
 
-  void init();
+  void init(const char* xmlGamePath);
   void run();
 };
 
