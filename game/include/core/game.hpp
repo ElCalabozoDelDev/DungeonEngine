@@ -6,16 +6,18 @@
 #include "systems/render_system.hpp"
 #include "systems/transform_system.hpp"
 #include "systems/update_animation_system.hpp"
+#include "systems/imgui_system.hpp"
+#include "core/config.hpp"
 #include <SDL_render.h>
 
 class Game {
 private:
   static Game *s_pInstance;
-  bool running;
-  SDL_Window *gWindow;
-  SDL_Renderer *gRenderer;
-  entt::registry registry;
-  int m_fps;
+  std::string m_xmlGamePath;
+  bool m_running;
+  SDL_Window *m_gWindow;
+  SDL_Renderer *m_gRenderer;
+  entt::registry m_registry;
   int m_frameDelay;
   Game();
   ~Game();
@@ -23,13 +25,14 @@ private:
   RenderSystem m_renderSystem;
   TransformSystem m_transformSystem;
   UpdateAnimationSystem m_updateAnimationSystem;
+  ImGuiSystem m_imguiSystem;
+  Config m_config;
   void handleEvents();
   void update();
   void render();
   void clean();
-  bool isRunning() const { return running; }
+  bool isRunning() const { return m_running; }
   void createEntities();
-  SDL_Texture *loadTexture(const std::string& path, SDL_Renderer* renderer);
 public:
   static Game *Instance() {
     if (s_pInstance == nullptr) {
@@ -38,8 +41,7 @@ public:
     return s_pInstance;
   }
 
-  void init(const char *title, int xpos, int ypos, int width, int height,
-            bool fullscreen, int fps, int frameDelay);
+  void init(const char* xmlGamePath);
   void run();
 };
 

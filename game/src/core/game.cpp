@@ -1,162 +1,120 @@
 #include "core/game.hpp"
-#include "SDL_image.h"
-#include "imgui.h"
-#include "imgui/imgui_impl_sdl2.h"
-#include "imgui/imgui_impl_sdlrenderer2.h"
+#include <SDL.h>
 #include <SDL_render.h>
 #include <iostream>
 #include <windows.h>
 
-#include "components/player_component.hpp"
-#include "components/position_component.hpp"
-#include "components/texture_component.hpp"
-#include "components/velocity_component.hpp"
-
+#include "core/config_loader.hpp"
+#include "scene/entity_loader.hpp"
 
 Game *Game::s_pInstance = nullptr;
 
-Game::Game() : running(false), gWindow(nullptr), gRenderer(nullptr) {}
+Game::Game() : m_running(false), m_gWindow(nullptr), m_gRenderer(nullptr) {}
 
 Game::~Game() {}
 
-void Game::init(const char *title, int xpos, int ypos, int width, int height,
-                bool fullscreen, int fps, int frameDelay) {
-  int flags = fullscreen ? SDL_WINDOW_FULLSCREEN : 0;
-  m_fps = fps;
-  m_frameDelay = frameDelay;
-  if (SDL_Init(SDL_INIT_VIDEO) == 0) {
-    gWindow = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
-    if (gWindow) {
-      gRenderer = SDL_CreateRenderer(
-          gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-      if (gRenderer) {
-        running = true;
+void Game::init(const char *xmlGamePath)
+{
+  m_xmlGamePath = xmlGamePath;
+  // Cargar la configuración del juego desde un archivo XML
+  ConfigLoader::loadConfigFromXML(m_xmlGamePath.c_str(), m_config);
+
+  int flags = m_config.fullScreen ? SDL_WINDOW_FULLSCREEN : 0;
+  m_frameDelay = 1000 /  m_config.frameRate;
+  if (SDL_Init(SDL_INIT_EVERYTHING) == 0)
+  {
+    m_gWindow = SDL_CreateWindow(m_config.title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_config.screenWidth, m_config.screenHeight, flags);
+    if (m_gWindow)
+    {
+      m_gRenderer = SDL_CreateRenderer(
+          m_gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+      if (m_gRenderer)
+      {
+        m_running = true;
 
         // Configuración de ImGui
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO &io = ImGui::GetIO();
-        (void)io;
-        io.ConfigFlags |=
-            ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-        io.ConfigFlags |=
-            ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
-        // Estilo
-        ImGui::StyleColorsDark();
-
-        // Configuración para SDL2
-        ImGui_ImplSDL2_InitForSDLRenderer(gWindow, gRenderer);
-        ImGui_ImplSDLRenderer2_Init(gRenderer);
+        m_imguiSystem.init(m_gWindow, m_gRenderer);
       }
     }
-  } else {
-    std::cerr << "Error al inicializar SDL: " << SDL_GetError() << std::endl;
-    running = false;
   }
-
+  else
+  {
+    std::cerr << "Error al inicializar SDL: " << SDL_GetError() << std::endl;
+    m_running = false;
+  }
   createEntities();
 }
 
-
-SDL_Texture *Game::loadTexture(const std::string &path,
-                               SDL_Renderer *renderer) {
-  SDL_Texture *newTexture = IMG_LoadTexture(renderer, path.c_str());
-  if (newTexture == nullptr) {
-    std::cerr << "Failed to load texture: " << IMG_GetError() << std::endl;
-  }
-  return newTexture;
-}
-
-void Game::createEntities() {
-  // Aquí puedes inicializar tu juego, como la creación de la bola controlada
-  // por el jugador
-  SDL_Texture *playerTexture = loadTexture("../assets/Player/1-Heroes-Animated.png", gRenderer);
-  auto player = registry.create();
-  registry.emplace<PositionComponent>(player, 390.0f, 290.0f);
-  registry.emplace<VelocityComponent>(player, 0.0f, 0.0f);
-  registry.emplace<PlayerComponent>(player);
-  registry.emplace<TextureComponent>(player, playerTexture, 2, 4, 0, 0, 3, 0.3, 0);
-  if (player == entt::null) {
-    std::cerr << "Error al crear la entidad del jugador" << std::endl;
-  }
+void Game::createEntities()
+{
+  // Carga entidades desde un archivo XML
+  EntityLoader::loadPlayerDataFromXML(m_xmlGamePath, m_registry, m_gRenderer);
 }
 
 // # GAME LOOP
-void Game::handleEvents() {
+void Game::handleEvents()
+{
   SDL_Event event;
-  while (SDL_PollEvent(&event)) {
-    ImGui_ImplSDL2_ProcessEvent(&event);
-    if (event.type == SDL_QUIT) {
-      running = false;
+  while (SDL_PollEvent(&event))
+  {
+    m_imguiSystem.handleEvents(event);
+    if (event.type == SDL_QUIT)
+    {
+      m_running = false;
     }
   }
-  m_movementSystem.handle(registry); // Maneja el movimiento
+  m_movementSystem.handle(m_registry); // Maneja el movimiento
 }
 
-void Game::update() {
+void Game::update()
+{
   Uint32 currentTime = SDL_GetTicks();
   static Uint32 lastTime = currentTime;
   float deltaTime = (currentTime - lastTime) / 1000.0f;
   lastTime = currentTime;
 
-  m_transformSystem.update(registry, deltaTime); // Actualiza la posición
-  m_updateAnimationSystem.update(registry, deltaTime); // Actualiza la animación
+  m_transformSystem.update(m_registry, deltaTime);       // Actualiza la posición
+  m_updateAnimationSystem.update(m_registry, deltaTime); // Actualiza la animación
 }
 
-void Game::render() {
+void Game::render()
+{
   // Iniciar un nuevo frame de ImGui
-  ImGui_ImplSDL2_NewFrame();
-  ImGui_ImplSDLRenderer2_NewFrame();
-  ImGui::NewFrame();
+  m_imguiSystem.newFrame();
 
-  // Crear una ventana de ImGui para mostrar la posición de la esfera roja
-  auto view = registry.view<TextureComponent>();
-  for (auto entity : view) {
-    auto &texture = view.get<TextureComponent>(entity);
+  SDL_RenderClear(m_gRenderer);
+  m_imguiSystem.render(m_registry, m_gRenderer);
 
-    ImGui::Begin("Estado de la textura");
-    ImGui::Text("spriteRow: %.2d", texture.spriteRow);
-    ImGui::Text("spriteCol: %.2d", texture.spriteCol);
-    ImGui::Text("currentSprite: %.2d", texture.currentSprite);
-    ImGui::Text("currentFrame: %.2d", texture.currentFrame);
-    ImGui::Text("totalFrames: %.2d", texture.totalFrames);
-    ImGui::Text("animationTime: %.2f", texture.animationTime);
-    ImGui::Text("timeSinceLastFrame: %.2f", texture.timeSinceLastFrame);
-    ImGui::End();
-  }
+  m_renderSystem.render(m_gRenderer, m_registry);
 
-  SDL_RenderClear(gRenderer);
-  ImGui::Render();
-  ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), gRenderer);
-
-  m_renderSystem.render(gRenderer, registry);
-
-  SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
+  SDL_SetRenderDrawColor(m_gRenderer, 0, 0, 0, 255);
 
   // Mostrar el contenido renderizado en la pantalla
-  SDL_RenderPresent(gRenderer);
+  SDL_RenderPresent(m_gRenderer);
 }
 
-void Game::clean() {
+void Game::clean()
+{
   // Limpieza de ImGui
-  ImGui_ImplSDLRenderer2_Shutdown();
-  ImGui_ImplSDL2_Shutdown();
-  ImGui::DestroyContext();
+  m_imguiSystem.shutdown();
 
-  SDL_DestroyRenderer(gRenderer);
-  SDL_DestroyWindow(gWindow);
+  SDL_DestroyRenderer(m_gRenderer);
+  SDL_DestroyWindow(m_gWindow);
   SDL_Quit();
 }
 
-void Game::run() {
+void Game::run()
+{
   Uint32 frameStart, frameTime;
-  while (isRunning()) {
+  while (isRunning())
+  {
     frameStart = SDL_GetTicks();
     handleEvents();
     update();
     render();
     frameTime = SDL_GetTicks() - frameStart;
-    if (frameTime < m_frameDelay) {
+    if (frameTime < m_frameDelay)
+    {
       SDL_Delay(m_frameDelay - frameTime);
     }
   }
