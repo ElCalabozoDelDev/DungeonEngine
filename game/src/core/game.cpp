@@ -1,18 +1,15 @@
 #include "core/game.hpp"
-#include "SDL_image.h"
 #include "imgui.h"
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_sdlrenderer2.h"
+#include <SDL.h>
 #include <SDL_render.h>
 #include <iostream>
 #include <windows.h>
 
-#include "components/player_component.hpp"
-#include "components/position_component.hpp"
 #include "components/texture_component.hpp"
-#include "components/velocity_component.hpp"
 #include "components/animation_component.hpp"
-
+#include "core/config_loader.hpp"
 #include "scene/entity_loader.hpp"
 
 Game *Game::s_pInstance = nullptr;
@@ -21,15 +18,16 @@ Game::Game() : m_running(false), m_gWindow(nullptr), m_gRenderer(nullptr), m_xml
 
 Game::~Game() {}
 
-void Game::init(const char *title, int xpos, int ypos, int width, int height,
-                bool fullscreen, int fps, int frameDelay)
+void Game::init()
 {
-  int flags = fullscreen ? SDL_WINDOW_FULLSCREEN : 0;
-  m_fps = fps;
-  m_frameDelay = frameDelay;
-  if (SDL_Init(SDL_INIT_VIDEO) == 0)
+  // Cargar la configuración del juego desde un archivo XML
+  ConfigLoader::loadConfigFromXML(m_xmlGamePath.c_str(), m_config);
+
+  int flags = m_config.fullScreen ? SDL_WINDOW_FULLSCREEN : 0;
+  m_frameDelay = 1000 /  m_config.frameRate;
+  if (SDL_Init(SDL_INIT_EVERYTHING) == 0)
   {
-    m_gWindow = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
+    m_gWindow = SDL_CreateWindow(m_config.title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_config.screenWidth, m_config.screenHeight, flags);
     if (m_gWindow)
     {
       m_gRenderer = SDL_CreateRenderer(
@@ -61,7 +59,6 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height,
     std::cerr << "Error al inicializar SDL: " << SDL_GetError() << std::endl;
     m_running = false;
   }
-
   createEntities();
 }
 

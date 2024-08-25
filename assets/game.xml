@@ -16,10 +16,9 @@
     <Config>
         <Init>
             <Title>DungeonEngine</Title>
-            <Fullscreen>false</Fullscreen>
+            <FullScreen>false</FullScreen>
+            <FrameRate>60</FrameRate>
             <Screen width="800" height="600" />
-            <Background color="0x000000" />
-            <FPS value="60" />
         </Init>
     </Config>
 </Game>

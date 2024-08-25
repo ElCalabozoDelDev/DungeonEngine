@@ -6,6 +6,7 @@
 #include "systems/render_system.hpp"
 #include "systems/transform_system.hpp"
 #include "systems/update_animation_system.hpp"
+#include "core/config.hpp"
 #include <SDL_render.h>
 
 class Game {
@@ -16,7 +17,6 @@ private:
   SDL_Window *m_gWindow;
   SDL_Renderer *m_gRenderer;
   entt::registry m_registry;
-  int m_fps;
   int m_frameDelay;
   Game();
   ~Game();
@@ -24,6 +24,7 @@ private:
   RenderSystem m_renderSystem;
   TransformSystem m_transformSystem;
   UpdateAnimationSystem m_updateAnimationSystem;
+  Config m_config;
   void handleEvents();
   void update();
   void render();
@@ -38,8 +39,7 @@ public:
     return s_pInstance;
   }
 
-  void init(const char *title, int xpos, int ypos, int width, int height,
-            bool fullscreen, int fps, int frameDelay);
+  void init();
   void run();
 };
 
