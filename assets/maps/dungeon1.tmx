@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="26" height="46" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="7">
+ <tileset firstgid="1" name="1-Dungeon" tilewidth="16" tileheight="16" tilecount="100" columns="10">
+  <image source="../Tiles/1-Dungeon.png" width="160" height="160"/>
+ </tileset>
+ <layer id="2" name="Bottom" width="26" height="46">
+  <data encoding="base64" compression="zlib">
+   eJztkzsOwDAIQ3PO3P8gXTpUVUjtYMhHtcRSQR4GWgqueke0duFUIN4ctGY2B/GN5FgcK5eJ3pued0fmlu2nJ8V+Tr3rEzioVPUZ/w8yLy8vm2MpghO5p5+zD6clNcfKWZ2jngvKaXG9Qv1Y35k8Jce7n9X8qDiIVvPz5DH9svc/2q/i3lBO7y2Gw/bv8fMlNJftMcrP6F0wHOV+UHlqWU4Gy8O5AD6kA94=
+  </data>
+ </layer>
+ <layer id="3" name="Overlay" width="26" height="46">
+  <properties>
+   <property name="Collidable" type="bool" value="true"/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJzt0jEKwCAMRuFcsdXNWu9/i/5DHQwuRZBA3wcPJbgIMQOAuaySOt3p9Xl294huVVRVbeENYjve/qDv62Xjzn6dR8F/Yv8HAABglwd4phfJ
+  </data>
+ </layer>
+ <objectgroup id="4" name="Objects1">
+  <object id="4" name="Treasure1" x="144.5" y="47.5" width="16" height="16">
+   <properties>
+    <property name="textureId" value="closedTreasure"/>
+   </properties>
+  </object>
+  <object id="5" name="Treasure2" x="223.5" y="48.5" width="16" height="16">
+   <properties>
+    <property name="textureId" value="closedTreasure"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <layer id="1" name="Collision" width="26" height="46">
+  <properties>
+   <property name="Collidable" type="bool" value="true"/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJztWNsKwyAMdd36tK592qX//6ObDwEXYjxpIrTQA8IYxmMuHmNTwrBUfkfDy3P9jRswhsLmDtqMG/a2xZ892NTiuBZzHpU5Y/qHxPMW1rOC+GeFpwc0f7jvFlDMEX+Q2Of1PsLgMd9DvZ02mA2qVcg51TSx5/mh/YwAzyuAbwF4IvzlPJKGevSuxtMrVyfPsXikc+65j2o8ElBdKsfM1kB4npaNM9B5XAEeDzS9Jp/RPvUi/Gfpd1A/tbhG8miI5NHujUgebZ6FJ/ePUq9GYxCt7TwtoP5QXVMt0v6nhOmO1pNY+hBP3Vk0uqU71P+j758I8LUsPFx/uM6U2pxzXatFa360+TzGnvxY7ole+eEa1Lqrtfdcrq+cI0kbpqS/7xAc5fvOF4XyDfo=
+  </data>
+ </layer>
+</map>
