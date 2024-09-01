@@ -11,7 +11,6 @@ public:
 
     void init(SDL_Window* window, SDL_Renderer* renderer);
     void handleEvents(SDL_Event& event);
-    void newFrame();
     void render(entt::registry& registry, SDL_Renderer *renderer);
     void shutdown();
 };

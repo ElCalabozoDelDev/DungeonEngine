@@ -79,8 +79,6 @@ void Game::update()
 
 void Game::render()
 {
-  // Iniciar un nuevo frame de ImGui
-  m_imguiSystem.newFrame();
 
   SDL_RenderClear(m_gRenderer);
   m_imguiSystem.render(m_registry, m_gRenderer);

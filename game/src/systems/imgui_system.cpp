@@ -24,13 +24,10 @@ void ImGuiSystem::handleEvents(SDL_Event& event) {
     ImGui_ImplSDL2_ProcessEvent(&event);
 }
 
-void ImGuiSystem::newFrame() {
+void ImGuiSystem::render(entt::registry& registry, SDL_Renderer *renderer) {
     ImGui_ImplSDL2_NewFrame();
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui::NewFrame();
-}
-
-void ImGuiSystem::render(entt::registry& registry, SDL_Renderer *renderer) {
     // Crear una ventana de ImGui para mostrar la información del sistema
     auto view = registry.view<AnimationComponent, TextureComponent>();
     for (auto entity : view) {

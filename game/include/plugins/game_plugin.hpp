@@ -1,0 +1,22 @@
+#ifndef GAME_PLUGIN_HPP
+#define GAME_PLUGIN_HPP
+
+#include "plugin.hpp"
+#include "systems/scene_system.hpp"
+#include "scene/in_game_scene.hpp"
+
+class GamePlugin : public Plugin {
+public:
+    void mount(GameLoop& gameLoop) override {
+        auto sceneManager = std::make_shared<SceneSystem>();
+
+        gameLoop.addSetupCallback([sceneManager](entt::registry& registry) {
+            registry.ctx().emplace<std::shared_ptr<SceneSystem>>(sceneManager);
+            sceneManager->changeScene(registry, std::make_unique<InGameScene>());
+        });
+
+        gameLoop.addSystem(sceneManager);
+    }
+};
+
+#endif
