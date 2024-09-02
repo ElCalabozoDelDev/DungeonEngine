@@ -20,16 +20,16 @@ public:
 
         gameLoop.addFrameBeginCallback([sceneManager](entt::registry &registry)
          {
-            // auto& cf = registry.ctx().get<ControlFlow>();
-            // SDL_Event event;
-            // while (SDL_PollEvent(&event))
-            // {
-            //     // m_imguiSystem.handleEvents(event);
-            //     if (event.type == SDL_QUIT)
-            //     {
-            //         cf = ControlFlow::Exit;
-            //     }
-            // } 
+            auto& cf = registry.ctx().get<ControlFlow>();
+            SDL_Event event;
+            while (SDL_PollEvent(&event))
+            {
+                // m_imguiSystem.handleEvents(event);
+                if (event.type == SDL_QUIT)
+                {
+                    cf = ControlFlow::Exit;
+                }
+            } 
         });
 
         gameLoop.addSystem(sceneManager);
