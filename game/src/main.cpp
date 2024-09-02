@@ -12,13 +12,13 @@
 #include "core/game_loop.hpp"
 #include "plugins/base_plugin.hpp"
 #include "plugins/game_plugin.hpp"
-
+#include "core/config.hpp"
+#include "core/config_loader.hpp"
 int main(int argc, char *argv[])
 {
     GameLoop gameLoop;
-    BasePlugin::Config config;
-    config.windowTitle = "Game";
-    config.frameRateCap = 60;
+    Config config;
+    ConfigLoader::loadConfigFromXML("../assets/game.xml", config);
     BasePlugin basePlugin(config);
     GamePlugin gamePlugin;
     gameLoop.addPlugin(basePlugin);

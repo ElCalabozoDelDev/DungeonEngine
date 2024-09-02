@@ -6,7 +6,6 @@
 
 void RenderSystem::run(entt::registry &registry) {
   SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
-  SDL_RenderClear(renderer);
 
   // Obtener la vista de entidades que tienen tanto PositionComponent como
   // TextureComponent
@@ -37,6 +36,4 @@ void RenderSystem::run(entt::registry &registry) {
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-  // Mostrar el contenido renderizado en la pantalla
-  SDL_RenderPresent(renderer);
 }

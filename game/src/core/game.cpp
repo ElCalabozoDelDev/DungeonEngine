@@ -58,22 +58,22 @@ void Game::handleEvents()
   SDL_Event event;
   while (SDL_PollEvent(&event))
   {
-    m_imguiSystem.handleEvents(event);
+    // m_imguiSystem.handleEvents(event);
     if (event.type == SDL_QUIT)
     {
       m_running = false;
     }
   }
-  m_movementSystem.run(m_registry); // Maneja el movimiento
+  // m_movementSystem.run(m_registry); // Maneja el movimiento
 }
 
 void Game::update()
 {
-  Uint32 currentTime = SDL_GetTicks();
-  static Uint32 lastTime = currentTime;
-  float deltaTime = (currentTime - lastTime) / 1000.0f;
-  lastTime = currentTime;
-  m_gameLoop.run();
+  // Uint32 currentTime = SDL_GetTicks();
+  // static Uint32 lastTime = currentTime;
+  // float deltaTime = (currentTime - lastTime) / 1000.0f;
+  // lastTime = currentTime;
+  // m_gameLoop.run();
 
   // m_transformSystem.update(m_registry, deltaTime);       // Actualiza la posición
   // m_updateAnimationSystem.update(m_registry, deltaTime); // Actualiza la animación

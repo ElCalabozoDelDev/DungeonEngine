@@ -68,14 +68,12 @@ public:
 
         m_hookSetup.publish(m_registry);
 
+        static Uint32 lastTime = SDL_GetTicks();
         while (m_controlFlow == ControlFlow::Loop) {
-
+            DeltaTime *dt = m_registry.ctx().get<DeltaTime *>();
             Uint32 currentTime = SDL_GetTicks();
-            static Uint32 lastTime = currentTime;
-            DeltaTime * deltaTime;
-            deltaTime->value = (currentTime - lastTime) / 1000.0f;
+            dt->value = (currentTime - lastTime) / 1000.0f;
             lastTime = currentTime;
-            m_registry.ctx().emplace<DeltaTime *>(deltaTime);
 
             m_hookFrameBegin.publish(m_registry);
 
