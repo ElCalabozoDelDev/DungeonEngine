@@ -5,6 +5,7 @@
 #include "components/position_component.hpp"
 #include "components/texture_component.hpp"
 #include "components/animation_component.hpp"
+#include "entity_loader.hpp" // Include the header file that declares EntityLoader
 // Incluir otros componentes y sistemas necesarios
 
 class InGameScene : public Scene {
@@ -21,14 +22,9 @@ public:
     // Este método se ejecuta cuando se entra a la escena
     void onEnter(entt::registry& registry) override {
         // Crear las entidades necesarias para el juego
-        // entt::entity player = registry.create();
-        // registry.emplace<PositionComponent>(player, 100.0f, 150.0f);
-        // registry.emplace<TextureComponent>(player, "path/to/player_texture.png");
-        // registry.emplace<AnimationComponent>(player, /* parámetros de animación */);
-        // m_entities.push_back(player);
-
-        // Crear otras entidades como enemigos, objetos, etc.
-        // ...
+        // Por ejemplo, cargar un jugador desde un archivo XML
+        SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
+        EntityLoader::loadPlayerDataFromXML("../assets/game.xml", registry, renderer);
 
         // Puedes inicializar otros sistemas o componentes específicos del nivel aquí
     }
@@ -38,11 +34,7 @@ public:
         // Aquí iría la lógica del juego, como manejar colisiones, actualizar la física, etc.
 
         // Ejemplo: Verificar el estado del jugador
-        auto view = registry.view<PositionComponent, TextureComponent>();
-        for (auto entity : view) {
-            auto& pos = view.get<PositionComponent>(entity);
-            // Lógica para actualizar la posición, chequear colisiones, etc.
-        }
+        
 
         // Se puede agregar lógica adicional para manejar enemigos, eventos de juego, etc.
     }

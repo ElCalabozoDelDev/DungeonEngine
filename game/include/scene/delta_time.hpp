@@ -1,0 +1,3 @@
+struct DeltaTime {
+    float value;
+};

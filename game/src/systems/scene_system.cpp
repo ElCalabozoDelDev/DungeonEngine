@@ -1,4 +1,5 @@
 #include "systems/scene_system.hpp"
+#include <iostream>
 
 void SceneSystem::run(entt::registry& registry) {
         if (m_currentScene) {

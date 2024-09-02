@@ -6,6 +6,7 @@
 
 #include "core/config_loader.hpp"
 #include "scene/entity_loader.hpp"
+#include "core/game_loop.hpp"
 
 Game *Game::s_pInstance = nullptr;
 
@@ -63,7 +64,7 @@ void Game::handleEvents()
       m_running = false;
     }
   }
-  m_movementSystem.handle(m_registry); // Maneja el movimiento
+  m_movementSystem.run(m_registry); // Maneja el movimiento
 }
 
 void Game::update()
@@ -72,23 +73,17 @@ void Game::update()
   static Uint32 lastTime = currentTime;
   float deltaTime = (currentTime - lastTime) / 1000.0f;
   lastTime = currentTime;
+  m_gameLoop.run();
 
-  m_transformSystem.update(m_registry, deltaTime);       // Actualiza la posición
-  m_updateAnimationSystem.update(m_registry, deltaTime); // Actualiza la animación
+  // m_transformSystem.update(m_registry, deltaTime);       // Actualiza la posición
+  // m_updateAnimationSystem.update(m_registry, deltaTime); // Actualiza la animación
 }
 
 void Game::render()
 {
+  // m_imguiSystem.render(m_registry, m_gRenderer);
+  // m_renderSystem.run(m_registry);
 
-  SDL_RenderClear(m_gRenderer);
-  m_imguiSystem.render(m_registry, m_gRenderer);
-
-  m_renderSystem.render(m_gRenderer, m_registry);
-
-  SDL_SetRenderDrawColor(m_gRenderer, 0, 0, 0, 255);
-
-  // Mostrar el contenido renderizado en la pantalla
-  SDL_RenderPresent(m_gRenderer);
 }
 
 void Game::clean()
@@ -107,9 +102,7 @@ void Game::run()
   while (isRunning())
   {
     frameStart = SDL_GetTicks();
-    handleEvents();
     update();
-    render();
     frameTime = SDL_GetTicks() - frameStart;
     if (frameTime < m_frameDelay)
     {

@@ -9,9 +9,11 @@
 #include "systems/imgui_system.hpp"
 #include "core/config.hpp"
 #include <SDL_render.h>
+#include "core/game_loop.hpp"
 
 class Game {
 private:
+  GameLoop m_gameLoop;
   static Game *s_pInstance;
   std::string m_xmlGamePath;
   bool m_running;

@@ -4,6 +4,7 @@
 #include "plugin.hpp"
 #include "systems/scene_system.hpp"
 #include "scene/in_game_scene.hpp"
+#include "core/game_loop.hpp"
 
 class GamePlugin : public Plugin {
 public:

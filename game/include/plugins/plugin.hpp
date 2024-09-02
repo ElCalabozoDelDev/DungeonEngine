@@ -1,7 +1,7 @@
 #ifndef PLUGIN_HPP
 #define PLUGIN_HPP
 
-#include "core/game_loop.hpp"
+class GameLoop;
 
 class Plugin {
 public:

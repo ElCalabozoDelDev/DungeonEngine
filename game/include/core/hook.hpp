@@ -1,7 +1,7 @@
 #ifndef HOOK_HPP
 #define HOOK_HPP
 
-#include <functional> // Add this line to include the <functional> header file
+#include <functional>
 
 template <typename Type>
 class Hook;

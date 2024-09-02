@@ -1,15 +1,17 @@
 #include "systems/transform_system.hpp"
 #include "components/position_component.hpp"
 #include "components/velocity_component.hpp"
+#include "scene/delta_time.hpp"
 
-void TransformSystem::update(entt::registry& registry, float deltaTime) {
+void TransformSystem::run(entt::registry& registry) {
+    DeltaTime * deltaTime = registry.ctx().get<DeltaTime *>();
     auto view = registry.view<PositionComponent, VelocityComponent>();
     for (auto entity : view) {
         auto& pos = view.get<PositionComponent>(entity);
         auto& vel = view.get<VelocityComponent>(entity);
 
-        pos.x += vel.vx * deltaTime;
-        pos.y += vel.vy * deltaTime;
+        pos.x += vel.vx * deltaTime->value;
+        pos.y += vel.vy * deltaTime->value;
 
         const int windowWidth = 800;
         const int windowHeight = 600;

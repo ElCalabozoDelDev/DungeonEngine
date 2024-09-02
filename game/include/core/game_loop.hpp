@@ -1,10 +1,13 @@
 #ifndef GAME_LOOP_HPP
 #define GAME_LOOP_HPP
 
+#include <SDL_stdinc.h>
+#include <SDL_timer.h>
 #include <entt/entt.hpp>
-#include "System.hpp"
+#include "system.hpp"
 #include "hook.hpp"
-
+#include "plugins/plugin.hpp"
+#include "scene/delta_time.hpp"
 enum class ControlFlow {
   Exit,
   Loop
@@ -23,6 +26,12 @@ private:
     Hook<void(entt::registry&)> m_hookTeardown;
 
 public:
+    GameLoop &addPlugin(Plugin &plugin)
+    {
+        plugin.mount(*this);
+        return *this;
+    }
+
     GameLoop& addSystem(std::shared_ptr<System> system) {
         m_systems.push_back(system);
         return *this;
@@ -60,6 +69,14 @@ public:
         m_hookSetup.publish(m_registry);
 
         while (m_controlFlow == ControlFlow::Loop) {
+
+            Uint32 currentTime = SDL_GetTicks();
+            static Uint32 lastTime = currentTime;
+            DeltaTime * deltaTime;
+            deltaTime->value = (currentTime - lastTime) / 1000.0f;
+            lastTime = currentTime;
+            m_registry.ctx().emplace<DeltaTime *>(deltaTime);
+
             m_hookFrameBegin.publish(m_registry);
 
             for (auto& system : m_systems) {

@@ -1,16 +1,17 @@
 #include "systems/update_animation_system.hpp"
 #include "components/animation_component.hpp"
 #include "components/texture_component.hpp"
+#include "scene/delta_time.hpp"
 
-void UpdateAnimationSystem::update(entt::registry& registry, float deltaTime) {
+void UpdateAnimationSystem::run(entt::registry& registry) {
     auto view = registry.view<AnimationComponent, TextureComponent>();
-
+    DeltaTime * deltaTime = registry.ctx().get<DeltaTime *>();
     for (auto entity : view) {
         auto& ani = view.get<AnimationComponent>(entity);
         auto& tex = view.get<TextureComponent>(entity);
 
         // Actualizar el tiempo acumulado
-        ani.timeSinceLastFrame += deltaTime;
+        ani.timeSinceLastFrame += deltaTime->value;
         // Cambiar de frame si el tiempo acumulado supera el tiempo entre frames
         if (ani.timeSinceLastFrame >= ani.animationTime) {
             // Mover al siguiente frame

@@ -3,7 +3,7 @@
 #include "components/velocity_component.hpp"
 #include "components/player_component.hpp"
 
-void MovementSystem::handle(entt::registry& registry) {
+void MovementSystem::run(entt::registry& registry) {
     auto view = registry.view<VelocityComponent, PlayerComponent>();
 
     for (auto entity : view) {

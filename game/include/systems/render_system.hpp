@@ -1,11 +1,11 @@
 #ifndef RENDER_HPP
 #define RENDER_HPP
 
-#include "SDL.h"
+#include "core/system.hpp"
 #include "entt/entt.hpp"
 
-class RenderSystem {
+class RenderSystem final : public System {
     public:
-        void render(SDL_Renderer* renderer, entt::registry& registry);
+        void run(entt::registry& registry) override;
 };
 #endif // RENDER_HPP
