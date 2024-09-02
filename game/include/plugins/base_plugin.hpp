@@ -22,21 +22,7 @@ private:
 public:
   BasePlugin(const Config &config) : m_sdl(config) {}
 
-  void mount(GameLoop &gameLoop) override {
-    gameLoop.addPlugin(m_sdl);
-    gameLoop.addSetupCallback([this](entt::registry &registry) {
-
-    });
-
-    gameLoop.addTeardownCallback([](entt::registry &registry) {
-
-    });
-
-    gameLoop.addSystem(std::make_shared<MovementSystem>());
-    gameLoop.addSystem(std::make_shared<TransformSystem>());
-    gameLoop.addSystem(std::make_shared<UpdateAnimationSystem>());
-    gameLoop.addSystemLast(std::make_shared<RenderSystem>());
-  }
+  void mount(GameLoop &gameLoop) override;
 };
 
 #endif
