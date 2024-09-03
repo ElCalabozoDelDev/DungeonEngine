@@ -1,10 +1,10 @@
-#ifndef GAME_PLUGIN_HPP
-#define GAME_PLUGIN_HPP
+#ifndef IMGUI_PLUGIN_HPP
+#define IMGUI_PLUGIN_HPP
 
 #include "plugin.hpp"
 #include "core/game_loop.hpp"
 
-class GamePlugin : public Plugin
+class ImGuiPlugin : public Plugin
 {
 public:
     void mount(GameLoop &gameLoop) override;

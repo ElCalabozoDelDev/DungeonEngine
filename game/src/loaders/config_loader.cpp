@@ -1,4 +1,4 @@
-#include "core/config_loader.hpp"
+#include "loaders/config_loader.hpp"
 #include "tinyxml2.h"
 #include <iostream>
 bool ConfigLoader::loadConfigFromXML(const char* path, Config& config) {

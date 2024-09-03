@@ -22,7 +22,8 @@ void SDLPlugin::mount(GameLoop &gameLoop)
             m_frameStart = SDL_GetTicks();
             SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
             // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            SDL_RenderClear(renderer); });
+            SDL_RenderClear(renderer); 
+            });
 
     gameLoop.addFrameEndCallback([this](entt::registry &registry)
                                  {

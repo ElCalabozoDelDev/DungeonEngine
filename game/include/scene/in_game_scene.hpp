@@ -2,10 +2,7 @@
 #define IN_GAME_SCENE_HPP
 
 #include "scene.hpp"
-#include "components/position_component.hpp"
-#include "components/texture_component.hpp"
-#include "components/animation_component.hpp"
-#include "entity_loader.hpp" // Include the header file that declares EntityLoader
+
 // Incluir otros componentes y sistemas necesarios
 
 class InGameScene : public Scene {

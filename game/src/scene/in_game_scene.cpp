@@ -1,4 +1,6 @@
 #include "scene/in_game_scene.hpp"
+#include "loaders/entity_loader.hpp" 
+
 // Este método se ejecuta cuando se entra a la escena
 void InGameScene::onEnter(entt::registry& registry) {
     // Crear las entidades necesarias para el juego

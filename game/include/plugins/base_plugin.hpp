@@ -4,21 +4,17 @@
 #include "plugin.hpp"
 #include <SDL.h>
 #include <SDL_stdinc.h>
-#include <memory>
-#include <string>
 #include <entt/entt.hpp>
 #include "core/game_loop.hpp"
-#include "systems/movement_system.hpp" // Include the header file for EventSystem
-#include "systems/render_system.hpp" // Include the header file for RenderSystem
-#include "systems/transform_system.hpp"
-#include "systems/update_animation_system.hpp"
-#include "core/config.hpp"
+#include "loaders/config.hpp"
+#include "plugins/imgui_plugin.hpp"
 #include "plugins/sdl_plugin.hpp"
 class BasePlugin final : public Plugin {
 public:
 
 private:
   SDLPlugin m_sdl;
+  ImGuiPlugin m_imgui;
 public:
   BasePlugin(const Config &config) : m_sdl(config) {}
 

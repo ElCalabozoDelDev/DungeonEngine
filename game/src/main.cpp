@@ -12,8 +12,8 @@
 #include "core/game_loop.hpp"
 #include "plugins/base_plugin.hpp"
 #include "plugins/game_plugin.hpp"
-#include "core/config.hpp"
-#include "core/config_loader.hpp"
+#include "loaders/config.hpp"
+#include "loaders/config_loader.hpp"
 int main(int argc, char *argv[])
 {
     GameLoop gameLoop;

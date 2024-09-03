@@ -4,8 +4,7 @@
 #include "plugin.hpp"
 #include "core/game_loop.hpp"
 #include <SDL.h>
-#include "core/config.hpp"
-#include "scene/delta_time.hpp"
+#include "loaders/config.hpp"
 class SDLPlugin : public Plugin
 {
 private:

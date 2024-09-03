@@ -1,18 +1,16 @@
 #ifndef IMGUI_SYSTEM_HPP
 #define IMGUI_SYSTEM_HPP
 
+#include "core/system.hpp"
 #include <SDL.h>
 #include <entt/entt.hpp>
 
-class ImGuiSystem {
+class ImGuiSystem : public System {
 public:
     ImGuiSystem() = default;
     ~ImGuiSystem() = default;
-
-    void init(SDL_Window* window, SDL_Renderer* renderer);
-    void handleEvents(SDL_Event& event);
-    void render(entt::registry& registry, SDL_Renderer *renderer);
-    void shutdown();
+    void run(entt::registry& registry) override;
+    void handle(SDL_Event& event);
 };
 
 #endif // IMGUI_SYSTEM_HPP
