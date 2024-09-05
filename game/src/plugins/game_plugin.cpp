@@ -19,11 +19,11 @@ void GamePlugin::mount(GameLoop &gameLoop)
             SDL_Event event;
             while (SDL_PollEvent(&event))
             {
-                imGuiSystem.handle(event);
                 if (event.type == SDL_QUIT)
                 {
                     cf = ControlFlow::Exit;
                 }
+                imGuiSystem.handle(event);
             } });
 
     gameLoop.addSystem(sceneSystem);
