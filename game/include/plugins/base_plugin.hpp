@@ -9,12 +9,14 @@
 #include "loaders/config.hpp"
 #include "plugins/imgui_plugin.hpp"
 #include "plugins/sdl_plugin.hpp"
+#include "plugins/widget_plugin.hpp"
 class BasePlugin final : public Plugin {
 public:
 
 private:
   SDLPlugin m_sdl;
   ImGuiPlugin m_imgui;
+  WidgetPlugin m_widget;
 public:
   BasePlugin(const Config &config) : m_sdl(config) {}
 

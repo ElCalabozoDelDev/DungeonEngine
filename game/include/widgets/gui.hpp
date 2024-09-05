@@ -31,7 +31,7 @@ using effect_fn_type = std::function<std::optional<cleanup_fn_type>()>;
 template <typename T>
 concept is_callback_fn = details::is_callback_fn<T>::value;
 
-class hooks {
+class Hooks {
 private:
   using mutation_type = std::function<void()>;
 
@@ -40,6 +40,7 @@ private:
   std::vector<mutation_type> m_mutation_queue;
 
 public:
+  Hooks() : m_state(std::allocator<entt::entity>()) { }
   void reset() { m_current_index = 0; }
 
   void commit() {
@@ -162,12 +163,14 @@ public:
   }
 };
 
-class component {
+class WidgetComponent {
 private:
-  hooks m_hooks;
+  Hooks m_hooks;
 
 public:
-  virtual void render(entt::registry &registry, hooks &h) = 0;
+  WidgetComponent() = default;
+  virtual ~WidgetComponent() = default;
+  virtual void render(entt::registry &registry, Hooks &h) = 0;
 
   void frame_begin() { m_hooks.reset(); }
 

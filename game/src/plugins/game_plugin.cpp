@@ -1,6 +1,6 @@
 #include "plugins/game_plugin.hpp"
 #include "SDL_events.h"
-#include "systems/imgui_system.hpp"
+#include "systems/widget_system.hpp"
 #include "systems/scene_system.hpp"
 #include "scene/in_game_scene.hpp"
 
@@ -15,7 +15,7 @@ void GamePlugin::mount(GameLoop &gameLoop)
     gameLoop.addFrameBeginCallback([sceneSystem](entt::registry &registry)
                                    {
             auto& cf = registry.ctx().get<ControlFlow>();
-            auto& imGuiSystem = *registry.ctx().get<std::shared_ptr<ImGuiSystem>>();
+            auto& imGuiSystem = *registry.ctx().get<std::shared_ptr<WidgetSystem>>();
             SDL_Event event;
             while (SDL_PollEvent(&event))
             {

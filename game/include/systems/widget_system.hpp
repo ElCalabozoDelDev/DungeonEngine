@@ -5,10 +5,10 @@
 #include <SDL.h>
 #include <entt/entt.hpp>
 
-class ImGuiSystem : public System {
+class WidgetSystem : public System {
 public:
-    ImGuiSystem() = default;
-    ~ImGuiSystem() = default;
+    WidgetSystem() = default;
+    ~WidgetSystem() = default;
     void run(entt::registry& registry) override;
     void handle(SDL_Event& event);
 };
