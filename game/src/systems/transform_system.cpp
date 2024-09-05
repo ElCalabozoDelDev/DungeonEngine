@@ -1,7 +1,7 @@
 #include "systems/transform_system.hpp"
 #include "components/position_component.hpp"
 #include "components/velocity_component.hpp"
-#include "scene/delta_time.hpp"
+#include "core/delta_time.hpp"
 
 void TransformSystem::run(entt::registry& registry) {
     DeltaTime * deltaTime = registry.ctx().get<DeltaTime *>();

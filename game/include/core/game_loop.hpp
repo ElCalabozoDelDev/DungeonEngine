@@ -7,7 +7,7 @@
 #include "system.hpp"
 #include "hook.hpp"
 #include "plugins/plugin.hpp"
-#include "scene/delta_time.hpp"
+#include "core/delta_time.hpp"
 enum class ControlFlow {
   Exit,
   Loop

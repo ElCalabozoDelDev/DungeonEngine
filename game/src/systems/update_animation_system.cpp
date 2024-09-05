@@ -1,7 +1,7 @@
 #include "systems/update_animation_system.hpp"
 #include "components/animation_component.hpp"
 #include "components/texture_component.hpp"
-#include "scene/delta_time.hpp"
+#include "core/delta_time.hpp"
 
 void UpdateAnimationSystem::run(entt::registry& registry) {
     auto view = registry.view<AnimationComponent, TextureComponent>();
