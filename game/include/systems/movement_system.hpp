@@ -1,7 +1,7 @@
 #ifndef HANDLE_INPUT_HPP
 #define HANDLE_INPUT_HPP
 
-#include "core/system.hpp"
+#include "systems/system.hpp"
 #include "entt/entt.hpp"
 
 class MovementSystem final : public System {

@@ -1,7 +1,7 @@
 #ifndef IMGUI_SYSTEM_HPP
 #define IMGUI_SYSTEM_HPP
 
-#include "core/system.hpp"
+#include "systems/system.hpp"
 #include <SDL.h>
 #include <entt/entt.hpp>
 

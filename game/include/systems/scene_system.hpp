@@ -1,7 +1,7 @@
 #ifndef SCENE_SYSTEM_HPP
 #define SCENE_SYSTEM_HPP
 
-#include "core/system.hpp"
+#include "systems/system.hpp"
 #include "scene/scene.hpp"
 
 class SceneSystem : public System {

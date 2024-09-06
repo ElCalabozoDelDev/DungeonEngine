@@ -1,7 +1,7 @@
 #ifndef RENDER_HPP
 #define RENDER_HPP
 
-#include "core/system.hpp"
+#include "systems/system.hpp"
 #include "entt/entt.hpp"
 
 class RenderSystem final : public System {

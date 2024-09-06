@@ -1,7 +1,7 @@
 #ifndef UPDATE_ANIMATION_SYSTEM_HPP
 #define UPDATE_ANIMATION_SYSTEM_HPP
 
-#include "core/system.hpp"
+#include "systems/system.hpp"
 #include "entt/entt.hpp"
 class UpdateAnimationSystem final : public System {
     public:

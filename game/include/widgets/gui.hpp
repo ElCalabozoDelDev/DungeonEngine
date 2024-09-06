@@ -1,6 +1,6 @@
-#pragma once
+#ifndef GUI_HPP
+#define GUI_HPP
 
-#include <concepts>
 #include <type_traits>
 
 #include <functional>
@@ -180,3 +180,5 @@ public:
 };
 
 } // namespace gui
+
+#endif // GUI_HPP
