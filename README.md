@@ -4,7 +4,7 @@ Requirements:
 * Git
 * vcpkg
 * CMake
-* Make
+* Ninja
 * a C++ compiler (I use Clang + LLVM)
 
 clone the repository
@@ -20,5 +20,5 @@ cd build
 Generate compiler files and compile
 ```
 cmake .. --preset default 
-make
+ninja
 ```
