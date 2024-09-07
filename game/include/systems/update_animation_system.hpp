@@ -1,9 +1,10 @@
 #ifndef UPDATE_ANIMATION_SYSTEM_HPP
 #define UPDATE_ANIMATION_SYSTEM_HPP
 
+#include "systems/system.hpp"
 #include "entt/entt.hpp"
-class UpdateAnimationSystem {
+class UpdateAnimationSystem final : public System {
     public:
-        void update(entt::registry& registry, float deltaTime);
+        void run(entt::registry& registry) override;
 };
 #endif // UPDATE_ANIMATION_SYSTEM_HPP

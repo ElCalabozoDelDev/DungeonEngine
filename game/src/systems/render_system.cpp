@@ -2,8 +2,11 @@
 #include "components/position_component.hpp"
 #include "components/texture_component.hpp"
 #include "components/animation_component.hpp"
+#include <SDL_render.h>
 
-void RenderSystem::render(SDL_Renderer *renderer, entt::registry &registry) {
+void RenderSystem::run(entt::registry &registry) {
+  SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
+
   // Obtener la vista de entidades que tienen tanto PositionComponent como
   // TextureComponent
   auto view = registry.view<PositionComponent, TextureComponent, AnimationComponent>();
@@ -31,5 +34,6 @@ void RenderSystem::render(SDL_Renderer *renderer, entt::registry &registry) {
     SDL_RenderCopy(renderer, tex.texture, &srcRect, &dstRect);
   }
 
-  SDL_RenderPresent(renderer);
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+
 }

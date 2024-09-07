@@ -1,10 +1,12 @@
 #ifndef HANDLE_INPUT_HPP
 #define HANDLE_INPUT_HPP
 
+#include "systems/system.hpp"
 #include "entt/entt.hpp"
-class MovementSystem {
+
+class MovementSystem final : public System {
     public:
-        void handle(entt::registry& registry);
+        void run(entt::registry& registry) override;
 };
 
 #endif // HANDLE_INPUT_HPP

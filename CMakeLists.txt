@@ -5,7 +5,7 @@ set(CMAKE_C_COMPILER "clang")
 set(CMAKE_CXX_COMPILER "clang++")
 
 # # Integración con vcpkg
-# set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/vcpkg_installed/x64-windows/share")
+set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/vcpkg_installed/x64-windows/share")
 
 # Nombre del proyecto
 project(DungeonEngine VERSION 1.0 LANGUAGES CXX)
@@ -14,7 +14,7 @@ project(DungeonEngine VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Configuración de C++ estándar
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Recursivamente busca todos los archivos .cpp dentro del directorio src/

@@ -1,4 +1,4 @@
-#include "scene/entity_loader.hpp"
+#include "loaders/entity_loader.hpp"
 #include "SDL_image.h"
 #include "tinyxml2.h"
 #include <iostream>
