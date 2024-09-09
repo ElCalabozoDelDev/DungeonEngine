@@ -6,7 +6,7 @@ void InGameScene::onEnter(entt::registry& registry) {
     // Crear las entidades necesarias para el juego
     // Por ejemplo, cargar un jugador desde un archivo XML
     SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
-    EntityLoader::loadPlayerDataFromXML("../assets/game.xml", registry, renderer);
+    EntityLoader::loadPlayerDataFromXML(registry, renderer);
 
     // Puedes inicializar otros sistemas o componentes específicos del nivel aquí
 }

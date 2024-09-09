@@ -27,7 +27,7 @@ void RenderSystem::run(entt::registry &registry) {
     srcRect.h = spriteHeight;
 
     // Definir el rectángulo de destino
-    SDL_Rect dstRect = {static_cast<int>(pos.x), static_cast<int>(pos.y),
+    SDL_Rect dstRect = {static_cast<int>(pos.position.getX()), static_cast<int>(pos.position.getY()),
                         spriteWidth, spriteHeight};
 
     // Renderizar la textura

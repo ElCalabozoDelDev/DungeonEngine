@@ -5,13 +5,14 @@
 
 void UpdateAnimationSystem::run(entt::registry& registry) {
     auto view = registry.view<AnimationComponent, TextureComponent>();
-    DeltaTime * deltaTime = registry.ctx().get<DeltaTime *>();
+    DeltaTime deltaTime = registry.ctx().get<DeltaTime>();
     for (auto entity : view) {
         auto& ani = view.get<AnimationComponent>(entity);
         auto& tex = view.get<TextureComponent>(entity);
 
         // Actualizar el tiempo acumulado
-        ani.timeSinceLastFrame += deltaTime->value;
+        ani.timeSinceLastFrame += deltaTime.value;
+
         // Cambiar de frame si el tiempo acumulado supera el tiempo entre frames
         if (ani.timeSinceLastFrame >= ani.animationTime) {
             // Mover al siguiente frame

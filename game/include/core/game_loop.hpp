@@ -70,9 +70,9 @@ public:
 
         static Uint32 lastTime = SDL_GetTicks();
         while (m_controlFlow == ControlFlow::Loop) {
-            DeltaTime *dt = m_registry.ctx().get<DeltaTime *>();
+            DeltaTime &dt = m_registry.ctx().get<DeltaTime>();
             Uint32 currentTime = SDL_GetTicks();
-            dt->value = (currentTime - lastTime) / 1000.0f;
+            dt.value = (currentTime - lastTime) / 1000.0f;
             lastTime = currentTime;
 
             m_hookFrameBegin.publish(m_registry);

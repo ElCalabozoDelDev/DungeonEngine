@@ -1,8 +1,13 @@
+#ifndef LAYER_HPP
+#define LAYER_HPP
+
 class Layer
 {
 public:
-    virtual void render() = 0;
-    virtual void update() = 0;
+    virtual void render() {}
+    virtual void update() {}
     protected:
     virtual ~Layer() {}
 };
+
+#endif
