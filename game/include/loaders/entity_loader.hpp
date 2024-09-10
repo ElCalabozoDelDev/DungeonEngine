@@ -7,8 +7,6 @@
 
 class EntityLoader
 {
-private:
-    static SDL_Texture *loadTexture(const std::string& path, SDL_Renderer* renderer);
 public:
     EntityLoader() = default;
     ~EntityLoader() = default;

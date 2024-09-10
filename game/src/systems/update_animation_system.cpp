@@ -1,14 +1,14 @@
 #include "systems/update_animation_system.hpp"
 #include "components/animation_component.hpp"
-#include "components/texture_component.hpp"
+#include "components/sprite_component.hpp"
 #include "core/delta_time.hpp"
 
 void UpdateAnimationSystem::run(entt::registry& registry) {
-    auto view = registry.view<AnimationComponent, TextureComponent>();
+    auto view = registry.view<AnimationComponent, SpriteComponent>();
     DeltaTime deltaTime = registry.ctx().get<DeltaTime>();
     for (auto entity : view) {
         auto& ani = view.get<AnimationComponent>(entity);
-        auto& tex = view.get<TextureComponent>(entity);
+        auto& spr = view.get<SpriteComponent>(entity);
 
         // Actualizar el tiempo acumulado
         ani.timeSinceLastFrame += deltaTime.value;
@@ -22,7 +22,7 @@ void UpdateAnimationSystem::run(entt::registry& registry) {
                 ani.currentFrame = 0;
             }
             // Actualizar la columna del sprite
-            ani.currentSprite = tex.spriteCol + ani.currentFrame;
+            spr.currentSprite = spr.spriteCol + ani.currentFrame;
             // Reiniciar el tiempo acumulado
             ani.timeSinceLastFrame = 0;
         }

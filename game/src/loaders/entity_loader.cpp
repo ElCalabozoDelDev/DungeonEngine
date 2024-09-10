@@ -1,15 +1,15 @@
 #include "loaders/entity_loader.hpp"
-#include "SDL_image.h"
 #include "tinyxml2.h"
-#include <SDL_surface.h>
 #include <iostream>
 #include <components/texture_component.hpp>
 #include <components/position_component.hpp>
 #include <components/velocity_component.hpp>
 #include <components/player_component.hpp>
 #include <components/animation_component.hpp>
+#include <components/sprite_component.hpp>
 #include "core/vector_2d.hpp"
 #include "loaders/game_xml_path.hpp"
+#include "core/texture_manager.hpp"
 
 bool EntityLoader::loadPlayerDataFromXML(entt::registry &registry, SDL_Renderer *renderer)
 {
@@ -66,33 +66,24 @@ bool EntityLoader::loadPlayerDataFromXML(entt::registry &registry, SDL_Renderer 
     int totalFrames = animation->IntAttribute("totalFrames");
     float animationTime = animation->FloatAttribute("animationTime");
 
-    SDL_Texture *playerTexture = loadTexture(texturePath, renderer);
+    SDL_Texture *playerTexture;
     auto player = registry.create();
-    registry.emplace<TextureComponent>(player, playerTexture, spriteWidth, spriteHeight, spriteRow, spriteCol);
+    SDL_Texture *pTexture = TheTextureManager::Instance()->load(texturePath, registry);
+    if (pTexture == nullptr)
+    {
+        std::cerr << "Error al cargar la textura del jugador" << std::endl;
+        return false;
+    }
+    registry.emplace<TextureComponent>(player, pTexture);
+    registry.emplace<SpriteComponent>(player, spriteWidth, spriteHeight, spriteRow, spriteCol, 0);
     registry.emplace<PositionComponent>(player, positionVector);
     registry.emplace<VelocityComponent>(player, velocityVector);
     registry.emplace<PlayerComponent>(player);
-    registry.emplace<AnimationComponent>(player, 0, spriteCol, totalFrames, animationTime, 0);
+    registry.emplace<AnimationComponent>(player, spriteCol, totalFrames, animationTime, 0);
     if (player == entt::null)
     {
         std::cerr << "Error al crear la entidad del jugador" << std::endl;
         return false;
     }
     return true;
-}
-
-SDL_Texture *EntityLoader::loadTexture(const std::string &path,
-                                       SDL_Renderer *renderer)
-{
-    SDL_Surface *tempSurface = IMG_Load(path.c_str());
-    if (tempSurface == nullptr)
-    {
-        std::cerr << "Failed to load surface: " << IMG_GetError() << std::endl;
-    }
-    SDL_Texture *newTexture = SDL_CreateTextureFromSurface(renderer, tempSurface);
-    if (newTexture == nullptr)
-    {
-        std::cerr << "Failed to load texture: " << IMG_GetError() << std::endl;
-    }
-    return newTexture;
 }
