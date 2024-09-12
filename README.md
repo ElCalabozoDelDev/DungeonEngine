@@ -9,7 +9,7 @@ Requirements:
 
 clone the repository
 ```
-git@github.com:ElCalabozoDelDev/DungeonEngine.git
+git clone git@github.com:ElCalabozoDelDev/DungeonEngine.git
 cd DungeonEngine
 ```
 Create build folder
