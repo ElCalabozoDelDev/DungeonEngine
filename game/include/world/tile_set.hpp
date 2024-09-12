@@ -1,7 +1,7 @@
-#include <string>
-
 #ifndef TILESET_HPP
 #define TILESET_HPP
+
+#include <string>
 struct Tileset
 {
     int firstGridID;
