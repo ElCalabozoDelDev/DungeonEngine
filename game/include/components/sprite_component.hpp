@@ -5,7 +5,7 @@ struct SpriteComponent {
     int spriteWidth;
     int spriteHeight;
     int spriteRow;  // Fila del sprite en la matriz
-    int spriteCol;  // Columna del sprite en la matriz (actualmente visible)
+    int currentCol;  // Columna del sprite en la matriz (actualmente visible)
     int currentSprite;  // Sprite actual de la animación
 };
 

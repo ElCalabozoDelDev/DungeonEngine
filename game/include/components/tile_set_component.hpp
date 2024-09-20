@@ -1,8 +1,7 @@
-#ifndef TILESET_HPP
-#define TILESET_HPP
+#ifndef TILESET_COMPONENT_HPP
+#define TILESET_COMPONENT_HPP
 
-#include <string>
-struct TileSet
+struct TileSetComponent
 {
     int firstGridID;
     int tileWidth;
@@ -12,6 +11,5 @@ struct TileSet
     int width;
     int height;
     int numColumns;
-    std::string name;
 };
 #endif

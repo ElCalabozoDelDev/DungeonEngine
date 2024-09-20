@@ -1,7 +1,5 @@
 #include "core/texture_manager.hpp"
 #include "SDL_image.h"
-#include "components/position_component.hpp"
-#include "components/sprite_component.hpp"
 #include <SDL_render.h>
 #include <iostream>
 

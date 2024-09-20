@@ -1,14 +1,17 @@
 #include <SDL.h>
-#include <iostream>
 #include "world/level_parser.hpp"
 #include "base64.h"
+#include "components/position_component.hpp"
+#include "components/texture_component.hpp"
 #include "core/texture_manager.hpp"
+#include "core/vector_2d.hpp"
 #include "world/level.hpp"
 #include "world/tile_layer.hpp"
 #include "entt/entity/fwd.hpp"
 #include "tinyxml2.h"
 #include "zlib.h"
-
+#include "components/tile_set_component.hpp"
+#include "components/tile_layer_component.hpp"
 #include "core/trim.hpp"
 
 // using namespace tinyxml2;
@@ -43,13 +46,17 @@ Level *LevelParser::parseLevel(entt::registry &registry,
 }
 void LevelParser::parseTilesets(entt::registry &registry,
                                 XMLElement *pTilesetRoot,
-                                std::vector<TileSet> *pTilesets) {
+                                std::vector<entt::entity> *pTilesets) {
 
   auto *pRenderer = registry.ctx().get<SDL_Renderer *>();
   std::string assetsTag = "../assets/maps/";
+  // Obtener el atributo "name"
+  const char* nameAttribute = pTilesetRoot->Attribute("name");
   // first add the tileset to texture manager
   // create a tileset object
-  TileSet tileset;
+  auto tileSetEntity = registry.create();
+  auto &tileset = registry.emplace<TileSetComponent>(tileSetEntity);
+  registry.emplace<TextureComponent>(tileSetEntity, nameAttribute);
   tileset.width = pTilesetRoot->FirstChildElement()->IntAttribute("width");
   tileset.height = pTilesetRoot->FirstChildElement()->IntAttribute("height");
   tileset.firstGridID = pTilesetRoot->IntAttribute("firstgid");
@@ -57,20 +64,17 @@ void LevelParser::parseTilesets(entt::registry &registry,
   tileset.tileHeight = pTilesetRoot->IntAttribute("tileheight");
   tileset.spacing = pTilesetRoot->IntAttribute("spacing");
   tileset.margin = pTilesetRoot->IntAttribute("margin");
-  // Obtener el atributo "name"
-  const char* nameAttribute = pTilesetRoot->Attribute("name");
-  tileset.name = nameAttribute ? nameAttribute : "";
 
-  TheTextureManager::Instance()->load(assetsTag.append(pTilesetRoot->FirstChildElement()->Attribute("source")), nameAttribute, pRenderer);
   tileset.numColumns = tileset.width / (tileset.tileWidth + tileset.spacing);
-  pTilesets->push_back(tileset);
+  TheTextureManager::Instance()->load(assetsTag.append(pTilesetRoot->FirstChildElement()->Attribute("source")), nameAttribute, pRenderer);
+  pTilesets->push_back(tileSetEntity);
 }
 
 void LevelParser::parseTileLayer(entt::registry &registry,
                                  XMLElement *pTileElement,
-                                 std::vector<Layer *> *pLayers,
-                                 const std::vector<TileSet> *pTilesets) {
-  TileLayer *pTileLayer = new TileLayer(m_tileSize, m_width, m_height, *pTilesets);
+                                 std::vector<entt::entity> *pLayers,
+                                 const std::vector<entt::entity> *pTilesets) {
+  TileLayer *pTileLayer = new TileLayer(m_width, m_height, pTilesets);
   // tile data
   std::vector<std::vector<int>> data;
   std::string decodedIDs;
@@ -101,5 +105,9 @@ void LevelParser::parseTileLayer(entt::registry &registry,
     }
   }
   pTileLayer->setTileIDs(data);
-  pLayers->push_back(pTileLayer);
+  auto layerEntity = registry.create();
+  registry.emplace<TileLayerComponent>(layerEntity, pTileLayer, m_tileSize);
+  registry.emplace<PositionComponent>(layerEntity, Vector2D(0, 0));
+
+  pLayers->push_back(layerEntity);
 }

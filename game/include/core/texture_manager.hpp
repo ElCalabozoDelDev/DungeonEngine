@@ -3,8 +3,7 @@
 
 #include <string>
 #include "SDL_render.h"
-#include "entt/entity/fwd.hpp"
-#include "entt/entt.hpp"
+#include <map>
 
 class TextureManager
 {

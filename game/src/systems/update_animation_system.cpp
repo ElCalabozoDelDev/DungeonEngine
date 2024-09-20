@@ -22,7 +22,7 @@ void UpdateAnimationSystem::run(entt::registry& registry) {
                 ani.currentFrame = 0;
             }
             // Actualizar la columna del sprite
-            spr.currentSprite = spr.spriteCol + ani.currentFrame;
+            spr.currentSprite = spr.currentCol + ani.currentFrame;
             // Reiniciar el tiempo acumulado
             ani.timeSinceLastFrame = 0;
         }

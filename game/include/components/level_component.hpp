@@ -1,12 +1,12 @@
 #ifndef DUNGEON_COMPONENT_HPP
 #define DUNGEON_COMPONENT_HPP
 
-#include "world/level.hpp"
-#include "SDL.h"
-#include <map>
+#include <vector>
+#include "entt/entity/fwd.hpp"
 
 struct LevelComponent {
-    Level *level;
+    std::vector<entt::entity> tilesets;
+	std::vector<entt::entity> layers;
 };
 
 #endif // DUNGEON_COMPONENT_HPP

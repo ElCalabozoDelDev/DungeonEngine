@@ -4,6 +4,7 @@
 #include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
 #include "components/level_component.hpp"
+#include "components/tile_layer_component.hpp"
 #include <iostream>
 
 void RenderSystem::run(entt::registry &registry) {
@@ -19,8 +20,9 @@ void RenderSystem::run(entt::registry &registry) {
   auto level = registry.view<LevelComponent>();
   for (auto entity : level) {
     auto &levelComponent = level.get<LevelComponent>(entity);
-    for (auto layer : *levelComponent.level->getLayers()) {
-      layer->render(registry);
+    for (int i = 0; i < levelComponent.layers.size(); i++) {
+      auto &layer = registry.get<TileLayerComponent>(levelComponent.layers.at(i));
+      layer.tileLayer->render(registry);
     }
   }
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
