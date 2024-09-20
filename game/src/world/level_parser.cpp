@@ -74,7 +74,6 @@ void LevelParser::parseTileLayer(entt::registry &registry,
                                  XMLElement *pTileElement,
                                  std::vector<entt::entity> *pLayers,
                                  const std::vector<entt::entity> *pTilesets) {
-  TileLayer *pTileLayer = new TileLayer(m_width, m_height, pTilesets);
   // tile data
   std::vector<std::vector<int>> data;
   std::string decodedIDs;
@@ -104,9 +103,8 @@ void LevelParser::parseTileLayer(entt::registry &registry,
       data[rows][cols] = gids[rows * m_width + cols];
     }
   }
-  pTileLayer->setTileIDs(data);
   auto layerEntity = registry.create();
-  registry.emplace<TileLayerComponent>(layerEntity, pTileLayer, m_tileSize);
+  registry.emplace<TileLayerComponent>(layerEntity, m_tileSize, pTilesets, data, m_width, m_height, m_width);
   registry.emplace<PositionComponent>(layerEntity, Vector2D(0, 0));
 
   pLayers->push_back(layerEntity);

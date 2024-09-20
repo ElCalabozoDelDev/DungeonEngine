@@ -6,13 +6,6 @@
 #include "components/tile_set_component.hpp"
 #include "components/tile_layer_component.hpp"
 #include "components/texture_component.hpp"
-TileLayer::TileLayer(int mapWidth, int mapHeight, const std::vector<entt::entity> *tilesets) : m_tilesets(tilesets)
-{
-    m_numColumns = mapWidth;
-    m_numRows = mapHeight;
-    
-    m_mapWidth = mapWidth;
-}
 
 void TileLayer::render(entt::registry& registry)
 {
@@ -24,17 +17,18 @@ void TileLayer::render(entt::registry& registry)
     {
         auto& layer = view.get<TileLayerComponent>(entity);
         auto& pos = view.get<PositionComponent>(entity);
+        auto& tileIDs = layer.tileIDs;
         x = pos.position.getX() / layer.tileSize;
         y = pos.position.getY() / layer.tileSize;
         
         x2 = int(pos.position.getX()) % layer.tileSize;
         y2 = int(pos.position.getY()) % layer.tileSize;
     
-        for(int i = 0; i < m_numRows; i++)
+        for(int i = 0; i < layer.numRows; i++)
         {
-            for(int j = 0; j < m_numColumns; j++)
+            for(int j = 0; j < layer.numColumns; j++)
             {
-                int id = m_tileIDs[i + y][j + x];
+                int id = tileIDs[i + y][j + x];
                 
                 if(id == 0)
                 {
@@ -59,21 +53,28 @@ void TileLayer::render(entt::registry& registry)
 
 entt::entity TileLayer::getTilesetByID(entt::registry& registry, int tileID)
 {
-    for(int i = 0; i < m_tilesets->size(); i++)
+    auto view = registry.view<TileLayerComponent>();
+    for (auto entity : view)
     {
-        if( i + 1 <= m_tilesets->size() - 1)
+        auto& layer = view.get<TileLayerComponent>(entity);
+        auto& tilesets = layer.tilesets;
+        for(int i = 0; i < tilesets->size(); i++)
         {
-            auto tileset = registry.get<TileSetComponent>( m_tilesets->at(i));
-            auto nextTileset = registry.get<TileSetComponent>(m_tilesets->at(i + 1));
-            if(tileID >= tileset.firstGridID && tileID <nextTileset.firstGridID)
+            if( i + 1 <= tilesets->size() - 1)
             {
-                return m_tilesets->at(i);
+                auto tileset = registry.get<TileSetComponent>( tilesets->at(i));
+                auto nextTileset = registry.get<TileSetComponent>(tilesets->at(i + 1));
+                if(tileID >= tileset.firstGridID && tileID <nextTileset.firstGridID)
+                {
+                    return tilesets->at(i);
+                }
+            }
+            else
+            {
+                return tilesets->at(i);
             }
         }
-        else
-        {
-            return m_tilesets->at(i);
-        }
+
     }
     
     std::cout << "did not find tileset, returning empty tileset\n";
