@@ -71,7 +71,6 @@ void LevelParser::parseTextures(entt::registry &registry,
   // load the textures
   std::string path = pTextureRoot->Attribute("value");
   std::string id = pTextureRoot->Attribute("name");
-  std::cout << "Texture: " << path << " loaded with id: " << id << std::endl;
   TheTextureManager::Instance()->load(path, id, registry.ctx().get<SDL_Renderer *>());
 }
 
