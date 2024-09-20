@@ -5,19 +5,19 @@
 #include "world/layer.hpp"
 #include "world/level.hpp"
 #include "world/tile_set.hpp"
+#include "entt/entt.hpp"
 #include <vector>
-
 
 class TileLayer : public Layer
 {
 public:
     
-    TileLayer(int tileSize, int mapWidth, int mapHeight, const std::vector<Tileset>& tilesets);
+    TileLayer(int tileSize, int mapWidth, int mapHeight, const std::vector<TileSet>& tilesets);
     
     virtual ~TileLayer() {}
     
-    virtual void update(Level* pLevel);
-    virtual void render();
+    virtual void update(Level* pLevel) override;
+    virtual void render(entt::registry& registry) override;
     
     void setTileIDs(const std::vector<std::vector<int>>& data) { m_tileIDs = data; }
     void setTileSize(int tileSize) { m_tileSize = tileSize; }
@@ -28,7 +28,7 @@ public:
     
     const std::vector<std::vector<int>>& getTileIDs() { return m_tileIDs; }
     
-    Tileset getTilesetByID(int tileID);
+    TileSet getTilesetByID(int tileID);
     
     const Vector2D getPosition() { return m_position; }
     
@@ -49,7 +49,7 @@ private:
     
     float diff;
     
-    const std::vector<Tileset>& m_tilesets;
+    const std::vector<TileSet>& m_tilesets;
     
     std::vector<std::vector<int>> m_tileIDs;
 };

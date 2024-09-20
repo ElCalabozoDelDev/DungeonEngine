@@ -7,6 +7,7 @@
 #include <components/player_component.hpp>
 #include <components/animation_component.hpp>
 #include <components/sprite_component.hpp>
+#include <string>
 #include "core/vector_2d.hpp"
 #include "loaders/game_xml_path.hpp"
 #include "core/texture_manager.hpp"
@@ -14,6 +15,7 @@
 bool EntityLoader::loadPlayerDataFromXML(entt::registry &registry, SDL_Renderer *renderer)
 {
     auto &gameXmlPath = registry.ctx().get<GameXmlPath>();
+    auto &pRenderer = registry.ctx().get<SDL_Renderer *>();
     std::string path = gameXmlPath.path;
     tinyxml2::XMLDocument doc;
     if (doc.LoadFile(path.c_str()) != tinyxml2::XML_SUCCESS) {
@@ -68,22 +70,24 @@ bool EntityLoader::loadPlayerDataFromXML(entt::registry &registry, SDL_Renderer 
 
     SDL_Texture *playerTexture;
     auto player = registry.create();
-    SDL_Texture *pTexture = TheTextureManager::Instance()->load(texturePath, registry);
-    if (pTexture == nullptr)
+    std::string id = "player";
+    if(TheTextureManager::Instance()->load(texturePath, id, pRenderer))
     {
+        registry.emplace<PlayerComponent>(player);
+        registry.emplace<TextureComponent>(player, id);
+        registry.emplace<SpriteComponent>(player, spriteWidth, spriteHeight, spriteRow, spriteCol, 0);
+        registry.emplace<PositionComponent>(player, positionVector);
+        registry.emplace<VelocityComponent>(player, velocityVector);
+        registry.emplace<AnimationComponent>(player, spriteCol, totalFrames, animationTime, 0);
+        if (player == entt::null)
+        {
+            std::cerr << "Error al crear la entidad del jugador" << std::endl;
+            return false;
+        }
+    } else {
         std::cerr << "Error al cargar la textura del jugador" << std::endl;
         return false;
     }
-    registry.emplace<TextureComponent>(player, pTexture);
-    registry.emplace<SpriteComponent>(player, spriteWidth, spriteHeight, spriteRow, spriteCol, 0);
-    registry.emplace<PositionComponent>(player, positionVector);
-    registry.emplace<VelocityComponent>(player, velocityVector);
-    registry.emplace<PlayerComponent>(player);
-    registry.emplace<AnimationComponent>(player, spriteCol, totalFrames, animationTime, 0);
-    if (player == entt::null)
-    {
-        std::cerr << "Error al crear la entidad del jugador" << std::endl;
-        return false;
-    }
+
     return true;
 }

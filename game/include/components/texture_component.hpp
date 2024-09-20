@@ -1,8 +1,9 @@
 #ifndef TEXTURE_COMPONENT_HPP
 #define TEXTURE_COMPONENT_HPP
-#include "SDL.h"
+
+#include <string>
 
 struct TextureComponent {
-    SDL_Texture *texture;
+    std::string id;
 };
 #endif // TEXTURE_COMPONENT_HPP

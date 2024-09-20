@@ -1,30 +1,39 @@
 #include "core/texture_manager.hpp"
 #include "SDL_image.h"
+#include "components/position_component.hpp"
+#include "components/sprite_component.hpp"
+#include <SDL_render.h>
+#include <iostream>
 
 TextureManager* TextureManager::s_pInstance = 0;
 
-SDL_Texture* TextureManager::load(std::string fileName, entt::registry& registry)
+bool TextureManager::load(std::string fileName, std::string id, SDL_Renderer* pRenderer)
 {
-    auto& renderer = registry.ctx().get<SDL_Renderer*>();
     SDL_Surface* pTempSurface = IMG_Load(fileName.c_str());
+    
     if(pTempSurface == 0)
     {
-        return 0;
+		std::cout << IMG_GetError();
+        return false;
     }
-    SDL_Texture* pTexture = SDL_CreateTextureFromSurface(renderer, pTempSurface);
+    
+    SDL_Texture* pTexture = SDL_CreateTextureFromSurface(pRenderer, pTempSurface);
+    
     SDL_FreeSurface(pTempSurface);
+    
     if(pTexture != 0)
     {
-        return pTexture;
+        m_textureMap[id] = pTexture;
+        return true;
     }
-    return 0;
+    return false;
 }
 
-void TextureManager::draw(entt::registry& registry, SDL_Texture *pTexture, int x, int y, int width, int height, SDL_RendererFlip flip)
+void TextureManager::draw(std::string id, int x, int y, int width, int height, SDL_Renderer* pRenderer, SDL_RendererFlip flip)
 {
-    auto& pRenderer = registry.ctx().get<SDL_Renderer*>();
     SDL_Rect srcRect;
     SDL_Rect destRect;
+    
     srcRect.x = 0;
     srcRect.y = 0;
     srcRect.w = destRect.w = width;
@@ -32,12 +41,11 @@ void TextureManager::draw(entt::registry& registry, SDL_Texture *pTexture, int x
     destRect.x = x;
     destRect.y = y;
     
-    SDL_RenderCopyEx(pRenderer, pTexture, &srcRect, &destRect, 0, 0, flip);
+    SDL_RenderCopyEx(pRenderer, m_textureMap[id], &srcRect, &destRect, 0, 0, flip);
 }
 
-void TextureManager::drawFrame(entt::registry& registry, SDL_Texture *pTexture, int x, int y, int width, int height, int currentRow, int currentFrame, double angle, int alpha, SDL_RendererFlip flip)
+void TextureManager::drawFrame(std::string id, int x, int y, int width, int height, int currentRow, int currentFrame, SDL_Renderer *pRenderer, double angle, int alpha, SDL_RendererFlip flip)
 {
-    auto& pRenderer = registry.ctx().get<SDL_Renderer*>();
     SDL_Rect srcRect;
     SDL_Rect destRect;
     srcRect.x = width * currentFrame;
@@ -46,14 +54,14 @@ void TextureManager::drawFrame(entt::registry& registry, SDL_Texture *pTexture, 
     srcRect.h = destRect.h = height;
     destRect.x = x;
     destRect.y = y;
-    
-    SDL_SetTextureAlphaMod(pTexture, alpha);
-    SDL_RenderCopyEx(pRenderer, pTexture, &srcRect, &destRect, angle, 0, flip);
+
+    SDL_SetTextureAlphaMod(m_textureMap[id], alpha);
+    SDL_RenderCopyEx(pRenderer, m_textureMap[id], &srcRect, &destRect, angle, 0, flip);
+
 }
 
-void TextureManager::drawTile(entt::registry& registry, SDL_Texture *pTexture, int margin, int spacing, int x, int y, int width, int height, int currentRow, int currentFrame)
+void TextureManager::drawTile(std::string id, int margin, int spacing, int x, int y, int width, int height, int currentRow, int currentFrame, SDL_Renderer *pRenderer)
 {
-    auto& pRenderer = registry.ctx().get<SDL_Renderer*>();
     SDL_Rect srcRect;
     SDL_Rect destRect;
     srcRect.x = margin + (spacing + width) * currentFrame;
@@ -63,5 +71,16 @@ void TextureManager::drawTile(entt::registry& registry, SDL_Texture *pTexture, i
     destRect.x = x;
     destRect.y = y;
     
-    SDL_RenderCopyEx(pRenderer, pTexture, &srcRect, &destRect, 0, 0, SDL_FLIP_NONE);
+    SDL_RenderCopyEx(pRenderer, m_textureMap[id], &srcRect, &destRect, 0, 0, SDL_FLIP_NONE);
+}
+
+
+void TextureManager::clearTextureMap()
+{
+    m_textureMap.clear();
+}
+
+void TextureManager::clearFromTextureMap(std::string id)
+{
+    m_textureMap.erase(id);
 }

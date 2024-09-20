@@ -1,11 +1,14 @@
 #ifndef LAYER_HPP
 #define LAYER_HPP
+#include "entt/entt.hpp"
+
+class Level;
 
 class Layer
 {
 public:
-    virtual void render() {}
-    virtual void update() {}
+    virtual void render(entt::registry& registry) = 0;
+    virtual void update(Level* pLevel) = 0;
     protected:
     virtual ~Layer() {}
 };

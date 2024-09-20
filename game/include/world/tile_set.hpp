@@ -2,7 +2,7 @@
 #define TILESET_HPP
 
 #include <string>
-struct Tileset
+struct TileSet
 {
     int firstGridID;
     int tileWidth;

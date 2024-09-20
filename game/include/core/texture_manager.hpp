@@ -9,6 +9,7 @@
 class TextureManager
 {
 public:
+    
     static TextureManager* Instance()
     {
         if(s_pInstance == 0)
@@ -20,11 +21,16 @@ public:
         return s_pInstance;
     }
     
-    SDL_Texture* load(std::string fileName, entt::registry& registry);
+    bool load(std::string fileName, std::string id, SDL_Renderer* pRenderer);
     
-    void draw(entt::registry& registry, SDL_Texture *pTexture, int x, int y, int width, int height, SDL_RendererFlip flip = SDL_FLIP_NONE);
-    void drawFrame(entt::registry& registry, SDL_Texture *pTexture, int x, int y, int width, int height, int currentRow, int currentFrame, double angle, int alpha, SDL_RendererFlip flip = SDL_FLIP_NONE);
-    void drawTile(entt::registry& registry, SDL_Texture *pTexture, int margin, int spacing, int x, int y, int width, int height, int currentRow, int currentFrame);
+    void clearTextureMap();
+    void clearFromTextureMap(std::string id);
+    
+    void draw(std::string id, int x, int y, int width, int height, SDL_Renderer* pRenderer, SDL_RendererFlip flip = SDL_FLIP_NONE);
+    void drawFrame(std::string id, int x, int y, int width, int height, int currentRow, int currentFrame, SDL_Renderer* pRenderer, double angle, int alpha, SDL_RendererFlip flip = SDL_FLIP_NONE);
+    void drawTile(std::string id, int margin, int spacing, int x, int y, int width, int height, int currentRow, int currentFrame, SDL_Renderer *pRenderer);
+    
+    std::map<std::string, SDL_Texture*> getTextureMap() { return m_textureMap; }
     
 private:
     
@@ -33,6 +39,8 @@ private:
     
     TextureManager(const TextureManager&);
 	TextureManager& operator=(const TextureManager&);
+    
+    std::map<std::string, SDL_Texture*> m_textureMap;
     
     static TextureManager* s_pInstance;
 };
