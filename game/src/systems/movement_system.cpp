@@ -11,20 +11,20 @@ void MovementSystem::run(entt::registry& registry) {
 
         const Uint8* state = SDL_GetKeyboardState(nullptr);
 
-        vel.vx = 0;
-        vel.vy = 0;
+        vel.velocity.setX(0);
+        vel.velocity.setY(0);
 
         if (state[SDL_SCANCODE_UP]) {
-            vel.vy = -200.0f;
+            vel.velocity.setY(-200.0f);
         }
         if (state[SDL_SCANCODE_DOWN]) {
-            vel.vy = 200.0f;
+            vel.velocity.setY(200.0f);
         }
         if (state[SDL_SCANCODE_LEFT]) {
-            vel.vx = -200.0f;
+            vel.velocity.setX(-200.0f);
         }
         if (state[SDL_SCANCODE_RIGHT]) {
-            vel.vx = 200.0f;
+            vel.velocity.setX(200.0f);
         }
     }
 }

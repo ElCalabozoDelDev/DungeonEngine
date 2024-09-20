@@ -1,39 +1,29 @@
 #include "systems/render_system.hpp"
+#include "core/texture_manager.hpp"
 #include "components/position_component.hpp"
+#include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
-#include "components/animation_component.hpp"
-#include <SDL_render.h>
+#include "world/tile_layer.hpp"
 
 void RenderSystem::run(entt::registry &registry) {
   SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
-
-  // Obtener la vista de entidades que tienen tanto PositionComponent como
-  // TextureComponent
-  auto view = registry.view<PositionComponent, TextureComponent, AnimationComponent>();
+  auto view = registry.view<PositionComponent, TextureComponent, SpriteComponent>();
 
   for (auto entity : view) {
     auto &pos = view.get<PositionComponent>(entity);
     auto &tex = view.get<TextureComponent>(entity);
-    auto &ani = view.get<AnimationComponent>(entity);
-
-    int spriteWidth = tex.spriteWidth;
-    int spriteHeight = tex.spriteHeight;
-
-    // Calcular las coordenadas de origen basadas en el frame actual
-    SDL_Rect srcRect;
-    srcRect.x = ani.currentSprite * spriteWidth;
-    srcRect.y = tex.spriteRow * spriteHeight;
-    srcRect.w = spriteWidth;
-    srcRect.h = spriteHeight;
-
-    // Definir el rectángulo de destino
-    SDL_Rect dstRect = {static_cast<int>(pos.x), static_cast<int>(pos.y),
-                        spriteWidth, spriteHeight};
-
-    // Renderizar la textura
-    SDL_RenderCopy(renderer, tex.texture, &srcRect, &dstRect);
+    auto &spr = view.get<SpriteComponent>(entity);
+    TheTextureManager::Instance()->drawFrame(tex.id, pos.position.getX(), pos.position.getY(), spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
   }
-
+  // auto level = registry.view<LevelComponent>();
+  // for (auto entity : level) {
+  //   auto &levelComponent = level.get<LevelComponent>(entity);
+  //   for (int i = 0; i < levelComponent.layers.size(); i++) {
+  //     auto &layer = registry.get<TileLayerComponent>(levelComponent.layers.at(i));
+  //     layer.tileLayer->render(registry);
+  //   }
+  // }
+  TileLayer::render(registry);
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
 }

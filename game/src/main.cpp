@@ -13,13 +13,11 @@
 #include "plugins/base_plugin.hpp"
 #include "plugins/game_plugin.hpp"
 #include "loaders/config.hpp"
-#include "loaders/config_loader.hpp"
+
 int main(int argc, char *argv[])
 {
     GameLoop gameLoop;
-    Config config;
-    ConfigLoader::loadConfigFromXML("../assets/game.xml", config);
-    BasePlugin basePlugin(config);
+    BasePlugin basePlugin("../assets/game.xml");
     GamePlugin gamePlugin;
     gameLoop.addPlugin(basePlugin);
     gameLoop.addPlugin(gamePlugin);

@@ -10,6 +10,7 @@
 #include "plugins/imgui_plugin.hpp"
 #include "plugins/sdl_plugin.hpp"
 #include "plugins/widget_plugin.hpp"
+#include "loaders/game_xml_path.hpp" // Replace "path/to" with the actual path to the header file
 class BasePlugin final : public Plugin {
 public:
 
@@ -17,8 +18,10 @@ private:
   SDLPlugin m_sdl;
   ImGuiPlugin m_imgui;
   WidgetPlugin m_widget;
+  Config m_config;
+  GameXmlPath m_gameXmlPath;
 public:
-  BasePlugin(const Config &config) : m_sdl(config) {}
+  BasePlugin(const std::string &configPath);
 
   void mount(GameLoop &gameLoop) override;
 };

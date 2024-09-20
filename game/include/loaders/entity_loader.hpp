@@ -7,12 +7,10 @@
 
 class EntityLoader
 {
-private:
-    static SDL_Texture *loadTexture(const std::string& path, SDL_Renderer* renderer);
 public:
     EntityLoader() = default;
     ~EntityLoader() = default;
-    static bool loadPlayerDataFromXML(const std::string &path, entt::registry &registry, SDL_Renderer* renderer);
+    static bool loadPlayerDataFromXML(entt::registry &registry, SDL_Renderer* renderer);
 };
 
 #endif // ENTITY_LOADER_HPP

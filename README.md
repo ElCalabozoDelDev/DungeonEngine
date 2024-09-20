@@ -4,12 +4,12 @@ Requirements:
 * Git
 * vcpkg
 * CMake
-* Make
+* Ninja
 * a C++ compiler (I use Clang + LLVM)
 
 clone the repository
 ```
-git@github.com:ElCalabozoDelDev/DungeonEngine.git
+git clone git@github.com:ElCalabozoDelDev/DungeonEngine.git
 cd DungeonEngine
 ```
 Create build folder
@@ -20,5 +20,5 @@ cd build
 Generate compiler files and compile
 ```
 cmake .. --preset default 
-make
+ninja
 ```
