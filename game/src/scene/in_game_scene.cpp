@@ -1,9 +1,7 @@
 #include "scene/in_game_scene.hpp"
-#include "loaders/entity_loader.hpp" 
+#include "loaders/config.hpp"
 #include "world/level_parser.hpp"
 #include "components/level_component.hpp"
-#include "components/tile_layer_component.hpp"
-#include <iostream>
 // Este método se ejecuta cuando se entra a la escena
 void InGameScene::onEnter(entt::registry& registry) {
     // Crear las entidades necesarias para el juego
@@ -11,12 +9,13 @@ void InGameScene::onEnter(entt::registry& registry) {
     // Puedes inicializar otros sistemas o componentes específicos del nivel aquí
     // Todo: Refactorizar para que se cargue el jugador y el nivel desde un archivo XML
     SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
+    auto config = registry.ctx().get<Config>();
     // Cargar el jugador
-    EntityLoader::loadPlayerDataFromXML(registry, renderer);
+    // EntityLoader::loadPlayerDataFromXML(registry, renderer);
     // Cargar el nivel
     // Todo: desacoplar logica de level y dejarlo mas cercano a ECS
     LevelParser levelParser;
-    Level* level = levelParser.parseLevel(registry, "../assets/maps/dungeon1.tmx");
+    Level* level = levelParser.parseLevel(registry, config.levels["level1"].c_str());
     auto levelEntity = registry.create();
     auto & levelComponent = registry.emplace<LevelComponent>(levelEntity);
     levelComponent.tilesets = *level->getTilesets();

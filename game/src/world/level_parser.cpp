@@ -1,8 +1,13 @@
 #include <SDL.h>
+#include <iostream>
 #include "world/level_parser.hpp"
 #include "base64.h"
+#include "components/animation_component.hpp"
+#include "components/player_component.hpp"
 #include "components/position_component.hpp"
+#include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
+#include "components/velocity_component.hpp"
 #include "core/texture_manager.hpp"
 #include "core/vector_2d.hpp"
 #include "world/level.hpp"
@@ -27,6 +32,15 @@ Level *LevelParser::parseLevel(entt::registry &registry,
   m_tileSize = pRoot->IntAttribute("tilewidth");
   m_width = pRoot->IntAttribute("width");
   m_height = pRoot->IntAttribute("height");
+
+  XMLElement *pProperties = pRoot->FirstChildElement();
+  // parse the textures
+  for (XMLElement *e = pProperties->FirstChildElement(); e != NULL;
+       e = e->NextSiblingElement()) {
+    if (e->Value() == std::string("property")) {
+      parseTextures(registry, e);
+    }
+  }
   // parse the tilesets
   for (XMLElement *e = pRoot->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
@@ -37,18 +51,36 @@ Level *LevelParser::parseLevel(entt::registry &registry,
   // parse any object layers
   for (XMLElement *e = pRoot->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
-    if (e->Value() == std::string("layer")) {
-      parseTileLayer(registry, e, pLevel->getLayers(), pLevel->getTilesets());
+    if (e->Value() == std::string("objectgroup") || e->Value() == std::string("layer")) {
+      if (e->FirstChildElement()->Value() == std::string("object"))
+      {
+        parseObjectLayer(registry, e, pLevel->getLayers(), pLevel);
+      }
+      else if (e->FirstChildElement()->Value() == std::string("data")||
+                    (e->FirstChildElement()->NextSiblingElement() != 0 && e->FirstChildElement()->NextSiblingElement()->Value() == std::string("data")))
+      {
+        parseTileLayer(registry, e, pLevel->getLayers(), pLevel->getTilesets());
+      }
     }
   }
   return pLevel;
 }
+
+void LevelParser::parseTextures(entt::registry &registry,
+                                XMLElement *pTextureRoot) {
+  // load the textures
+  std::string path = pTextureRoot->Attribute("value");
+  std::string id = pTextureRoot->Attribute("name");
+  std::cout << "Texture: " << path << " loaded with id: " << id << std::endl;
+  TheTextureManager::Instance()->load(path, id, registry.ctx().get<SDL_Renderer *>());
+}
+
 void LevelParser::parseTilesets(entt::registry &registry,
                                 XMLElement *pTilesetRoot,
                                 std::vector<entt::entity> *pTilesets) {
 
   auto *pRenderer = registry.ctx().get<SDL_Renderer *>();
-  std::string assetsTag = "../assets/maps/";
+  std::string assetsTag = "../assets/Levels/";
   // Obtener el atributo "name"
   const char* nameAttribute = pTilesetRoot->Attribute("name");
   // first add the tileset to texture manager
@@ -68,6 +100,70 @@ void LevelParser::parseTilesets(entt::registry &registry,
   TheTextureManager::Instance()->load(assetsTag.append(pTilesetRoot->FirstChildElement()->Attribute("source")), nameAttribute, pRenderer);
   pTilesets->push_back(tileSetEntity);
 }
+
+void LevelParser::parseObjectLayer(entt::registry &registry,
+                                   XMLElement *pObjectElement,
+                                   std::vector<entt::entity> *pLayers,
+                                   Level *pLevel) {
+  // create an object layer
+  std::vector<entt::entity> entities;
+  for (XMLElement *e = pObjectElement->FirstChildElement(); e != NULL;
+       e = e->NextSiblingElement()) {
+    if (e->Value() == std::string("object")) {
+      auto entity = registry.create();
+      int x, y, width, height, numFrames, spriteRow = 0, spriteCol = 0;
+      float animationTime = 0;
+      std::string textureID;
+      std::string type = e->Attribute("type");
+      // get the initial node values
+      e->QueryIntAttribute("x", &x);
+      e->QueryIntAttribute("y", &y);
+
+      width = e->IntAttribute("width");
+      height = e->IntAttribute("height");
+
+      // get the property values
+      for (XMLElement *properties = e->FirstChildElement(); properties != NULL;
+           properties = properties->NextSiblingElement()) {
+        if (properties->Value() == std::string("properties")) {
+          for (XMLElement *prop = properties->FirstChildElement();
+               prop != NULL; prop = prop->NextSiblingElement()) {
+            if (prop->Value() == std::string("property")) {
+              std::string name = prop->Attribute("name");
+              std::string value = prop->Attribute("value");
+              if (name == "totalFrames") {
+                numFrames = atoi(value.c_str());
+              } else if (name == "textureID") {
+                textureID = value;
+              } else if (name == "spriteRow") {
+                spriteRow = atoi(value.c_str());
+              } else if (name == "spriteCol") {
+                spriteCol = atoi(value.c_str());
+              } else if (name == "animationTime") {
+                animationTime = atof(value.c_str());
+              }
+            }
+          }
+        }
+      }
+      // add the object to the object list
+      registry.emplace<PositionComponent>(entity, Vector2D(x, y));
+      registry.emplace<TextureComponent>(entity, textureID);
+
+      registry.emplace<SpriteComponent>(entity, width, height, spriteRow, spriteCol, 0);
+      registry.emplace<VelocityComponent>(entity, Vector2D(0, 0));
+      registry.emplace<AnimationComponent>(entity, spriteCol, numFrames, animationTime, 0);
+      if (type == "Player")
+      {
+        registry.emplace<PlayerComponent>(entity);
+      }
+      entities.push_back(entity);
+    }
+  }
+  for (const auto& entity : entities) {
+    pLayers->push_back(entity);
+  }
+} 
 
 void LevelParser::parseTileLayer(entt::registry &registry,
                                  XMLElement *pTileElement,

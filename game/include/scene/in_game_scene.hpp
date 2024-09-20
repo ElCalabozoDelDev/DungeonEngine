@@ -1,6 +1,7 @@
 #ifndef IN_GAME_SCENE_HPP
 #define IN_GAME_SCENE_HPP
 
+#include "SDL2/SDL.h"
 #include "scene.hpp"
 
 // Incluir otros componentes y sistemas necesarios

@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="26" height="46" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="8">
+ <properties>
+  <property name="player" value="../assets/Player/1-Heroes-Animated.png"/>
+ </properties>
  <tileset firstgid="1" name="1-Dungeon" tilewidth="16" tileheight="16" tilecount="100" columns="10">
   <image source="../Tiles/1-Dungeon.png" width="160" height="160"/>
  </tileset>
@@ -17,17 +20,15 @@
   </data>
  </layer>
  <objectgroup id="4" name="Objects1">
-  <object id="4" name="Treasure1" x="144.5" y="47.5" width="16" height="16">
+  <object id="7" name="Player" type="Player" x="376" y="384" width="16" height="16">
    <properties>
-    <property name="textureId" value="closedTreasure"/>
+    <property name="animationTime" value="0.3"/>
+    <property name="spriteCol" value="4"/>
+    <property name="spriteRow" value="1"/>
+    <property name="textureID" value="player"/>
+    <property name="totalFrames" value="3"/>
    </properties>
   </object>
-  <object id="5" name="Treasure2" x="223.5" y="48.5" width="16" height="16">
-   <properties>
-    <property name="textureId" value="closedTreasure"/>
-   </properties>
-  </object>
-  <object id="7" name="Player" type="Player" x="177" y="718.5" width="16" height="16"/>
  </objectgroup>
  <layer id="1" name="Collision" width="26" height="46">
   <properties>

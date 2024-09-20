@@ -1,24 +1,14 @@
 <?xml version="1.0"?>
 <Game>
-    <Assets>
-        <Player>
-            <Texture path="../assets/Player/1-Heroes-Animated.png" 
-                spriteWidth="16"
-                spriteHeight="16"
-                spriteRow="1"
-                spriteCol="4"/>
-            <Animation totalFrames="3"
-                animationTime="0.3"/>
-            <Position x="390" y="290" />
-            <Speed x="0" y="0" />
-        </Player>
-    </Assets>
     <Config>
         <Init>
             <Title>DungeonEngine</Title>
             <FullScreen>false</FullScreen>
             <FrameRate>60</FrameRate>
             <Screen width="800" height="600" />
+            <Levels>
+                <Level name="level1" path="../assets/Levels/dungeon1.tmx" />
+            </Levels>
         </Init>
     </Config>
 </Game>
