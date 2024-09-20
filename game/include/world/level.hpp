@@ -1,7 +1,6 @@
 #ifndef LEVEL_HPP
 #define LEVEL_HPP
 
-#include "world/layer.hpp"
 #include "entt/entt.hpp"
 #include <vector>
 

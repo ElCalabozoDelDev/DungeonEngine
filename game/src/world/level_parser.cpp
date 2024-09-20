@@ -6,7 +6,6 @@
 #include "core/texture_manager.hpp"
 #include "core/vector_2d.hpp"
 #include "world/level.hpp"
-#include "world/tile_layer.hpp"
 #include "entt/entity/fwd.hpp"
 #include "tinyxml2.h"
 #include "zlib.h"
