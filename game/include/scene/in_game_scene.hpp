@@ -53,13 +53,14 @@ private:
         auto camera = registry.create();
         registry.emplace<CameraComponent>(camera);
         registry.emplace<CameraBoundsComponent>(camera, mapWidth, mapHeight);
-        registry.emplace<PositionComponent>(camera, Vector2D(0, 0));
         auto view = registry.view<PlayerComponent>();
         if(view.empty()) {
             std::cerr << "No player found in the scene" << std::endl;
             return;
         }
         auto player = *view.begin();
+        auto& playerPosition = registry.get<PositionComponent>(player).position;
+        registry.emplace<PositionComponent>(camera, playerPosition);
         registry.emplace<FollowComponent>(camera, player);
         m_entities.push_back(camera);
     }

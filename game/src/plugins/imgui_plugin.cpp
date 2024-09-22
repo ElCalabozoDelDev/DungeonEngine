@@ -3,15 +3,11 @@
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_sdlrenderer2.h"
 #include <SDL_render.h>
-#include "SDL_events.h"
-#include "systems/widget_system.hpp"
 
 void ImGuiPlugin::mount(GameLoop &gameLoop)
 {
-    auto imGuiSystem = std::make_shared<WidgetSystem>();
-    gameLoop.addSetupCallback([imGuiSystem](entt::registry &registry)
+    gameLoop.addSetupCallback([](entt::registry &registry)
     {
-        registry.ctx().emplace<std::shared_ptr<WidgetSystem>>(imGuiSystem);
         SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
         SDL_Window *window = registry.ctx().get<SDL_Window *>();
         // Inicialización de ImGui
@@ -41,5 +37,4 @@ void ImGuiPlugin::mount(GameLoop &gameLoop)
         ImGui_ImplSDL2_Shutdown();
         ImGui::DestroyContext();
     });
-    gameLoop.addSystem(imGuiSystem);
 }

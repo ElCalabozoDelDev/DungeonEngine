@@ -2,9 +2,11 @@
 #define RENDERER_HPP
 
 // #include "SDL2/SDL.h"
+#include "entt/entt.hpp"
+#include "imgui.h"
+#include "imgui/imgui_impl_sdlrenderer2.h"
 #include "components/camera_bounds_component.hpp"
 #include "components/camera_component.hpp"
-#include "entt/entt.hpp"
 #include "components/tile_layer_component.hpp"
 #include "components/tile_set_component.hpp"
 #include "core/texture_manager.hpp"
@@ -12,8 +14,8 @@
 #include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
 #include "loaders/config.hpp"
+#include "widgets/gui.hpp"
 #include <iostream>
-
 class Renderer {
 public:
     static void renderSprites(entt::registry &registry, std::vector<entt::entity> visibleSprites) {
@@ -67,7 +69,6 @@ public:
                     // Posición del tile en la pantalla (ajustada por la cámara)
                     int renderX = (j * layer.tileSize) - cameraPos.m_x + config.screenWidth / 2.0f + offsetX;
                     int renderY = (i * layer.tileSize) - cameraPos.m_y + config.screenHeight / 2.0f + offsetY;
-
                     // Verificar que el tile esté dentro de la pantalla antes de dibujarlo
                     if (renderX + layer.tileSize < 0 || renderX > config.screenWidth ||
                         renderY + layer.tileSize < 0 || renderY > config.screenHeight) {
@@ -88,6 +89,17 @@ public:
                 }
             }
         }
+    }
+
+    static void renderGUI(entt::registry &registry) {
+        SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
+        registry.view<std::unique_ptr<gui::WidgetComponent>>().each([&registry](auto entity, auto &widget_component) {
+            widget_component->frame_begin();
+            widget_component->frame_update(registry);
+            widget_component->frame_end();
+        });
+        ImGui::Render();
+        ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
     }
 private:
     static entt::entity getTilesetByID(entt::registry& registry, int tileID)
