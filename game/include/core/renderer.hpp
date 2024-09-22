@@ -39,47 +39,47 @@ public:
     static void renderTiles(entt::registry& registry, std::vector<entt::entity> visibleTiles) {
         auto config = registry.ctx().get<Config>();
         auto *pRenderer = registry.ctx().get<SDL_Renderer *>();
+
+        // Obtener la posición de la cámara
+        auto cameraPos = registry.get<PositionComponent>(registry.view<CameraComponent>().front()).position;
+
         for (auto entity : visibleTiles) {
             auto& layer = registry.get<TileLayerComponent>(entity);
             auto& pos = registry.get<PositionComponent>(entity);
             auto& tileIDs = layer.tileIDs;
 
-            
-            // Obtener la posición de la cámara
-            auto cameraPos = registry.get<PositionComponent>(registry.view<CameraComponent>().front()).position;
-            auto cameraBounds = registry.get<CameraBoundsComponent>(registry.view<CameraComponent>().front());
-
+            int x = pos.position.getX() / layer.tileSize;
+            int y = pos.position.getY() / layer.tileSize;
             float offsetX = (config.screenWidth - registry.get<CameraBoundsComponent>(registry.view<CameraComponent>().front()).levelWidth) / 2.0f;
             float offsetY = (config.screenHeight - registry.get<CameraBoundsComponent>(registry.view<CameraComponent>().front()).levelHeight) / 2.0f;
             
             offsetX = std::max(0.0f, offsetX);  // Si el mapa es más grande, no aplicar offset
             offsetY = std::max(0.0f, offsetY);
             
-            int x = pos.position.getX() / layer.tileSize;
-            int y = pos.position.getY() / layer.tileSize;
             for (int i = 0; i < layer.numRows; i++) {
                 for (int j = 0; j < layer.numColumns; j++) {
 
                     int id = tileIDs[i + y][j + x];
                     if (id == 0) {
-                        continue; // Saltar tiles vacíos
+                        continue;  // Saltar tiles vacíos
                     }
+
                     // Posición del tile en la pantalla (ajustada por la cámara)
-                    int renderX = (j * layer.tileSize) - cameraPos.m_x + offsetX;
-                    int renderY = (i * layer.tileSize) - cameraPos.m_y + offsetY;
-                    
+                    int renderX = (j * layer.tileSize) - cameraPos.m_x + config.screenWidth / 2.0f + offsetX;
+                    int renderY = (i * layer.tileSize) - cameraPos.m_y + config.screenHeight / 2.0f + offsetY;
+
                     // Verificar que el tile esté dentro de la pantalla antes de dibujarlo
                     if (renderX + layer.tileSize < 0 || renderX > config.screenWidth ||
                         renderY + layer.tileSize < 0 || renderY > config.screenHeight) {
                         continue;  // Tile fuera de la pantalla, no dibujar
                     }
 
-
                     entt::entity tilesetId = getTilesetByID(registry, id);
                     auto tileset = registry.get<TileSetComponent>(tilesetId);
                     auto texture = registry.get<TextureComponent>(tilesetId);
                     id--;
 
+                    // Renderizar el tile ajustado por la cámara
                     TheTextureManager::Instance()->drawTile(texture.id, tileset.margin, tileset.spacing,
                         renderX, renderY, layer.tileSize, layer.tileSize,
                         (id - (tileset.firstGridID - 1)) / tileset.numColumns,
