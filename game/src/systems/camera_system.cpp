@@ -29,9 +29,8 @@ void CameraSystem::run(entt::registry& registry) {
 
         // Aplicamos los límites de la cámara
 
-        position.position.m_x = std::max(0.0f, std::min(position.position.m_x, static_cast<float>(bounds.levelWidth - screenWidth)));
-
-        position.position.m_y = std::max(0.0f, std::min(position.position.m_y, static_cast<float>(bounds.levelHeight - screenHeight)));
+        position.position.m_x = std::max(screenWidth / 2.0f, std::min(position.position.m_x, static_cast<float>(bounds.levelWidth - screenWidth / 2.0f)));
+        position.position.m_y = std::max(screenHeight / 2.0f, std::min(position.position.m_y, static_cast<float>(bounds.levelHeight - screenHeight / 2.0f)));
 
     }
 }

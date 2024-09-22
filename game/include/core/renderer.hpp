@@ -18,12 +18,20 @@ class Renderer {
 public:
     static void renderSprites(entt::registry &registry, std::vector<entt::entity> visibleSprites) {
         SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
+        auto config = registry.ctx().get<Config>();
+        // Obtener la posición de la cámara
+        auto cameraPos = registry.get<PositionComponent>(registry.view<CameraComponent>().front()).position;
 
         for (auto entity : visibleSprites) {
             auto &pos = registry.get<PositionComponent>(entity);
             auto &tex = registry.get<TextureComponent>(entity);
             auto &spr = registry.get<SpriteComponent>(entity);
-            TheTextureManager::Instance()->drawFrame(tex.id, pos.position.getX(), pos.position.getY(), spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
+
+            // Ajustar la posición del sprite en base a la cámara
+            int renderX = static_cast<int>(pos.position.getX() - cameraPos.m_x + config.screenWidth / 2.0f);
+            int renderY = static_cast<int>(pos.position.getY() - cameraPos.m_y + config.screenHeight / 2.0f);
+
+            TheTextureManager::Instance()->drawFrame(tex.id, renderX, renderY, spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
         }
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     }
@@ -41,17 +49,12 @@ public:
             auto cameraPos = registry.get<PositionComponent>(registry.view<CameraComponent>().front()).position;
             auto cameraBounds = registry.get<CameraBoundsComponent>(registry.view<CameraComponent>().front());
 
-            float offsetX = 0.0f;
-            float offsetY = 0.0f;
-
-            if (cameraBounds.levelWidth < config.screenWidth) {
-                offsetX = static_cast<float>(config.screenWidth - cameraBounds.levelWidth) / 2.0f;
-            }
-
-            if (cameraBounds.levelHeight < config.screenHeight) {
-                offsetY = static_cast<float>(config.screenHeight - cameraBounds.levelHeight) / 2.0f;
-            }
-
+            float offsetX = (config.screenWidth - registry.get<CameraBoundsComponent>(registry.view<CameraComponent>().front()).levelWidth) / 2.0f;
+            float offsetY = (config.screenHeight - registry.get<CameraBoundsComponent>(registry.view<CameraComponent>().front()).levelHeight) / 2.0f;
+            
+            offsetX = std::max(0.0f, offsetX);  // Si el mapa es más grande, no aplicar offset
+            offsetY = std::max(0.0f, offsetY);
+            
             int x = pos.position.getX() / layer.tileSize;
             int y = pos.position.getY() / layer.tileSize;
             for (int i = 0; i < layer.numRows; i++) {
@@ -59,7 +62,7 @@ public:
 
                     int id = tileIDs[i + y][j + x];
                     if (id == 0) {
-                        continue;
+                        continue; // Saltar tiles vacíos
                     }
                     // Posición del tile en la pantalla (ajustada por la cámara)
                     int renderX = (j * layer.tileSize) - cameraPos.m_x + offsetX;

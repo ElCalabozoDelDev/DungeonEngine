@@ -5,16 +5,16 @@
 #include "components/tile_layer_component.hpp"
 #include "entt/entt.hpp"
 #include "components/position_component.hpp"
-#include <iostream>
 
 struct AABB {
     int x, y, width, height;
 
     bool contains(int px, int py) const {
-        return px >= x && px < (x + width) && py >= y && py < (y + height);
+        return px >= x && px <= (x + width) && py >= y && py <= (y + height);
     }
 
     bool intersects(const AABB& range) const {
+        
         return !(range.x > (x + width) || 
                  (range.x + range.width) < x || 
                  range.y > (y + height) ||
@@ -32,6 +32,10 @@ private:
     bool divided = false;
 
 public:
+    int getBoundaryX() const { return boundary.x; }
+    int getBoundaryY() const { return boundary.y; }
+    int getBoundaryWidth() const { return boundary.width; }
+    int getBoundaryHeight() const { return boundary.height; }
     Quadtree(const AABB& boundary, int capacity)
         : boundary(boundary), capacity(capacity) {}
 
@@ -49,6 +53,7 @@ public:
             subdivide();
         }
 
+        // Intentar insertar en los nodos hijos
         if (northeast->insert(tile, pos)) return true;
         if (northwest->insert(tile, pos)) return true;
         if (southeast->insert(tile, pos)) return true;
@@ -84,6 +89,7 @@ public:
             return; // No hay intersección con el rango de búsqueda
         }
 
+        // Buscar en las entidades del nodo actual
         for (auto& tile : tiles) {
             auto& pos = registry.get<PositionComponent>(tile);
             if (range.contains(pos.position.m_x, pos.position.m_y)) {
@@ -91,6 +97,7 @@ public:
             }
         }
 
+        // Si está subdividido, buscar en los nodos hijos
         if (divided) {
             northeast->query(range, found, registry);
             northwest->query(range, found, registry);

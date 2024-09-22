@@ -1,6 +1,4 @@
 #include "scene/in_game_scene.hpp"
-#include "components/player_component.hpp"
-#include "components/position_component.hpp"
 #include "loaders/config.hpp"
 #include "world/level_parser.hpp"
 #include "components/level_component.hpp"
