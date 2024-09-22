@@ -4,7 +4,6 @@
 #include "core/vector_2d.hpp"
 #include "systems/system.hpp"
 #include "entt/entt.hpp"
-#include "world/quadtree.hpp"
 
 class TransformSystem final : public System {
 public:

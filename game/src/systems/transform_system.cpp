@@ -4,6 +4,8 @@
 #include "components/velocity_component.hpp"
 #include "core/delta_time.hpp"
 #include "loaders/config.hpp"
+#include "world/quadtree.hpp"
+
 
 void TransformSystem::run(entt::registry& registry) {
     DeltaTime deltaTime = registry.ctx().get<DeltaTime>();
