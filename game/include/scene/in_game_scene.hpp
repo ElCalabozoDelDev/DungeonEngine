@@ -32,7 +32,7 @@ private:
     }
     void populateTileQuadtree(entt::registry& registry) {
         auto& tileQuadtree = registry.ctx().get<std::shared_ptr<TileQuadtree>>();
-        auto view = registry.view<PositionComponent, TileLayerComponent>();
+        auto view = registry.view<TileLayerComponent, PositionComponent>();
         for (auto entity : view) {
             auto& pos = view.get<PositionComponent>(entity);
             tileQuadtree->insert(entity, pos);
@@ -41,7 +41,7 @@ private:
     void populateSpriteQuadtree(entt::registry& registry) {
         auto& spriteQuadtree = registry.ctx().get<std::shared_ptr<SpriteQuadtree>>();
 
-        auto view = registry.view<PositionComponent, SpriteComponent, TextureComponent, AnimationComponent, VelocityComponent>();
+        auto view = registry.view<PositionComponent, SpriteComponent>();
         for (auto entity : view) {
             auto& pos = view.get<PositionComponent>(entity);
             spriteQuadtree->insert(entity, pos);

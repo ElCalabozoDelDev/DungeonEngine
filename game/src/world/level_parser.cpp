@@ -144,7 +144,7 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
         }
       }
       // add the object to the object list
-      auto &pos = registry.emplace<PositionComponent>(entity, Vector2D(x, y));
+      registry.emplace<PositionComponent>(entity, Vector2D(x, y));
       registry.emplace<TextureComponent>(entity, textureID);
 
       registry.emplace<SpriteComponent>(entity, width, height, spriteRow, spriteCol, 0);
@@ -194,6 +194,8 @@ void LevelParser::parseTileLayer(entt::registry &registry,
   }
   auto layerEntity = registry.create();
   registry.emplace<TileLayerComponent>(layerEntity, m_tileSize, pTilesets, data, m_width, m_height, m_width);
+  int posX = m_tileSize * m_width;
+  int posY = m_tileSize * m_height;
   registry.emplace<PositionComponent>(layerEntity, Vector2D(0, 0));
   pLayers->push_back(layerEntity);
 }

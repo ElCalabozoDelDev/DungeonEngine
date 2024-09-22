@@ -23,12 +23,10 @@ public:
         auto config = registry.ctx().get<Config>();
         // Obtener la posición de la cámara
         auto cameraPos = registry.get<PositionComponent>(registry.view<CameraComponent>().front()).position;
-
         for (auto entity : visibleSprites) {
             auto &pos = registry.get<PositionComponent>(entity);
             auto &tex = registry.get<TextureComponent>(entity);
             auto &spr = registry.get<SpriteComponent>(entity);
-
             // Ajustar la posición del sprite en base a la cámara
             int renderX = static_cast<int>(pos.position.getX() - cameraPos.m_x + config.screenWidth / 2.0f);
             int renderY = static_cast<int>(pos.position.getY() - cameraPos.m_y + config.screenHeight / 2.0f);

@@ -27,9 +27,11 @@ void InGameScene::onEnter(entt::registry& registry) {
     }
 
     // Inicializar la cámara
-    initializeCamera(registry, levelParser.getWidth() * levelParser.getTileSize(), levelParser.getHeight() * levelParser.getTileSize());
+    int mapWidth = levelParser.getWidth() * levelParser.getTileSize();
+    int mapHeight = levelParser.getHeight() * levelParser.getTileSize();
+    initializeCamera(registry, mapWidth, mapHeight);
     
-    initializeQuadtrees(registry, config.screenWidth, config.screenHeight);
+    initializeQuadtrees(registry, mapWidth, mapHeight);
     populateTileQuadtree(registry);
     populateSpriteQuadtree(registry);
 }
