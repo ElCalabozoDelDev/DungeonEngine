@@ -94,7 +94,7 @@ void LevelParser::parseTilesets(entt::registry &registry,
   tileset.tileHeight = pTilesetRoot->IntAttribute("tileheight");
   tileset.spacing = pTilesetRoot->IntAttribute("spacing");
   tileset.margin = pTilesetRoot->IntAttribute("margin");
-
+  tileset.tileCount = pTilesetRoot->IntAttribute("tilecount");
   tileset.numColumns = tileset.width / (tileset.tileWidth + tileset.spacing);
   TheTextureManager::Instance()->load(assetsTag.append(pTilesetRoot->FirstChildElement()->Attribute("source")), nameAttribute, pRenderer);
   pTilesets->push_back(tileSetEntity);
@@ -104,8 +104,6 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
                                    XMLElement *pObjectElement,
                                    std::vector<entt::entity> *pLayers,
                                    Level *pLevel) {
-  // create an object layer
-  std::vector<entt::entity> entities;
   for (XMLElement *e = pObjectElement->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
     if (e->Value() == std::string("object")) {
@@ -146,7 +144,7 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
         }
       }
       // add the object to the object list
-      registry.emplace<PositionComponent>(entity, Vector2D(x, y));
+      auto &pos = registry.emplace<PositionComponent>(entity, Vector2D(x, y));
       registry.emplace<TextureComponent>(entity, textureID);
 
       registry.emplace<SpriteComponent>(entity, width, height, spriteRow, spriteCol, 0);
@@ -156,11 +154,8 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
       {
         registry.emplace<PlayerComponent>(entity);
       }
-      entities.push_back(entity);
+      pLayers->push_back(entity);
     }
-  }
-  for (const auto& entity : entities) {
-    pLayers->push_back(entity);
   }
 } 
 
@@ -200,6 +195,5 @@ void LevelParser::parseTileLayer(entt::registry &registry,
   auto layerEntity = registry.create();
   registry.emplace<TileLayerComponent>(layerEntity, m_tileSize, pTilesets, data, m_width, m_height, m_width);
   registry.emplace<PositionComponent>(layerEntity, Vector2D(0, 0));
-
   pLayers->push_back(layerEntity);
 }

@@ -11,5 +11,6 @@ struct TileSetComponent
     int width;
     int height;
     int numColumns;
+    int tileCount;
 };
 #endif

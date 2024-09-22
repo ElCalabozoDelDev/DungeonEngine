@@ -1,8 +1,10 @@
 #include "plugins/game_plugin.hpp"
 #include "SDL_events.h"
+#include "systems/camera_system.hpp"
 #include "systems/widget_system.hpp"
 #include "systems/scene_system.hpp"
 #include "scene/in_game_scene.hpp"
+#include <memory>
 
 void GamePlugin::mount(GameLoop &gameLoop)
 {
@@ -26,5 +28,6 @@ void GamePlugin::mount(GameLoop &gameLoop)
                 imGuiSystem.handle(event);
             } });
 
+    gameLoop.addSystem(std::make_shared<CameraSystem>());
     gameLoop.addSystem(sceneSystem);
 }

@@ -1,23 +1,32 @@
 #include "systems/render_system.hpp"
-#include "core/texture_manager.hpp"
-#include "components/position_component.hpp"
-#include "components/sprite_component.hpp"
-#include "components/texture_component.hpp"
-#include "world/tile_layer.hpp"
+#include "world/quadtree.hpp"
+#include "core/renderer.hpp"
+#include "loaders/config.hpp"
 #include <iostream>
 
 void RenderSystem::run(entt::registry &registry) {
   SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
-  auto view = registry.view<PositionComponent, TextureComponent, SpriteComponent>();
 
-  for (auto entity : view) {
-    auto &pos = view.get<PositionComponent>(entity);
-    auto &tex = view.get<TextureComponent>(entity);
-    auto &spr = view.get<SpriteComponent>(entity);
-    TheTextureManager::Instance()->drawFrame(tex.id, pos.position.getX(), pos.position.getY(), spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
-  }
+  auto config = registry.ctx().get<Config>();
+  // Obtener Quadtrees desde el contexto
+  auto &tileQuadtree = registry.ctx().get<std::shared_ptr<TileQuadtree>>();
+  auto &spriteQuadtree = registry.ctx().get<std::shared_ptr<SpriteQuadtree>>();
+  auto cameraPos = registry.get<PositionComponent>(registry.view<CameraComponent>().front()).position;
+  // Obtener área de cámara visible
+  AABB cameraView{
+      static_cast<int>(cameraPos.getX()),
+      static_cast<int>(cameraPos.getY()),
+      config.screenWidth, config.screenHeight};
 
-  TileLayer::render(registry);
+  // Renderizar tiles visibles
+  std::vector<entt::entity> visibleTiles;
+  tileQuadtree->query(cameraView, visibleTiles, registry);
+  Renderer::renderTiles(registry, visibleTiles);
+
+  std::vector<entt::entity> visibleSprites;
+  spriteQuadtree->query(cameraView, visibleSprites, registry);
+  Renderer::renderSprites(registry, visibleSprites);
+
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
 }

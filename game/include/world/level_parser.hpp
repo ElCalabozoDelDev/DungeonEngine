@@ -11,7 +11,9 @@ using namespace tinyxml2;
 class LevelParser {
     public:
     Level *parseLevel(entt::registry& registry, const char *levelFile);
-
+    int getTileSize() const { return m_tileSize; }
+    int getWidth() const { return m_width; }
+    int getHeight() const { return m_height; }
     private:
     void parseTextures(entt::registry& registry, XMLElement* pTextureRoot);
     void parseTilesets(entt::registry& registry, XMLElement *pTilesetRoot, std::vector<entt::entity> *pTilesets);
