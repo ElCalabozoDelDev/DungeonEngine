@@ -10,7 +10,10 @@ using namespace tinyxml2;
 
 class LevelParser {
     public:
-    Level *parseLevel(entt::registry& registry, const char *levelFile);
+    LevelParser(std::vector<entt::entity> *entities) {
+        m_entities = entities;
+    }
+    void parseLevel(entt::registry& registry, const char *levelFile);
     int getTileSize() const { return m_tileSize; }
     int getWidth() const { return m_width; }
     int getHeight() const { return m_height; }
@@ -23,6 +26,7 @@ class LevelParser {
     int m_tileSize;
     int m_width;
     int m_height;
+    std::vector<entt::entity> *m_entities;
 };
 
 #endif

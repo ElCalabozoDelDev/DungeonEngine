@@ -2,6 +2,7 @@
 #define QUADTREE_HPP
 
 #include "components/sprite_component.hpp"
+#include "components/tile_component.hpp"
 #include "components/tile_layer_component.hpp"
 #include "entt/entt.hpp"
 #include "components/position_component.hpp"
@@ -197,7 +198,7 @@ private:
     }
 };
 
-using TileQuadtree = Quadtree<TileLayerComponent>;
+using TileQuadtree = Quadtree<TileComponent>;
 using SpriteQuadtree = Quadtree<SpriteComponent>;
 
 #endif // QUADTREE_HPP

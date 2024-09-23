@@ -11,20 +11,9 @@ void InGameScene::onEnter(entt::registry& registry) {
 
     // Siguiendo al jugador
     // Todo: desacoplar logica de level y dejarlo mas cercano a ECS
-    LevelParser levelParser;
-    Level* level = levelParser.parseLevel(registry, config.levels["level1"].c_str());
+    LevelParser levelParser = LevelParser(&m_entities);
+    levelParser.parseLevel(registry, config.levels["level1"].c_str());
 
-    auto levelEntity = registry.create();
-    auto & levelComponent = registry.emplace<LevelComponent>(levelEntity);
-    levelComponent.tilesets = *level->getTilesets();
-    levelComponent.layers = *level->getLayers();
-    m_entities.push_back(levelEntity);
-    for (auto tilesetEntity : levelComponent.tilesets) {
-        m_entities.push_back(tilesetEntity);
-    }
-    for (auto layerEntity : levelComponent.layers) {
-        m_entities.push_back(layerEntity);
-    }
 
     // Inicializar la cámara
     int mapWidth = levelParser.getWidth() * levelParser.getTileSize();

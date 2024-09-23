@@ -20,7 +20,7 @@ void RenderSystem::run(entt::registry &registry) {
     config.screenWidth, config.screenHeight};
 
   std::vector<entt::entity> visibleTiles;
-  tileQuadtree->querydbg(cameraView, visibleTiles, registry);
+  tileQuadtree->query(cameraView, visibleTiles, registry);
   Renderer::renderTiles(registry, visibleTiles);
 
   std::vector<entt::entity> visibleSprites;

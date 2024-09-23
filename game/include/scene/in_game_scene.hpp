@@ -32,7 +32,7 @@ private:
     }
     void populateTileQuadtree(entt::registry& registry) {
         auto& tileQuadtree = registry.ctx().get<std::shared_ptr<TileQuadtree>>();
-        auto view = registry.view<TileLayerComponent, PositionComponent>();
+        auto view = registry.view<TileComponent, PositionComponent>();
         for (auto entity : view) {
             auto& pos = view.get<PositionComponent>(entity);
             tileQuadtree->insert(entity, pos);
