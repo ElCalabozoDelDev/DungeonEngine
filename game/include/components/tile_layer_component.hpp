@@ -7,11 +7,12 @@
 struct TileLayerComponent
 {
     int tileSize;
-    const std::vector<entt::entity> *tilesets;
-    std::vector<std::vector<int>> tileIDs;
+    std::vector<entt::entity> tileEntities; // Entidades que representan cada tile en esta capa
+    std::vector<entt::entity> tileSetEntities; // Entidades que representan cada tileset en esta capa
     int numColumns;
     int numRows;
     int mapWidth;
+    int mapHeight;
 };
 
 #endif

@@ -3,11 +3,13 @@
 #include "world/level_parser.hpp"
 #include "base64.h"
 #include "components/animation_component.hpp"
+#include "components/level_component.hpp"
 #include "components/player_component.hpp"
 #include "components/position_component.hpp"
 #include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
 #include "components/velocity_component.hpp"
+#include "components/tile_component.hpp"
 #include "core/texture_manager.hpp"
 #include "core/vector_2d.hpp"
 #include "world/level.hpp"
@@ -20,7 +22,7 @@
 
 // using namespace tinyxml2;
 
-Level *LevelParser::parseLevel(entt::registry &registry,
+void LevelParser::parseLevel(entt::registry &registry,
                                const char *levelFile) {
   // create a TinyXML document and load the map XML
   XMLDocument levelDocument;
@@ -63,7 +65,11 @@ Level *LevelParser::parseLevel(entt::registry &registry,
       }
     }
   }
-  return pLevel;
+  auto levelEntity = registry.create();
+  auto & levelComponent = registry.emplace<LevelComponent>(levelEntity);
+  levelComponent.tilesets = *pLevel->getTilesets();
+  levelComponent.layers = *pLevel->getLayers();
+  m_entities->push_back(levelEntity);
 }
 
 void LevelParser::parseTextures(entt::registry &registry,
@@ -94,18 +100,17 @@ void LevelParser::parseTilesets(entt::registry &registry,
   tileset.tileHeight = pTilesetRoot->IntAttribute("tileheight");
   tileset.spacing = pTilesetRoot->IntAttribute("spacing");
   tileset.margin = pTilesetRoot->IntAttribute("margin");
-
+  tileset.tileCount = pTilesetRoot->IntAttribute("tilecount");
   tileset.numColumns = tileset.width / (tileset.tileWidth + tileset.spacing);
   TheTextureManager::Instance()->load(assetsTag.append(pTilesetRoot->FirstChildElement()->Attribute("source")), nameAttribute, pRenderer);
   pTilesets->push_back(tileSetEntity);
+  m_entities->push_back(tileSetEntity);
 }
 
 void LevelParser::parseObjectLayer(entt::registry &registry,
                                    XMLElement *pObjectElement,
                                    std::vector<entt::entity> *pLayers,
                                    Level *pLevel) {
-  // create an object layer
-  std::vector<entt::entity> entities;
   for (XMLElement *e = pObjectElement->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
     if (e->Value() == std::string("object")) {
@@ -156,11 +161,9 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
       {
         registry.emplace<PlayerComponent>(entity);
       }
-      entities.push_back(entity);
+      m_entities->push_back(entity);
+      pLayers->push_back(entity);
     }
-  }
-  for (const auto& entity : entities) {
-    pLayers->push_back(entity);
   }
 } 
 
@@ -188,18 +191,41 @@ void LevelParser::parseTileLayer(entt::registry &registry,
   std::vector<unsigned> gids(numGids);
   uncompress((Bytef *)&gids[0], &numGids, (const Bytef *)decodedIDs.c_str(),
              decodedIDs.size());
-  std::vector<int> layerRow(m_width);
-  for (int j = 0; j < m_height; j++) {
-    data.push_back(layerRow);
-  }
-  for (int rows = 0; rows < m_height; rows++) {
-    for (int cols = 0; cols < m_width; cols++) {
-      data[rows][cols] = gids[rows * m_width + cols];
-    }
-  }
   auto layerEntity = registry.create();
-  registry.emplace<TileLayerComponent>(layerEntity, m_tileSize, pTilesets, data, m_width, m_height, m_width);
+  auto & tileLayer = registry.emplace<TileLayerComponent>(layerEntity);
+  tileLayer.tileSize = m_tileSize;
+  tileLayer.numColumns = m_width;
+  tileLayer.numRows = m_height;
+  tileLayer.mapWidth = m_width * m_tileSize;
+  tileLayer.mapHeight = m_height * m_tileSize;
+  tileLayer.tileSetEntities = *pTilesets;
+
   registry.emplace<PositionComponent>(layerEntity, Vector2D(0, 0));
 
+  // std::vector<int> layerRow(m_width);
+  // for (int j = 0; j < m_height; j++) {
+  //   data.push_back(layerRow);
+  // }
+  for (int rows = 0; rows < m_height; rows++) {
+    for (int cols = 0; cols < m_width; cols++) {
+      int tileId = gids[rows * m_width + cols];
+      if (tileId == 0) {
+        continue; // Ignorar tiles vacíos (tileId == 0)
+      }
+      auto tileEntity = registry.create();
+      int tileX = cols * m_tileSize;
+      int tileY = rows * m_tileSize;
+
+      registry.emplace<PositionComponent>(tileEntity, Vector2D(tileX, tileY));
+      auto &tile = registry.emplace<TileComponent>(tileEntity);
+      tile.tileId = tileId;
+      tile.tileX = cols;
+      tile.tileY = rows;
+
+      tileLayer.tileEntities.push_back(tileEntity);
+      m_entities->push_back(tileEntity);
+    }
+  }
   pLayers->push_back(layerEntity);
+  m_entities->push_back(layerEntity);
 }
