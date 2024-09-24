@@ -3,7 +3,6 @@
 
 #include "components/sprite_component.hpp"
 #include "components/tile_component.hpp"
-#include "components/tile_layer_component.hpp"
 #include "entt/entt.hpp"
 #include "components/position_component.hpp"
 #include <SDL_rect.h>
@@ -14,12 +13,6 @@ struct AABB {
 
     bool contains(int px, int py) const {
         return px >= x && px <= (x + width) && py >= y && py <= (y + height);
-    }
-
-    bool containsdbg(int px, int py) const {
-        std::cout << "Contains: " << px << ", " << py << std::endl;
-        std::cout << "Bounds: " << x << ", " << y << ", " << width << ", " << height << std::endl;
-        return px <= x && px + width >= x && py <= y && py + height >= y;
     }
 
     bool intersects(const AABB& range) const {
@@ -51,30 +44,6 @@ public:
 
     bool insert(entt::entity tile, const PositionComponent& pos) {
         if (!boundary.contains(pos.position.m_x, pos.position.m_y)) {
-            return false; // Fuera de los límites
-        }
-
-        if (tiles.size() < capacity) {
-            tiles.push_back(tile);
-            return true;
-        }
-
-        if (!divided) {
-            subdivide();
-        }
-
-        // Intentar insertar en los nodos hijos
-        if (northeast->insert(tile, pos)) return true;
-        if (northwest->insert(tile, pos)) return true;
-        if (southeast->insert(tile, pos)) return true;
-        if (southwest->insert(tile, pos)) return true;
-
-        return false;
-    }
-
-    bool insertdbg(entt::entity tile, const PositionComponent& pos) {
-        if (!boundary.containsdbg(pos.position.m_x, pos.position.m_y)) {
-            std::cout << "Out of bounds" << std::endl;
             return false; // Fuera de los límites
         }
 
@@ -140,32 +109,6 @@ public:
         }
     }
 
-    void querydbg(const AABB& range, std::vector<entt::entity>& found, const entt::registry& registry) const {
-        if (!boundary.intersects(range)) {
-            return; // No hay intersección con el rango de búsqueda
-        }
-        std::cout << "Tiles size: " << tiles.size() << std::endl;
-        // Buscar en las entidades del nodo actual
-        for (auto& tile : tiles) {
-            auto& pos = registry.get<PositionComponent>(tile);
-
-            if (range.containsdbg(pos.position.m_x, pos.position.m_y)) {
-                std::cout << "Tile found" << std::endl;
-                found.push_back(tile);
-            } else {
-                std::cout << "Tile not found" << std::endl;
-            }
-        }
-
-        // Si está subdividido, buscar en los nodos hijos
-        if (divided) {
-            northeast->query(range, found, registry);
-            northwest->query(range, found, registry);
-            southeast->query(range, found, registry);
-            southwest->query(range, found, registry);
-        }
-    }
-
     void drawQuadtree(SDL_Renderer* renderer, const Quadtree& quadtree) {
         AABB boundary = quadtree.getBoundary();
         SDL_Rect rect = { boundary.x, boundary.y, boundary.width, boundary.height };
@@ -179,8 +122,6 @@ public:
             drawQuadtree(renderer, *quadtree.southwest);
         }
     }
-
-    
 
 private:
     void subdivide() {

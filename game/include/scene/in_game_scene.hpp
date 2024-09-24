@@ -12,7 +12,7 @@
 #include "components/tile_layer_component.hpp"
 #include "components/velocity_component.hpp"
 #include "scene.hpp"
-#include "world/quadtree.hpp"
+#include "core/quadtree.hpp"
 #include <iostream>
 
 class InGameScene : public Scene {

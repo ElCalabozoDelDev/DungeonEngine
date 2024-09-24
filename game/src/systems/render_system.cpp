@@ -1,5 +1,5 @@
 #include "systems/render_system.hpp"
-#include "world/quadtree.hpp"
+#include "core/quadtree.hpp"
 #include "core/renderer.hpp"
 #include "loaders/config.hpp"
 #include <iostream>
