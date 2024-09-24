@@ -2,7 +2,6 @@
 #define LEVEL_PARSER_HPP
 
 #include "tinyxml2.h"
-#include "world/level.hpp"
 #include <entt/entity/fwd.hpp>
 #include <vector>
 #include "entt/entt.hpp"
@@ -11,7 +10,7 @@ using namespace tinyxml2;
 class LevelParser {
     public:
     LevelParser(std::vector<entt::entity> *entities) {
-        m_entities = entities;
+        m_pEntities = entities;
     }
     void parseLevel(entt::registry& registry, const char *levelFile);
     int getTileSize() const { return m_tileSize; }
@@ -19,14 +18,15 @@ class LevelParser {
     int getHeight() const { return m_height; }
     private:
     void parseTextures(entt::registry& registry, XMLElement* pTextureRoot);
-    void parseTilesets(entt::registry& registry, XMLElement *pTilesetRoot, std::vector<entt::entity> *pTilesets);
-    void parseObjectLayer(entt::registry& registry, XMLElement* pObjectElement, std::vector<entt::entity> *pLayers, Level* pLevel);
-    void parseTileLayer(entt::registry& registry, XMLElement *pTileElement, std::vector<entt::entity> *pLayers,
-                        const std::vector<entt::entity> *pTilesets);
+    void parseTilesets(entt::registry& registry, XMLElement *pTilesetRoot);
+    void parseObjectLayer(entt::registry& registry, XMLElement* pObjectElement);
+    void parseTileLayer(entt::registry& registry, XMLElement *pTileElement);
     int m_tileSize;
     int m_width;
     int m_height;
-    std::vector<entt::entity> *m_entities;
+    std::vector<entt::entity> *m_pEntities;
+    std::vector<entt::entity> m_tilesets;
+	std::vector<entt::entity> m_layers;
 };
 
 #endif

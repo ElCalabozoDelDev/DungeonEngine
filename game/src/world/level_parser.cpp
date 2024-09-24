@@ -12,7 +12,6 @@
 #include "components/tile_component.hpp"
 #include "core/texture_manager.hpp"
 #include "core/vector_2d.hpp"
-#include "world/level.hpp"
 #include "entt/entity/fwd.hpp"
 #include "tinyxml2.h"
 #include "zlib.h"
@@ -27,8 +26,6 @@ void LevelParser::parseLevel(entt::registry &registry,
   // create a TinyXML document and load the map XML
   XMLDocument levelDocument;
   levelDocument.LoadFile(levelFile);
-  // create the level object
-  Level *pLevel = new Level();
   // get the root node
   XMLElement *pRoot = levelDocument.RootElement();
   m_tileSize = pRoot->IntAttribute("tilewidth");
@@ -47,7 +44,7 @@ void LevelParser::parseLevel(entt::registry &registry,
   for (XMLElement *e = pRoot->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
     if (e->Value() == std::string("tileset")) {
-      parseTilesets(registry, e, pLevel->getTilesets());
+      parseTilesets(registry, e);
     }
   }
   // parse any object layers
@@ -56,20 +53,20 @@ void LevelParser::parseLevel(entt::registry &registry,
     if (e->Value() == std::string("objectgroup") || e->Value() == std::string("layer")) {
       if (e->FirstChildElement()->Value() == std::string("object"))
       {
-        parseObjectLayer(registry, e, pLevel->getLayers(), pLevel);
+        parseObjectLayer(registry, e);
       }
       else if (e->FirstChildElement()->Value() == std::string("data")||
                     (e->FirstChildElement()->NextSiblingElement() != 0 && e->FirstChildElement()->NextSiblingElement()->Value() == std::string("data")))
       {
-        parseTileLayer(registry, e, pLevel->getLayers(), pLevel->getTilesets());
+        parseTileLayer(registry, e);
       }
     }
   }
   auto levelEntity = registry.create();
   auto & levelComponent = registry.emplace<LevelComponent>(levelEntity);
-  levelComponent.tilesets = *pLevel->getTilesets();
-  levelComponent.layers = *pLevel->getLayers();
-  m_entities->push_back(levelEntity);
+  levelComponent.tilesets = m_tilesets;
+  levelComponent.layers = m_layers;
+  m_pEntities->push_back(levelEntity);
 }
 
 void LevelParser::parseTextures(entt::registry &registry,
@@ -81,8 +78,7 @@ void LevelParser::parseTextures(entt::registry &registry,
 }
 
 void LevelParser::parseTilesets(entt::registry &registry,
-                                XMLElement *pTilesetRoot,
-                                std::vector<entt::entity> *pTilesets) {
+                                XMLElement *pTilesetRoot) {
 
   auto *pRenderer = registry.ctx().get<SDL_Renderer *>();
   std::string assetsTag = "../assets/Levels/";
@@ -103,14 +99,12 @@ void LevelParser::parseTilesets(entt::registry &registry,
   tileset.tileCount = pTilesetRoot->IntAttribute("tilecount");
   tileset.numColumns = tileset.width / (tileset.tileWidth + tileset.spacing);
   TheTextureManager::Instance()->load(assetsTag.append(pTilesetRoot->FirstChildElement()->Attribute("source")), nameAttribute, pRenderer);
-  pTilesets->push_back(tileSetEntity);
-  m_entities->push_back(tileSetEntity);
+  m_tilesets.push_back(tileSetEntity);
+  m_pEntities->push_back(tileSetEntity);
 }
 
 void LevelParser::parseObjectLayer(entt::registry &registry,
-                                   XMLElement *pObjectElement,
-                                   std::vector<entt::entity> *pLayers,
-                                   Level *pLevel) {
+                                   XMLElement *pObjectElement) {
   for (XMLElement *e = pObjectElement->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
     if (e->Value() == std::string("object")) {
@@ -161,16 +155,14 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
       {
         registry.emplace<PlayerComponent>(entity);
       }
-      m_entities->push_back(entity);
-      pLayers->push_back(entity);
+      m_pEntities->push_back(entity);
+      m_layers.push_back(entity);
     }
   }
 } 
 
 void LevelParser::parseTileLayer(entt::registry &registry,
-                                 XMLElement *pTileElement,
-                                 std::vector<entt::entity> *pLayers,
-                                 const std::vector<entt::entity> *pTilesets) {
+                                 XMLElement *pTileElement) {
   // tile data
   std::vector<std::vector<int>> data;
   std::string decodedIDs;
@@ -198,7 +190,7 @@ void LevelParser::parseTileLayer(entt::registry &registry,
   tileLayer.numRows = m_height;
   tileLayer.mapWidth = m_width * m_tileSize;
   tileLayer.mapHeight = m_height * m_tileSize;
-  tileLayer.tileSetEntities = *pTilesets;
+  tileLayer.tileSetEntities = m_tilesets;
 
   registry.emplace<PositionComponent>(layerEntity, Vector2D(0, 0));
 
@@ -223,9 +215,9 @@ void LevelParser::parseTileLayer(entt::registry &registry,
       tile.tileY = rows;
 
       tileLayer.tileEntities.push_back(tileEntity);
-      m_entities->push_back(tileEntity);
+      m_pEntities->push_back(tileEntity);
     }
   }
-  pLayers->push_back(layerEntity);
-  m_entities->push_back(layerEntity);
+  m_layers.push_back(layerEntity);
+  m_pEntities->push_back(layerEntity);
 }
