@@ -1,8 +1,8 @@
 #ifndef VECTOR_2D_HPP
 #define VECTOR_2D_HPP
 
-#include <iostream>
 #include <math.h>
+#include "core/q_rsqrt.hpp"
 
 class Vector2D
 {
@@ -74,7 +74,7 @@ public:
         int l = length();
         if ( l > 0)
         {
-            (*this) *= 1 / l;
+            (*this) *= Q_rsqrt(l);
         }
     }
     
