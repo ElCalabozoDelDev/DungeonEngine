@@ -9,6 +9,7 @@ struct Config {
     int screenWidth;
     int screenHeight;
     int frameRate;
+    bool debug;
     std::map<std::string, std::string> levels;
 };
 

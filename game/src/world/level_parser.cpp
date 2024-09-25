@@ -1,5 +1,4 @@
 #include <SDL.h>
-#include <iostream>
 #include "world/level_parser.hpp"
 #include "base64.h"
 #include "components/animation_component.hpp"
@@ -18,6 +17,7 @@
 #include "components/tile_set_component.hpp"
 #include "components/tile_layer_component.hpp"
 #include "core/trim.hpp"
+#include "systems/debug_system.hpp"
 
 // using namespace tinyxml2;
 

@@ -13,6 +13,7 @@
 #include "components/velocity_component.hpp"
 #include "scene.hpp"
 #include "core/quadtree.hpp"
+#include "systems/debug_system.hpp"
 #include <iostream>
 
 class InGameScene : public Scene {
@@ -63,6 +64,14 @@ private:
         registry.emplace<TransformComponent>(camera, playerTransform);
         registry.emplace<FollowComponent>(camera, player);
         m_entities.push_back(camera);
+    }
+
+    void initializeDebug(entt::registry& registry, bool open) {
+        if(!open) return;
+        auto &debugSystem = *registry.ctx().get<std::shared_ptr<DebugSystem>>();
+        debugSystem.setOpen(open);
+        debugSystem.register_component<PlayerComponent>("Player");
+        debugSystem.register_component<CameraComponent>("Camera");
     }
 
 

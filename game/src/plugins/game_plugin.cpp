@@ -4,15 +4,19 @@
 #include "systems/camera_system.hpp"
 #include "systems/scene_system.hpp"
 #include "scene/in_game_scene.hpp"
+#include "systems/debug_system.hpp"
 #include <memory>
 
 void GamePlugin::mount(GameLoop &gameLoop)
 {
+    auto debugSystem = std::make_shared<DebugSystem>();
     auto sceneSystem = std::make_shared<SceneSystem>();
-    gameLoop.addSetupCallback([sceneSystem](entt::registry &registry)
+    gameLoop.addSetupCallback([sceneSystem, debugSystem](entt::registry &registry)
                               {
             registry.ctx().emplace<std::shared_ptr<SceneSystem>>(sceneSystem);
+            registry.ctx().emplace<std::shared_ptr<DebugSystem>>(debugSystem);
             sceneSystem->changeScene(registry, std::make_unique<InGameScene>()); });
+
 
     gameLoop.addFrameBeginCallback([sceneSystem](entt::registry &registry)
                                    {
@@ -29,4 +33,5 @@ void GamePlugin::mount(GameLoop &gameLoop)
 
     gameLoop.addSystem(std::make_shared<CameraSystem>());
     gameLoop.addSystem(sceneSystem);
+    gameLoop.addSystem(debugSystem);
 }

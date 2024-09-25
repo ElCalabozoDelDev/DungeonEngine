@@ -1,6 +1,5 @@
 #include "plugins/base_plugin.hpp"
 #include "loaders/config_loader.hpp"
-#include "systems/debug_system.hpp"
 #include "systems/movement_system.hpp"
 #include "systems/render_system.hpp"
 #include "systems/transform_system.hpp"
@@ -15,8 +14,6 @@ BasePlugin::BasePlugin(const std::string &configPath) {
 }
 
 void BasePlugin::mount(GameLoop &gameLoop) {
-
-    // auto debugSystem = std::make_shared<DebugSystem>();
     gameLoop.addSetupCallback([this](entt::registry &registry) {
       registry.ctx().emplace<Config>(m_config);
     });
@@ -26,6 +23,5 @@ void BasePlugin::mount(GameLoop &gameLoop) {
     gameLoop.addSystem(std::make_shared<MovementSystem>());
     gameLoop.addSystem(std::make_shared<TransformSystem>());
     gameLoop.addSystem(std::make_shared<UpdateAnimationSystem>());
-    // gameLoop.addSystem(debugSystem);
     gameLoop.addSystemLast(std::make_shared<RenderSystem>());
   }

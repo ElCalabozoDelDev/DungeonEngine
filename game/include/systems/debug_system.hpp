@@ -2,7 +2,7 @@
 #define DEBUG_SYSTEM_HPP
 
 #include "entt/entt.hpp"
-#include "debug/mm.hpp"
+#include "core/debug.hpp"
 #include "systems/system.hpp"
 #include "entt/entity/fwd.hpp"
 
@@ -14,6 +14,7 @@ class DebugSystem final : public System {
         }
 
         void run(entt::registry& registry) override;
+        void setOpen(bool open) { m_open = open; }
     private:
         using Editor = MM::EntityEditor<entt::entity>;
         Editor m_editor;

@@ -23,6 +23,7 @@ void InGameScene::onEnter(entt::registry& registry) {
     initializeQuadtrees(registry, mapWidth, mapHeight);
     populateTileQuadtree(registry);
     populateSpriteQuadtree(registry);
+    initializeDebug(registry, config.debug);
 }
 
 // Este método se llama en cada frame para actualizar la escena
