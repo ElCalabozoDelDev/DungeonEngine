@@ -4,7 +4,7 @@
 #include "components/sprite_component.hpp"
 #include "components/tile_component.hpp"
 #include "entt/entt.hpp"
-#include "components/position_component.hpp"
+#include "components/transform_component.hpp"
 #include <SDL_rect.h>
 #include <SDL_render.h>
 
@@ -42,8 +42,8 @@ public:
     Quadtree(const AABB& boundary, int capacity)
         : boundary(boundary), capacity(capacity) {}
 
-    bool insert(entt::entity tile, const PositionComponent& pos) {
-        if (!boundary.contains(pos.position.m_x, pos.position.m_y)) {
+    bool insert(entt::entity tile, const TransformComponent& trf) {
+        if (!boundary.contains(trf.position.m_x, trf.position.m_y)) {
             return false; // Fuera de los límites
         }
 
@@ -57,16 +57,16 @@ public:
         }
 
         // Intentar insertar en los nodos hijos
-        if (northeast->insert(tile, pos)) return true;
-        if (northwest->insert(tile, pos)) return true;
-        if (southeast->insert(tile, pos)) return true;
-        if (southwest->insert(tile, pos)) return true;
+        if (northeast->insert(tile, trf)) return true;
+        if (northwest->insert(tile, trf)) return true;
+        if (southeast->insert(tile, trf)) return true;
+        if (southwest->insert(tile, trf)) return true;
 
         return false;
     }
 
-    bool remove(entt::entity entity, const PositionComponent& pos) {
-        if (!boundary.contains(pos.position.m_x, pos.position.m_y)) {
+    bool remove(entt::entity entity, const TransformComponent& trf) {
+        if (!boundary.contains(trf.position.m_x, trf.position.m_y)) {
             return false;  // Fuera de los límites, no puede estar aquí
         }
 
@@ -78,10 +78,10 @@ public:
         }
         // Si el nodo está dividido, intentar eliminar de los nodos hijos
         if (divided) {
-            if (northeast->remove(entity, pos)) return true;
-            if (northwest->remove(entity, pos)) return true;
-            if (southeast->remove(entity, pos)) return true;
-            if (southwest->remove(entity, pos)) return true;
+            if (northeast->remove(entity, trf)) return true;
+            if (northwest->remove(entity, trf)) return true;
+            if (southeast->remove(entity, trf)) return true;
+            if (southwest->remove(entity, trf)) return true;
         }
 
         return false;  // No se encontró la entidad en este Quadtree
@@ -94,8 +94,8 @@ public:
 
         // Buscar en las entidades del nodo actual
         for (auto& tile : tiles) {
-            auto& pos = registry.get<PositionComponent>(tile);
-            if (range.contains(pos.position.m_x, pos.position.m_y)) {
+            auto& trf = registry.get<TransformComponent>(tile);
+            if (range.contains(trf.position.m_x, trf.position.m_y)) {
                 found.push_back(tile);
             }
         }

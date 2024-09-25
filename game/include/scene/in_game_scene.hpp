@@ -32,19 +32,19 @@ private:
     }
     void populateTileQuadtree(entt::registry& registry) {
         auto& tileQuadtree = registry.ctx().get<std::shared_ptr<TileQuadtree>>();
-        auto view = registry.view<TileComponent, PositionComponent>();
+        auto view = registry.view<TileComponent, TransformComponent>();
         for (auto entity : view) {
-            auto& pos = view.get<PositionComponent>(entity);
-            tileQuadtree->insert(entity, pos);
+            auto& transform = view.get<TransformComponent>(entity);
+            tileQuadtree->insert(entity, transform);
         }
     }
     void populateSpriteQuadtree(entt::registry& registry) {
         auto& spriteQuadtree = registry.ctx().get<std::shared_ptr<SpriteQuadtree>>();
 
-        auto view = registry.view<PositionComponent, SpriteComponent>();
+        auto view = registry.view<TransformComponent, SpriteComponent>();
         for (auto entity : view) {
-            auto& pos = view.get<PositionComponent>(entity);
-            spriteQuadtree->insert(entity, pos);
+            auto& transform = view.get<TransformComponent>(entity);
+            spriteQuadtree->insert(entity, transform);
         }
     }
 
@@ -59,8 +59,8 @@ private:
             return;
         }
         auto player = *view.begin();
-        auto& playerPosition = registry.get<PositionComponent>(player).position;
-        registry.emplace<PositionComponent>(camera, playerPosition);
+        auto& playerTransform = registry.get<TransformComponent>(player).position;
+        registry.emplace<TransformComponent>(camera, playerTransform);
         registry.emplace<FollowComponent>(camera, player);
         m_entities.push_back(camera);
     }

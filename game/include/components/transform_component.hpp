@@ -3,7 +3,7 @@
 
 #include "core/vector_2d.hpp"
 
-struct PositionComponent {
+struct TransformComponent {
     Vector2D position;
 };
 

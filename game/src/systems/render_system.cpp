@@ -11,7 +11,7 @@ void RenderSystem::run(entt::registry &registry) {
   // Obtener Quadtrees desde el contexto
   auto &tileQuadtree = registry.ctx().get<std::shared_ptr<TileQuadtree>>();
   auto &spriteQuadtree = registry.ctx().get<std::shared_ptr<SpriteQuadtree>>();
-  auto &cameraPos = registry.get<PositionComponent>(registry.view<CameraComponent>().front()).position;
+  auto &cameraPos = registry.get<TransformComponent>(registry.view<CameraComponent>().front()).position;
   
   // Obtener área de cámara visible
   AABB cameraView{

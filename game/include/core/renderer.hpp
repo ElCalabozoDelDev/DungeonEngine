@@ -10,7 +10,7 @@
 #include "components/tile_layer_component.hpp"
 #include "components/tile_set_component.hpp"
 #include "core/texture_manager.hpp"
-#include "components/position_component.hpp"
+#include "components/transform_component.hpp"
 #include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
 #include "loaders/config.hpp"
@@ -24,14 +24,14 @@ public:
         SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
         auto config = registry.ctx().get<Config>();
         // Obtener la posición de la cámara
-        auto cameraPos = registry.get<PositionComponent>(registry.view<CameraComponent>().front()).position;
+        auto cameraPos = registry.get<TransformComponent>(registry.view<CameraComponent>().front()).position;
         for (auto entity : visibleSprites) {
-            auto &pos = registry.get<PositionComponent>(entity);
+            auto &trf = registry.get<TransformComponent>(entity);
             auto &tex = registry.get<TextureComponent>(entity);
             auto &spr = registry.get<SpriteComponent>(entity);
             // Ajustar la posición del sprite en base a la cámara
-            int renderX = static_cast<int>(pos.position.getX() - cameraPos.m_x + config.screenWidth / 2.0f);
-            int renderY = static_cast<int>(pos.position.getY() - cameraPos.m_y + config.screenHeight / 2.0f);
+            int renderX = static_cast<int>(trf.position.getX() - cameraPos.m_x + config.screenWidth / 2.0f);
+            int renderY = static_cast<int>(trf.position.getY() - cameraPos.m_y + config.screenHeight / 2.0f);
 
             TheTextureManager::Instance()->drawFrame(tex.id, renderX, renderY, spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
         }
@@ -42,11 +42,11 @@ public:
         auto config = registry.ctx().get<Config>();
         auto *pRenderer = registry.ctx().get<SDL_Renderer *>();
         // Obtener la posición de la cámara
-        auto cameraPos = registry.get<PositionComponent>(registry.view<CameraComponent>().front()).position;
+        auto cameraPos = registry.get<TransformComponent>(registry.view<CameraComponent>().front()).position;
 
         for (auto entity : visibleTiles) {
             // Obtener los componentes del tile
-            auto& pos = registry.get<PositionComponent>(entity);
+            auto& trf = registry.get<TransformComponent>(entity);
             auto& tile = registry.get<TileComponent>(entity);
 
             // Encontrar el tileset correspondiente al tile
@@ -55,8 +55,8 @@ public:
             auto& texture = registry.get<TextureComponent>(tilesetId);
 
             // Calcular la posición del tile ajustada por la cámara
-            int renderX = static_cast<int>(pos.position.getX() - cameraPos.m_x + config.screenWidth / 2.0f);
-            int renderY = static_cast<int>(pos.position.getY() - cameraPos.m_y + config.screenHeight / 2.0f);
+            int renderX = static_cast<int>(trf.position.getX() - cameraPos.m_x + config.screenWidth / 2.0f);
+            int renderY = static_cast<int>(trf.position.getY() - cameraPos.m_y + config.screenHeight / 2.0f);
 
             // Verificar si el tile está dentro del área visible de la pantalla
             if (renderX + tileset.tileWidth < 0 || renderX > config.screenWidth ||

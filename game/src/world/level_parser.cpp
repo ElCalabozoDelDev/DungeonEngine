@@ -5,7 +5,7 @@
 #include "components/animation_component.hpp"
 #include "components/level_component.hpp"
 #include "components/player_component.hpp"
-#include "components/position_component.hpp"
+#include "components/transform_component.hpp"
 #include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
 #include "components/velocity_component.hpp"
@@ -145,7 +145,7 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
         }
       }
       // add the object to the object list
-      registry.emplace<PositionComponent>(entity, Vector2D(x, y));
+      registry.emplace<TransformComponent>(entity, Vector2D(x, y));
       registry.emplace<TextureComponent>(entity, textureID);
 
       registry.emplace<SpriteComponent>(entity, width, height, spriteRow, spriteCol, 0);
@@ -192,7 +192,7 @@ void LevelParser::parseTileLayer(entt::registry &registry,
   tileLayer.mapHeight = m_height * m_tileSize;
   tileLayer.tileSetEntities = m_tilesets;
 
-  registry.emplace<PositionComponent>(layerEntity, Vector2D(0, 0));
+  registry.emplace<TransformComponent>(layerEntity, Vector2D(0, 0));
 
   // std::vector<int> layerRow(m_width);
   // for (int j = 0; j < m_height; j++) {
@@ -208,7 +208,7 @@ void LevelParser::parseTileLayer(entt::registry &registry,
       int tileX = cols * m_tileSize;
       int tileY = rows * m_tileSize;
 
-      registry.emplace<PositionComponent>(tileEntity, Vector2D(tileX, tileY));
+      registry.emplace<TransformComponent>(tileEntity, Vector2D(tileX, tileY));
       auto &tile = registry.emplace<TileComponent>(tileEntity);
       tile.tileId = tileId;
       tile.tileX = cols;
