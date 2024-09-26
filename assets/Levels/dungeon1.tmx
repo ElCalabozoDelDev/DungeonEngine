@@ -20,7 +20,7 @@
   </data>
  </layer>
  <objectgroup id="4" name="Objects1">
-  <object id="7" name="Player" type="Player" x="376" y="384" width="16" height="16">
+  <object id="7" name="Player" type="Player" x="178.012" y="717.137" width="16" height="16">
    <properties>
     <property name="animationTime" value="0.3"/>
     <property name="spriteCol" value="4"/>

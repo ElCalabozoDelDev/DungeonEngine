@@ -33,7 +33,7 @@ public:
             int renderX = static_cast<int>(trf.position.getX() - cameraPos.m_x + config.screenWidth / 2.0f);
             int renderY = static_cast<int>(trf.position.getY() - cameraPos.m_y + config.screenHeight / 2.0f);
 
-            TheTextureManager::Instance()->drawFrame(tex.id, renderX, renderY, spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
+            TextureManager::Instance()->drawFrame(tex.id, renderX, renderY, spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
         }
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     }
@@ -70,7 +70,7 @@ public:
             int tileCol = tileIndex % tileset.numColumns;
 
             // Renderizar el tile
-            TheTextureManager::Instance()->drawTile(
+            TextureManager::Instance()->drawTile(
                 texture.id, tileset.margin, tileset.spacing,
                 renderX, renderY, tileset.tileWidth, tileset.tileHeight,
                 tileRow, tileCol, pRenderer

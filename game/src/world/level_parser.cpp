@@ -74,7 +74,7 @@ void LevelParser::parseTextures(entt::registry &registry,
   // load the textures
   std::string path = pTextureRoot->Attribute("value");
   std::string id = pTextureRoot->Attribute("name");
-  TheTextureManager::Instance()->load(path, id, registry.ctx().get<SDL_Renderer *>());
+  TextureManager::Instance()->load(path, id, registry.ctx().get<SDL_Renderer *>());
 }
 
 void LevelParser::parseTilesets(entt::registry &registry,
@@ -98,7 +98,7 @@ void LevelParser::parseTilesets(entt::registry &registry,
   tileset.margin = pTilesetRoot->IntAttribute("margin");
   tileset.tileCount = pTilesetRoot->IntAttribute("tilecount");
   tileset.numColumns = tileset.width / (tileset.tileWidth + tileset.spacing);
-  TheTextureManager::Instance()->load(assetsTag.append(pTilesetRoot->FirstChildElement()->Attribute("source")), nameAttribute, pRenderer);
+  TextureManager::Instance()->load(assetsTag.append(pTilesetRoot->FirstChildElement()->Attribute("source")), nameAttribute, pRenderer);
   m_tilesets.push_back(tileSetEntity);
   m_pEntities->push_back(tileSetEntity);
 }
