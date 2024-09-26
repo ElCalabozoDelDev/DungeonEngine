@@ -1,4 +1,6 @@
 #include "systems/transform_system.hpp"
+#include "components/camera_bounds_component.hpp"
+#include "components/camera_component.hpp"
 #include "components/transform_component.hpp"
 #include "components/sprite_component.hpp"
 #include "components/velocity_component.hpp"
@@ -11,6 +13,10 @@ void TransformSystem::run(entt::registry& registry) {
     DeltaTime deltaTime = registry.ctx().get<DeltaTime>();
     auto config = registry.ctx().get<Config>();
 
+    auto camView = registry.view<CameraBoundsComponent>();
+    auto cameraEntity = *camView.begin();
+    auto& camera = registry.get<CameraBoundsComponent>(cameraEntity);
+
     auto view = registry.view<TransformComponent, VelocityComponent, SpriteComponent>();
     for (auto entity : view) {
         auto& trf = view.get<TransformComponent>(entity);
@@ -19,19 +25,19 @@ void TransformSystem::run(entt::registry& registry) {
 
         trf.position += vel.velocity * deltaTime.value;
 
-        const int windowWidth = config.screenWidth;
-        const int windowHeight = config.screenHeight;
+        const int levelWidth = camera.levelWidth;
+        const int levelHeight = camera.levelHeight;
 
 
         if(trf.position.getX() < 0) {
             trf.position.setX(0);
-        } else if(trf.position.getX() + spr.spriteWidth > windowWidth) {
-            trf.position.setX(windowWidth - spr.spriteWidth);
+        } else if(trf.position.getX() + spr.spriteWidth > levelWidth) {
+            trf.position.setX(levelWidth - spr.spriteWidth);
         }
         if(trf.position.getY() < 0) {
             trf.position.setY(0);
-        } else if(trf.position.getY() + spr.spriteHeight > windowHeight) {
-            trf.position.setY(windowHeight - spr.spriteHeight);
+        } else if(trf.position.getY() + spr.spriteHeight > levelHeight) {
+            trf.position.setY(levelHeight - spr.spriteHeight);
         }
         updateSpritePosition(registry, entity, trf.position);
     }
