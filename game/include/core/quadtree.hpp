@@ -1,6 +1,9 @@
 #ifndef QUADTREE_HPP
 #define QUADTREE_HPP
 
+#include "components/bottom_layer_component.hpp"
+#include "components/collision_layer_component.hpp"
+#include "components/overlay_layer_component.hpp"
 #include "components/sprite_component.hpp"
 #include "components/tile_component.hpp"
 #include "entt/entt.hpp"
@@ -139,7 +142,10 @@ private:
     }
 };
 
-using TileQuadtree = Quadtree<TileComponent>;
-using SpriteQuadtree = Quadtree<SpriteComponent>;
+using ObjectQuadtree = Quadtree<SpriteComponent>;
+
+using BottomLayerQuadtree = Quadtree<BottomLayerComponent>;
+using OverlayLayerQuadtree = Quadtree<OverlayLayerComponent>;
+using CollisionLayerQuadtree = Quadtree<CollisionLayerComponent>;
 
 #endif // QUADTREE_HPP

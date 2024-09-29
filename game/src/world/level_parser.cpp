@@ -1,4 +1,6 @@
 #include <SDL.h>
+#include <iostream>
+#include <string>
 #include "world/level_parser.hpp"
 #include "base64.h"
 #include "components/animation_component.hpp"
@@ -9,17 +11,17 @@
 #include "components/texture_component.hpp"
 #include "components/velocity_component.hpp"
 #include "components/tile_component.hpp"
+#include "components/bottom_layer_component.hpp"
+#include "components/collision_layer_component.hpp"
+#include "components/overlay_layer_component.hpp"
+#include "components/tile_set_component.hpp"
+#include "components/tile_layer_component.hpp"
 #include "core/texture_manager.hpp"
 #include "core/vector_2d.hpp"
 #include "entt/entity/fwd.hpp"
 #include "tinyxml2.h"
 #include "zlib.h"
-#include "components/tile_set_component.hpp"
-#include "components/tile_layer_component.hpp"
 #include "core/trim.hpp"
-#include "systems/debug_system.hpp"
-
-// using namespace tinyxml2;
 
 void LevelParser::parseLevel(entt::registry &registry,
                                const char *levelFile) {
@@ -163,8 +165,6 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
 
 void LevelParser::parseTileLayer(entt::registry &registry,
                                  XMLElement *pTileElement) {
-  // tile data
-  std::vector<std::vector<int>> data;
   std::string decodedIDs;
   XMLElement *pDataNode;
   for (XMLElement *e = pTileElement->FirstChildElement(); e != NULL;
@@ -183,21 +183,20 @@ void LevelParser::parseTileLayer(entt::registry &registry,
   std::vector<unsigned> gids(numGids);
   uncompress((Bytef *)&gids[0], &numGids, (const Bytef *)decodedIDs.c_str(),
              decodedIDs.size());
+  std::string name = pTileElement->Attribute("name");
   auto layerEntity = registry.create();
   auto & tileLayer = registry.emplace<TileLayerComponent>(layerEntity);
-  tileLayer.tileSize = m_tileSize;
-  tileLayer.numColumns = m_width;
-  tileLayer.numRows = m_height;
-  tileLayer.mapWidth = m_width * m_tileSize;
-  tileLayer.mapHeight = m_height * m_tileSize;
   tileLayer.tileSetEntities = m_tilesets;
 
-  registry.emplace<TransformComponent>(layerEntity, Vector2D(0, 0));
-
-  // std::vector<int> layerRow(m_width);
-  // for (int j = 0; j < m_height; j++) {
-  //   data.push_back(layerRow);
-  // }
+  if (name == "Bottom") {
+    registry.emplace<BottomLayerComponent>(layerEntity);
+  }
+  if (name == "Overlay") {
+    registry.emplace<OverlayLayerComponent>(layerEntity);
+  }
+  else if (name == "Collision") {
+    registry.emplace<CollisionLayerComponent>(layerEntity);
+  }
   for (int rows = 0; rows < m_height; rows++) {
     for (int cols = 0; cols < m_width; cols++) {
       int tileId = gids[rows * m_width + cols];

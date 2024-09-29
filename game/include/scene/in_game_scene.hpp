@@ -3,9 +3,12 @@
 
 #include "SDL2/SDL.h"
 #include "components/animation_component.hpp"
+#include "components/bottom_layer_component.hpp"
 #include "components/camera_bounds_component.hpp"
 #include "components/camera_component.hpp"
+#include "components/collision_layer_component.hpp"
 #include "components/follow_component.hpp"
+#include "components/overlay_layer_component.hpp"
 #include "components/player_component.hpp"
 #include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
@@ -24,23 +27,54 @@ private:
         AABB spriteBoundary{0, 0, mapWidth, mapHeight};
 
         // Crear instancias de Quadtrees para tiles y sprites
-        auto tileQuadtree = std::make_shared<TileQuadtree>(tileBoundary, 4);
-        auto spriteQuadtree = std::make_shared<SpriteQuadtree>(spriteBoundary, 4);
+        auto bottomQuadtree = std::make_shared<BottomLayerQuadtree>(tileBoundary, 4);
+        auto overlayQuadtree = std::make_shared<OverlayLayerQuadtree>(tileBoundary, 4);
+        auto collisionQuadtree = std::make_shared<CollisionLayerQuadtree>(tileBoundary, 4);
+        auto spriteQuadtree = std::make_shared<ObjectQuadtree>(spriteBoundary, 4);
 
         // Guardar las instancias en el contexto del registry
-        registry.ctx().emplace<std::shared_ptr<TileQuadtree>>(tileQuadtree);
-        registry.ctx().emplace<std::shared_ptr<SpriteQuadtree>>(spriteQuadtree);
+        registry.ctx().emplace<std::shared_ptr<BottomLayerQuadtree>>(bottomQuadtree);
+        registry.ctx().emplace<std::shared_ptr<OverlayLayerQuadtree>>(overlayQuadtree);
+        registry.ctx().emplace<std::shared_ptr<CollisionLayerQuadtree>>(collisionQuadtree);
+        registry.ctx().emplace<std::shared_ptr<ObjectQuadtree>>(spriteQuadtree);
     }
     void populateTileQuadtree(entt::registry& registry) {
-        auto& tileQuadtree = registry.ctx().get<std::shared_ptr<TileQuadtree>>();
-        auto view = registry.view<TileComponent, TransformComponent>();
-        for (auto entity : view) {
-            auto& transform = view.get<TransformComponent>(entity);
-            tileQuadtree->insert(entity, transform);
+        // auto& tileQuadtree = registry.ctx().get<std::shared_ptr<TileQuadtree>>();
+        // auto view = registry.view<TileComponent, TransformComponent>();
+        // for (auto entity : view) {
+        //     auto& transform = view.get<TransformComponent>(entity);
+        //     tileQuadtree->insert(entity, transform);
+        // }
+        auto& bottomQuadtree = registry.ctx().get<std::shared_ptr<BottomLayerQuadtree>>();
+        auto& overlayQuadtree = registry.ctx().get<std::shared_ptr<OverlayLayerQuadtree>>();
+        auto& collisionQuadtree = registry.ctx().get<std::shared_ptr<CollisionLayerQuadtree>>();
+        auto bView = registry.view<TileLayerComponent, BottomLayerComponent>();
+        for (auto entity : bView) {
+            auto& layer = bView.get<TileLayerComponent>(entity);
+            for (auto tile : layer.tileEntities) {
+                auto& transform = registry.get<TransformComponent>(tile);
+                bottomQuadtree->insert(tile, transform);
+            }
+        }
+        auto oView = registry.view<TileLayerComponent, OverlayLayerComponent>();
+        for (auto entity : oView) {
+            auto& layer = oView.get<TileLayerComponent>(entity);
+            for (auto tile : layer.tileEntities) {
+                auto& transform = registry.get<TransformComponent>(tile);
+                overlayQuadtree->insert(tile, transform);
+            }
+        }
+        auto cView = registry.view<TileLayerComponent, CollisionLayerComponent>();
+        for (auto entity : cView) {
+            auto& layer = cView.get<TileLayerComponent>(entity);
+            for (auto tile : layer.tileEntities) {
+                auto& transform = registry.get<TransformComponent>(tile);
+                collisionQuadtree->insert(tile, transform);
+            }
         }
     }
     void populateSpriteQuadtree(entt::registry& registry) {
-        auto& spriteQuadtree = registry.ctx().get<std::shared_ptr<SpriteQuadtree>>();
+        auto& spriteQuadtree = registry.ctx().get<std::shared_ptr<ObjectQuadtree>>();
 
         auto view = registry.view<TransformComponent, SpriteComponent>();
         for (auto entity : view) {

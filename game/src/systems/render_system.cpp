@@ -9,8 +9,11 @@ void RenderSystem::run(entt::registry &registry) {
   auto config = registry.ctx().get<Config>();
   
   // Obtener Quadtrees desde el contexto
-  auto &tileQuadtree = registry.ctx().get<std::shared_ptr<TileQuadtree>>();
-  auto &spriteQuadtree = registry.ctx().get<std::shared_ptr<SpriteQuadtree>>();
+  auto& bottomQuadtree = registry.ctx().get<std::shared_ptr<BottomLayerQuadtree>>();
+  auto& overlayQuadtree = registry.ctx().get<std::shared_ptr<OverlayLayerQuadtree>>();
+  auto& collisionQuadtree = registry.ctx().get<std::shared_ptr<CollisionLayerQuadtree>>();
+  auto &objectQuadtree = registry.ctx().get<std::shared_ptr<ObjectQuadtree>>();
+
   auto &cameraPos = registry.get<TransformComponent>(registry.view<CameraComponent>().front()).position;
   
   // Obtener área de cámara visible
@@ -19,13 +22,22 @@ void RenderSystem::run(entt::registry &registry) {
     static_cast<int>(cameraPos.getY() - config.screenHeight / 2.0f), // Centrar la cámara en Y
     config.screenWidth, config.screenHeight};
 
-  std::vector<entt::entity> visibleTiles;
-  tileQuadtree->query(cameraView, visibleTiles, registry);
-  Renderer::renderTiles(registry, visibleTiles);
+  std::vector<entt::entity> visibleBottomTiles;
+  bottomQuadtree->query(cameraView, visibleBottomTiles, registry);
+  Renderer::renderTiles(registry, visibleBottomTiles);
+
+  std::vector<entt::entity> visibleOverlayTiles;
+  overlayQuadtree->query(cameraView, visibleOverlayTiles, registry);
+  Renderer::renderTiles(registry, visibleOverlayTiles);
 
   std::vector<entt::entity> visibleSprites;
-  spriteQuadtree->query(cameraView, visibleSprites, registry);
+  objectQuadtree->query(cameraView, visibleSprites, registry);
   Renderer::renderSprites(registry, visibleSprites);
+
+  std::vector<entt::entity> visibleCollisions;
+  collisionQuadtree->query(cameraView, visibleCollisions, registry);
+  Renderer::renderTiles(registry, visibleCollisions);
+
 
   Renderer::renderGUI(registry);
 
