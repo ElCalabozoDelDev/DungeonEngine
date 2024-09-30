@@ -1,30 +1,31 @@
-#include <SDL.h>
-#include <iostream>
-#include <string>
 #include "world/level_parser.hpp"
 #include "base64.h"
 #include "components/animation_component.hpp"
+#include "components/bottom_layer_component.hpp"
+#include "components/collision_component.hpp"
+#include "components/collision_layer_component.hpp"
 #include "components/level_component.hpp"
+#include "components/overlay_layer_component.hpp"
 #include "components/player_component.hpp"
-#include "components/transform_component.hpp"
 #include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
-#include "components/velocity_component.hpp"
 #include "components/tile_component.hpp"
-#include "components/bottom_layer_component.hpp"
-#include "components/collision_layer_component.hpp"
-#include "components/overlay_layer_component.hpp"
-#include "components/tile_set_component.hpp"
 #include "components/tile_layer_component.hpp"
+#include "components/tile_set_component.hpp"
+#include "components/transform_component.hpp"
+#include "components/velocity_component.hpp"
 #include "core/texture_manager.hpp"
+#include "core/trim.hpp"
 #include "core/vector_2d.hpp"
 #include "entt/entity/fwd.hpp"
 #include "tinyxml2.h"
 #include "zlib.h"
-#include "core/trim.hpp"
+#include <SDL.h>
+#include <iostream>
+#include <string>
 
-void LevelParser::parseLevel(entt::registry &registry,
-                               const char *levelFile) {
+
+void LevelParser::parseLevel(entt::registry &registry, const char *levelFile) {
   // create a TinyXML document and load the map XML
   XMLDocument levelDocument;
   levelDocument.LoadFile(levelFile);
@@ -52,20 +53,20 @@ void LevelParser::parseLevel(entt::registry &registry,
   // parse any object layers
   for (XMLElement *e = pRoot->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
-    if (e->Value() == std::string("objectgroup") || e->Value() == std::string("layer")) {
-      if (e->FirstChildElement()->Value() == std::string("object"))
-      {
+    if (e->Value() == std::string("objectgroup") ||
+        e->Value() == std::string("layer")) {
+      if (e->FirstChildElement()->Value() == std::string("object")) {
         parseObjectLayer(registry, e);
-      }
-      else if (e->FirstChildElement()->Value() == std::string("data")||
-                    (e->FirstChildElement()->NextSiblingElement() != 0 && e->FirstChildElement()->NextSiblingElement()->Value() == std::string("data")))
-      {
+      } else if (e->FirstChildElement()->Value() == std::string("data") ||
+                 (e->FirstChildElement()->NextSiblingElement() != 0 &&
+                  e->FirstChildElement()->NextSiblingElement()->Value() ==
+                      std::string("data"))) {
         parseTileLayer(registry, e);
       }
     }
   }
   auto levelEntity = registry.create();
-  auto & levelComponent = registry.emplace<LevelComponent>(levelEntity);
+  auto &levelComponent = registry.emplace<LevelComponent>(levelEntity);
   levelComponent.tilesets = m_tilesets;
   levelComponent.layers = m_layers;
   m_pEntities->push_back(levelEntity);
@@ -76,7 +77,8 @@ void LevelParser::parseTextures(entt::registry &registry,
   // load the textures
   std::string path = pTextureRoot->Attribute("value");
   std::string id = pTextureRoot->Attribute("name");
-  TextureManager::Instance()->load(path, id, registry.ctx().get<SDL_Renderer *>());
+  TextureManager::Instance()->load(path, id,
+                                   registry.ctx().get<SDL_Renderer *>());
 }
 
 void LevelParser::parseTilesets(entt::registry &registry,
@@ -85,7 +87,7 @@ void LevelParser::parseTilesets(entt::registry &registry,
   auto *pRenderer = registry.ctx().get<SDL_Renderer *>();
   std::string assetsTag = "../assets/Levels/";
   // Obtener el atributo "name"
-  const char* nameAttribute = pTilesetRoot->Attribute("name");
+  const char *nameAttribute = pTilesetRoot->Attribute("name");
   // first add the tileset to texture manager
   // create a tileset object
   auto tileSetEntity = registry.create();
@@ -100,7 +102,9 @@ void LevelParser::parseTilesets(entt::registry &registry,
   tileset.margin = pTilesetRoot->IntAttribute("margin");
   tileset.tileCount = pTilesetRoot->IntAttribute("tilecount");
   tileset.numColumns = tileset.width / (tileset.tileWidth + tileset.spacing);
-  TextureManager::Instance()->load(assetsTag.append(pTilesetRoot->FirstChildElement()->Attribute("source")), nameAttribute, pRenderer);
+  TextureManager::Instance()->load(
+      assetsTag.append(pTilesetRoot->FirstChildElement()->Attribute("source")),
+      nameAttribute, pRenderer);
   m_tilesets.push_back(tileSetEntity);
   m_pEntities->push_back(tileSetEntity);
 }
@@ -126,8 +130,8 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
       for (XMLElement *properties = e->FirstChildElement(); properties != NULL;
            properties = properties->NextSiblingElement()) {
         if (properties->Value() == std::string("properties")) {
-          for (XMLElement *prop = properties->FirstChildElement();
-               prop != NULL; prop = prop->NextSiblingElement()) {
+          for (XMLElement *prop = properties->FirstChildElement(); prop != NULL;
+               prop = prop->NextSiblingElement()) {
             if (prop->Value() == std::string("property")) {
               std::string name = prop->Attribute("name");
               std::string value = prop->Attribute("value");
@@ -150,18 +154,19 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
       registry.emplace<TransformComponent>(entity, Vector2D(x, y));
       registry.emplace<TextureComponent>(entity, textureID);
 
-      registry.emplace<SpriteComponent>(entity, width, height, spriteRow, spriteCol, 0);
+      registry.emplace<SpriteComponent>(entity, width, height, spriteRow,
+                                        spriteCol, 0);
       registry.emplace<VelocityComponent>(entity, Vector2D(0, 0));
-      registry.emplace<AnimationComponent>(entity, spriteCol, numFrames, animationTime, 0);
-      if (type == "Player")
-      {
+      registry.emplace<AnimationComponent>(entity, spriteCol, numFrames,
+                                           animationTime, 0);
+      if (type == "Player") {
         registry.emplace<PlayerComponent>(entity);
       }
       m_pEntities->push_back(entity);
       m_layers.push_back(entity);
     }
   }
-} 
+}
 
 void LevelParser::parseTileLayer(entt::registry &registry,
                                  XMLElement *pTileElement) {
@@ -185,7 +190,7 @@ void LevelParser::parseTileLayer(entt::registry &registry,
              decodedIDs.size());
   std::string name = pTileElement->Attribute("name");
   auto layerEntity = registry.create();
-  auto & tileLayer = registry.emplace<TileLayerComponent>(layerEntity);
+  auto &tileLayer = registry.emplace<TileLayerComponent>(layerEntity);
   tileLayer.tileSetEntities = m_tilesets;
 
   if (name == "Bottom") {
@@ -193,10 +198,28 @@ void LevelParser::parseTileLayer(entt::registry &registry,
   }
   if (name == "Overlay") {
     registry.emplace<OverlayLayerComponent>(layerEntity);
-  }
-  else if (name == "Collision") {
+  } else if (name == "Collision") {
     registry.emplace<CollisionLayerComponent>(layerEntity);
   }
+
+  for (XMLElement *e = pTileElement->FirstChildElement(); e != NULL;
+       e = e->NextSiblingElement()) {
+    if (e->Value() == std::string("properties")) {
+      for (XMLElement *prop = e->FirstChildElement(); prop != NULL;
+           prop = prop->NextSiblingElement()) {
+        if (prop->Value() == std::string("property")) {
+          std::string name = prop->Attribute("name");
+          std::string value = prop->Attribute("value");
+          if (name == "Collidable") {
+            if (value == "true") {
+              registry.emplace<CollisionComponent>(layerEntity);
+            }
+          }
+        }
+      }
+    }
+  }
+
   for (int rows = 0; rows < m_height; rows++) {
     for (int cols = 0; cols < m_width; cols++) {
       int tileId = gids[rows * m_width + cols];
@@ -217,6 +240,9 @@ void LevelParser::parseTileLayer(entt::registry &registry,
       m_pEntities->push_back(tileEntity);
     }
   }
+
+  
+
   m_layers.push_back(layerEntity);
   m_pEntities->push_back(layerEntity);
 }
