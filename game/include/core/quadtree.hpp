@@ -28,13 +28,6 @@ struct AABB {
 
 template<typename T>
 class Quadtree {
-private:
-    AABB boundary;
-    int capacity;
-    std::vector<entt::entity> tiles;
-    std::unique_ptr<Quadtree> northeast, northwest, southeast, southwest;
-    bool divided = false;
-
 public:
     int getBoundaryX() const { return boundary.x; }
     int getBoundaryY() const { return boundary.y; }
@@ -89,6 +82,15 @@ public:
         return false;  // No se encontró la entidad en este Quadtree
     }
 
+    void clear() {
+        tiles.clear();
+        divided = false;
+        northeast.reset();
+        northwest.reset();
+        southeast.reset();
+        southwest.reset();
+    }
+
     void query(const AABB& range, std::vector<entt::entity>& found, const entt::registry& registry) const {
         if (!boundary.intersects(range)) {
             return; // No hay intersección con el rango de búsqueda
@@ -112,7 +114,6 @@ public:
     }
 
     void drawQuadtree(SDL_Renderer* renderer, const Quadtree& quadtree) {
-        AABB boundary = quadtree.getBoundary();
         SDL_Rect rect = { boundary.x, boundary.y, boundary.width, boundary.height };
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Color rojo para los nodos del Quadtree
         SDL_RenderDrawRect(renderer, &rect);
@@ -126,6 +127,12 @@ public:
     }
 
 private:
+    AABB boundary;
+    int capacity;
+    std::vector<entt::entity> tiles;
+    std::unique_ptr<Quadtree> northeast, northwest, southeast, southwest;
+    bool divided = false;
+
     void subdivide() {
         int x = boundary.x;
         int y = boundary.y;
