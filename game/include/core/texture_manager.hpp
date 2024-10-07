@@ -1,6 +1,7 @@
 #ifndef TEXTURE_MANAGER_HPP
 #define TEXTURE_MANAGER_HPP
 
+#include <memory>
 #include <string>
 #include "SDL_render.h"
 #include <map>
@@ -11,13 +12,11 @@ public:
     
     static TextureManager* Instance()
     {
-        if(s_pInstance == 0)
+        if(s_pInstance.get() == 0)
         {
-            s_pInstance = new TextureManager();
-            return s_pInstance;
+            s_pInstance.reset(new TextureManager());
         }
-       
-        return s_pInstance;
+        return s_pInstance.get();
     }
     
     bool load(std::string fileName, std::string id, SDL_Renderer* pRenderer);
@@ -31,19 +30,17 @@ public:
     
     std::map<std::string, SDL_Texture*> getTextureMap() { return m_textureMap; }
     
-private:
-    
-    TextureManager() {}
     ~TextureManager() {}
+private:
+    TextureManager() {}
+    
     
     TextureManager(const TextureManager&);
 	TextureManager& operator=(const TextureManager&);
     
     std::map<std::string, SDL_Texture*> m_textureMap;
     
-    static TextureManager* s_pInstance;
+    static std::unique_ptr<TextureManager> s_pInstance;
 };
-
-typedef TextureManager TheTextureManager;
 
 #endif

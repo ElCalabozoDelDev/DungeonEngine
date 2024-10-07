@@ -1,5 +1,6 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
+#include <map>
 #include <string>
 
 struct Config {
@@ -8,6 +9,8 @@ struct Config {
     int screenWidth;
     int screenHeight;
     int frameRate;
+    bool debug;
+    std::map<std::string, std::string> levels;
 };
 
 #endif

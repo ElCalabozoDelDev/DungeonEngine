@@ -11,14 +11,11 @@ BasePlugin::BasePlugin(const std::string &configPath) {
   m_sdl = SDLPlugin();
   m_imgui = ImGuiPlugin();
   m_widget = WidgetPlugin();
-  m_gameXmlPath.path = configPath;
 }
 
 void BasePlugin::mount(GameLoop &gameLoop) {
-
     gameLoop.addSetupCallback([this](entt::registry &registry) {
       registry.ctx().emplace<Config>(m_config);
-      registry.ctx().emplace<GameXmlPath>(m_gameXmlPath);
     });
     gameLoop.addPlugin(m_sdl);
     gameLoop.addPlugin(m_imgui);

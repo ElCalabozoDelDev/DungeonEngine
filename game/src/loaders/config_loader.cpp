@@ -32,10 +32,24 @@ bool ConfigLoader::loadConfigFromXML(const char* path, Config& config) {
         std::cerr << "Failed to load frameRate data from XML" << std::endl;
         return false;
     }
+    tinyxml2::XMLElement* debug = root->FirstChildElement("Debug");
+    if (debug == nullptr) {
+        std::cerr << "Failed to load debug data from XML" << std::endl;
+        return false;
+    }
+    tinyxml2::XMLElement* levels = root->FirstChildElement("Levels");
+    if (levels == nullptr) {
+        std::cerr << "Failed to load levels data from XML" << std::endl;
+        return false;
+    }
+    for (tinyxml2::XMLElement* level = levels->FirstChildElement("Level"); level != nullptr; level = level->NextSiblingElement("Level")) {
+        config.levels[level->Attribute("name")] = level->Attribute("path");
+    }
     config.title = title->GetText();
     config.fullScreen = fullScreen->BoolText();
     config.screenWidth = screen->IntAttribute("width");	
     config.screenHeight = screen->IntAttribute("height");
     config.frameRate = frameRate->IntText();
+    config.debug = debug->BoolText();
     return true;
 }

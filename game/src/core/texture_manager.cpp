@@ -3,7 +3,7 @@
 #include <SDL_render.h>
 #include <iostream>
 
-TextureManager* TextureManager::s_pInstance = 0;
+std::unique_ptr<TextureManager> TextureManager::s_pInstance;
 
 bool TextureManager::load(std::string fileName, std::string id, SDL_Renderer* pRenderer)
 {
