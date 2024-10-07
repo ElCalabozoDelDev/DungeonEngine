@@ -6,7 +6,8 @@
 
 class Render {
 public:
-    virtual void render(entt::registry registry, AABB cameraView) = 0;
+    virtual void draw(entt::registry &registry, AABB cameraView) = 0;
+    virtual ~Render() = default;
 };
 
 #endif // RENDER_HPP

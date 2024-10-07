@@ -23,6 +23,7 @@ void InGameScene::onEnter(entt::registry& registry) {
     initializeQuadtrees(registry, mapWidth, mapHeight);
     populateTileQuadtree(registry);
     populateSpriteQuadtree(registry);
+    initializeRenderers(registry);
     initializeDebug(registry, config.debug);
 }
 

@@ -6,8 +6,6 @@
 #include "graphics/render.hpp"
 
 class RenderSystem final : public System {
-    private:
-        std::vector<std::shared_ptr<Render>> m_renders;
     public:
         void run(entt::registry& registry) override;
 };

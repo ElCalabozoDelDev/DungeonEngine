@@ -4,6 +4,7 @@
 // #include "SDL2/SDL.h"
 #include "components/tile_component.hpp"
 #include "entt/entt.hpp"
+#include "graphics/render.hpp"
 #include "imgui.h"
 #include "imgui/imgui_impl_sdlrenderer2.h"
 #include "components/camera_component.hpp"
@@ -91,6 +92,13 @@ public:
         ImGui::Render();
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
     }
+    static void renderGraphics(entt::registry &registry, AABB &cameraView) {
+        registry.view<std::shared_ptr<Render>>().each([&registry, &cameraView](entt::entity entity, std::shared_ptr<Render> &render) {
+            if (render) {
+                render->draw(registry, cameraView);
+            }
+        });
+    }
 private:
     static entt::entity getTilesetByID(entt::registry& registry, int tileID)
     {
@@ -122,6 +130,5 @@ private:
         entt::entity t;
         return t;
     }
-
 };
 #endif // RENDERER_HPP

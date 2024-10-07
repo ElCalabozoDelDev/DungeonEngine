@@ -14,10 +14,15 @@
 #include "components/texture_component.hpp"
 #include "components/tile_layer_component.hpp"
 #include "components/velocity_component.hpp"
+#include "graphics/render_bottom.hpp"
+#include "graphics/render_collision.hpp"
+#include "graphics/render_object.hpp"
+#include "graphics/render_overlay.hpp"
 #include "scene.hpp"
 #include "core/quadtree.hpp"
 #include "systems/debug_system.hpp"
 #include <iostream>
+#include <memory>
 
 class InGameScene : public Scene {
 private:
@@ -98,6 +103,18 @@ private:
         registry.emplace<TransformComponent>(camera, playerTransform);
         registry.emplace<FollowComponent>(camera, player);
         m_entities.push_back(camera);
+    }
+
+    void initializeRenderers(entt::registry& registry) {
+        // registry renders from top to bottom
+        auto bottomEntity = registry.create();
+        auto overlayEntity = registry.create();
+        auto collisionEntity = registry.create();
+        auto objectEntity = registry.create();
+        registry.emplace<std::shared_ptr<Render>>(collisionEntity, std::make_shared<RenderCollision>());
+        registry.emplace<std::shared_ptr<Render>>(objectEntity, std::make_shared<RenderObject>());
+        registry.emplace<std::shared_ptr<Render>>(overlayEntity, std::make_shared<RenderOverlay>());
+        registry.emplace<std::shared_ptr<Render>>(bottomEntity, std::make_shared<RenderBottom>());
     }
 
     void initializeDebug(entt::registry& registry, bool open) {
