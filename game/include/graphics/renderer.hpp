@@ -17,7 +17,7 @@
 #include "widgets/gui.hpp"
 #include <iostream>
 #include <ostream>
-#include <system_error>
+
 class Renderer {
 public:
     static void renderSprites(entt::registry &registry, std::vector<entt::entity> visibleSprites) {

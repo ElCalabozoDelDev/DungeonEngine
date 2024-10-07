@@ -1,6 +1,6 @@
 #include "systems/render_system.hpp"
 #include "core/quadtree.hpp"
-#include "core/renderer.hpp"
+#include "graphics/renderer.hpp"
 #include "loaders/config.hpp"
 #include <iostream>
 
