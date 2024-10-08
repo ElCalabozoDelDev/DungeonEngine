@@ -37,5 +37,8 @@ void InGameScene::onExit(entt::registry& registry) {
     for (auto entity : m_entities) {
         registry.destroy(entity);
     }
+    for (auto quadtree : m_quadtrees) {
+        quadtree->clear();
+    }
     m_entities.clear();
 }
