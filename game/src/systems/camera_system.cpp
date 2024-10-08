@@ -3,9 +3,9 @@
 #include "components/camera_bounds_component.hpp"
 #include "components/camera_component.hpp"
 #include "components/transform_component.hpp"
+#include "components/velocity_component.hpp"
 #include "core/delta_time.hpp"
 #include "core/vector_2d.hpp"
-#include "loaders/config.hpp"
 
 void CameraSystem::run(entt::registry& registry) {
     auto view = registry.view<CameraComponent, FollowComponent, CameraBoundsComponent, TransformComponent>();
@@ -16,25 +16,31 @@ void CameraSystem::run(entt::registry& registry) {
         auto& follow = view.get<FollowComponent>(entity);
         auto& bounds = view.get<CameraBoundsComponent>(entity);
         auto& transform = view.get<TransformComponent>(entity);
+        auto& targetTransform = registry.get<TransformComponent>(follow.target);
+        auto& targetVelocity = registry.get<VelocityComponent>(follow.target);
 
-        // Obtenemos la posición del jugador
-        Vector2D targetPosition = registry.get<TransformComponent>(follow.target).position;
+        // Predecir la posición del jugador
+        Vector2D predictedPosition = targetTransform.position;
+        Vector2D velocity = targetVelocity.velocity;
 
-        // Aplicamos LERP para un seguimiento suave
-        transform.position.m_x += (targetPosition.m_x - transform.position.m_x) * camera.followSpeed * dt;
-        transform.position.m_y += (targetPosition.m_y - transform.position.m_y) * camera.followSpeed * dt;
+        // Predicción de la posición futura
+        predictedPosition.m_x += velocity.m_x * camera.predictionFactor * dt;
+        predictedPosition.m_y += velocity.m_y * camera.predictionFactor * dt;
+
+        // Aplicar LERP hacia la posición predicha
+        transform.position.m_x += (predictedPosition.m_x - transform.position.m_x) * camera.followSpeed * dt;
+        transform.position.m_y += (predictedPosition.m_y - transform.position.m_y) * camera.followSpeed * dt;
 
         // Limitar la cámara a los límites del nivel
-        float screenWidth = camera.cameraWidth;
-        float screenHeight = camera.cameraHeight;
-
-        // Ajustar los límites en el eje X y Y teniendo en cuenta la mitad del tamaño de la pantalla
-        float halfScreenWidth = screenWidth / 2.0f;
-        float halfScreenHeight = screenHeight / 2.0f;
-
+        float halfScreenWidth = camera.cameraWidth / 2.0f;
+        float halfScreenHeight = camera.cameraHeight / 2.0f;
         transform.position.m_x = std::max(halfScreenWidth, std::min(transform.position.m_x, static_cast<float>(bounds.levelWidth - halfScreenWidth)));
         transform.position.m_y = std::max(halfScreenHeight, std::min(transform.position.m_y, static_cast<float>(bounds.levelHeight - halfScreenHeight)));
-
     }
 }
+
+
+
+
+
 

@@ -1,7 +1,6 @@
 #include "systems/render_system.hpp"
 #include "core/quadtree.hpp"
 #include "graphics/renderer.hpp"
-#include "loaders/config.hpp"
 
 void RenderSystem::run(entt::registry &registry) {
   SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
@@ -19,5 +18,4 @@ void RenderSystem::run(entt::registry &registry) {
   Renderer::renderGUI(registry);
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-
 }
