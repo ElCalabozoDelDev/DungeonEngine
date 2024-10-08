@@ -40,5 +40,6 @@ void InGameScene::onExit(entt::registry& registry) {
     for (auto quadtree : m_quadtrees) {
         quadtree->clear();
     }
+    m_quadtrees.clear();
     m_entities.clear();
 }
