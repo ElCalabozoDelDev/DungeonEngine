@@ -1,10 +1,6 @@
 #ifndef QUADTREE_HPP
 #define QUADTREE_HPP
 
-#include "components/bottom_layer_component.hpp"
-#include "components/collision_layer_component.hpp"
-#include "components/overlay_layer_component.hpp"
-#include "components/sprite_component.hpp"
 #include "entt/entt.hpp"
 #include "components/transform_component.hpp"
 #include <SDL_rect.h>
@@ -26,7 +22,7 @@ struct AABB {
     }
 };
 
-template<typename T>
+// template<typename T>
 class Quadtree {
 public:
     int getBoundaryX() const { return boundary.x; }
@@ -147,11 +143,5 @@ private:
         divided = true;
     }
 };
-
-using ObjectQuadtree = Quadtree<SpriteComponent>;
-
-using BottomLayerQuadtree = Quadtree<BottomLayerComponent>;
-using OverlayLayerQuadtree = Quadtree<OverlayLayerComponent>;
-using CollisionLayerQuadtree = Quadtree<CollisionLayerComponent>;
 
 #endif // QUADTREE_HPP

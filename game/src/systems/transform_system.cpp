@@ -7,7 +7,7 @@
 #include "core/delta_time.hpp"
 #include "loaders/config.hpp"
 #include "core/quadtree.hpp"
-
+#include "core/constants.hpp"
 
 void TransformSystem::run(entt::registry& registry) {
     DeltaTime deltaTime = registry.ctx().get<DeltaTime>();
@@ -44,7 +44,7 @@ void TransformSystem::run(entt::registry& registry) {
 }
 
 void TransformSystem::updateSpritePosition(entt::registry& registry, entt::entity entity, const Vector2D& newPosition) {
-        auto& objectQuadtree = registry.ctx().get<std::shared_ptr<ObjectQuadtree>>();
+        auto& objectQuadtree = registry.ctx().get<std::vector<std::shared_ptr<Quadtree>>>()[LayerType::OBJECT];
 
         // Verificar que la entidad sea válida antes de operar con ella
         if (!registry.valid(entity) || !registry.all_of<TransformComponent>(entity)) {
