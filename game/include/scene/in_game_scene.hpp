@@ -1,8 +1,6 @@
 #ifndef IN_GAME_SCENE_HPP
 #define IN_GAME_SCENE_HPP
 
-#include "SDL2/SDL.h"
-#include "components/animation_component.hpp"
 #include "components/bottom_layer_component.hpp"
 #include "components/camera_bounds_component.hpp"
 #include "components/camera_component.hpp"
@@ -11,9 +9,7 @@
 #include "components/overlay_layer_component.hpp"
 #include "components/player_component.hpp"
 #include "components/sprite_component.hpp"
-#include "components/texture_component.hpp"
 #include "components/tile_layer_component.hpp"
-#include "components/velocity_component.hpp"
 #include "graphics/render_bottom.hpp"
 #include "graphics/render_collision.hpp"
 #include "graphics/render_object.hpp"

@@ -1,6 +1,5 @@
 #include "systems/transform_system.hpp"
 #include "components/camera_bounds_component.hpp"
-#include "components/camera_component.hpp"
 #include "components/transform_component.hpp"
 #include "components/sprite_component.hpp"
 #include "components/velocity_component.hpp"

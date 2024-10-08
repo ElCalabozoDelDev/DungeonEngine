@@ -2,7 +2,6 @@
 #include "core/quadtree.hpp"
 #include "graphics/renderer.hpp"
 #include "loaders/config.hpp"
-#include <iostream>
 
 void RenderSystem::run(entt::registry &registry) {
   SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
