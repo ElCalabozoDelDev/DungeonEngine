@@ -4,6 +4,8 @@
 struct CameraComponent
 {
     float followSpeed = 5.0f;
+    int cameraWidth = 400;
+    int cameraHeight = 300;
 };
 
 #endif

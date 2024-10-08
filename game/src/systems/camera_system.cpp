@@ -24,10 +24,9 @@ void CameraSystem::run(entt::registry& registry) {
         transform.position.m_x += (targetPosition.m_x - transform.position.m_x) * camera.followSpeed * dt;
         transform.position.m_y += (targetPosition.m_y - transform.position.m_y) * camera.followSpeed * dt;
 
-        // Obtenemos la configuración de la pantalla
-        auto config = registry.ctx().get<Config>();
-        float screenWidth = config.screenWidth;
-        float screenHeight = config.screenHeight;
+        // Limitar la cámara a los límites del nivel
+        float screenWidth = camera.cameraWidth;
+        float screenHeight = camera.cameraHeight;
 
         // Ajustar los límites en el eje X y Y teniendo en cuenta la mitad del tamaño de la pantalla
         float halfScreenWidth = screenWidth / 2.0f;

@@ -5,15 +5,16 @@
 
 void RenderSystem::run(entt::registry &registry) {
   SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
-  auto config = registry.ctx().get<Config>();
-
-  auto &cameraPos = registry.get<TransformComponent>(registry.view<CameraComponent>().front()).position;
+  const auto &view = registry.view<CameraComponent, TransformComponent>();
+  auto cameraEntity = *view.begin();
+  auto &camera = view.get<CameraComponent>(cameraEntity);
+  auto &cameraPos = view.get<TransformComponent>(cameraEntity).position;
   
   // Obtener área de cámara visible
   AABB cameraView{
-    static_cast<int>(cameraPos.getX() - config.screenWidth / 2.0f),  // Centrar la cámara en X
-    static_cast<int>(cameraPos.getY() - config.screenHeight / 2.0f), // Centrar la cámara en Y
-    config.screenWidth, config.screenHeight};
+    static_cast<int>(cameraPos.getX() - camera.cameraWidth / 2.0f),  // Centrar la cámara en X
+    static_cast<int>(cameraPos.getY() - camera.cameraHeight / 2.0f), // Centrar la cámara en Y
+    camera.cameraWidth, camera.cameraHeight};
   Renderer::renderGraphics(registry, cameraView);
   Renderer::renderGUI(registry);
 
