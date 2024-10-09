@@ -31,8 +31,8 @@ public:
             auto &tex = registry.get<TextureComponent>(entity);
             auto &spr = registry.get<SpriteComponent>(entity);
             // Ajustar la posición del sprite en base a la cámara
-            int renderX = static_cast<int>(trf.position.getX() - cameraPos.m_x + config.screenWidth / 2.0f);
-            int renderY = static_cast<int>(trf.position.getY() - cameraPos.m_y + config.screenHeight / 2.0f);
+            int renderX = static_cast<int>(trf.position.getX() - cameraPos.getX() + config.screenWidth / 2.0f);
+            int renderY = static_cast<int>(trf.position.getY() - cameraPos.getY() + config.screenHeight / 2.0f);
 
             TextureManager::Instance()->drawFrame(tex.id, renderX, renderY, spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
         }
@@ -56,8 +56,8 @@ public:
             auto& texture = registry.get<TextureComponent>(tilesetId);
 
             // Calcular la posición del tile ajustada por la cámara
-            int renderX = static_cast<int>(trf.position.getX() - cameraPos.m_x + config.screenWidth / 2.0f);
-            int renderY = static_cast<int>(trf.position.getY() - cameraPos.m_y + config.screenHeight / 2.0f);
+            int renderX = static_cast<int>(trf.position.getX() - cameraPos.getX() + config.screenWidth / 2.0f);
+            int renderY = static_cast<int>(trf.position.getY() - cameraPos.getY() + config.screenHeight / 2.0f);
 
             // Verificar si el tile está dentro del área visible de la pantalla
             if (renderX + tileset.tileWidth < 0 || renderX > config.screenWidth ||

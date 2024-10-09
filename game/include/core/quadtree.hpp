@@ -34,7 +34,7 @@ public:
         : boundary(boundary), capacity(capacity) {}
 
     bool insert(entt::entity tile, const TransformComponent& trf) {
-        if (!boundary.contains(trf.position.m_x, trf.position.m_y)) {
+        if (!boundary.contains(trf.position.getX(), trf.position.getY())) {
             return false; // Fuera de los límites
         }
 
@@ -57,7 +57,7 @@ public:
     }
 
     bool remove(entt::entity entity, const TransformComponent& trf) {
-        if (!boundary.contains(trf.position.m_x, trf.position.m_y)) {
+        if (!boundary.contains(trf.position.getX(), trf.position.getY())) {
             return false;  // Fuera de los límites, no puede estar aquí
         }
 
@@ -95,7 +95,7 @@ public:
         // Buscar en las entidades del nodo actual
         for (auto& tile : tiles) {
             auto& trf = registry.get<TransformComponent>(tile);
-            if (range.contains(trf.position.m_x, trf.position.m_y)) {
+            if (range.contains(trf.position.getX(), trf.position.getY())) {
                 found.push_back(tile);
             }
         }
