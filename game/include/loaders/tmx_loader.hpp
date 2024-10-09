@@ -7,20 +7,20 @@
 #include "entt/entt.hpp"
 using namespace tinyxml2;
 
-class LevelParser {
+class TMXLoader {
     public:
-    LevelParser(std::vector<entt::entity> *entities) {
+    TMXLoader(std::vector<entt::entity> *entities) {
         m_pEntities = entities;
     }
-    void parseLevel(entt::registry& registry, const char *levelFile);
+    void loadLevel(entt::registry& registry, const char *levelFile);
     int getTileSize() const { return m_tileSize; }
     int getWidth() const { return m_width; }
     int getHeight() const { return m_height; }
     private:
-    void parseTextures(entt::registry& registry, XMLElement* pTextureRoot);
-    void parseTilesets(entt::registry& registry, XMLElement *pTilesetRoot);
-    void parseObjectLayer(entt::registry& registry, XMLElement* pObjectElement);
-    void parseTileLayer(entt::registry& registry, XMLElement *pTileElement);
+    void loadTextures(entt::registry& registry, XMLElement* pTextureRoot);
+    void loadTilesets(entt::registry& registry, XMLElement *pTilesetRoot);
+    void loadObjectLayer(entt::registry& registry, XMLElement* pObjectElement);
+    void loadTileLayer(entt::registry& registry, XMLElement *pTileElement);
     int m_tileSize;
     int m_width;
     int m_height;

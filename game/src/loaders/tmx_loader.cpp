@@ -1,4 +1,4 @@
-#include "world/level_parser.hpp"
+#include "loaders/tmx_loader.hpp"
 #include "base64.h"
 #include "components/animation_component.hpp"
 #include "components/bottom_layer_component.hpp"
@@ -14,7 +14,7 @@
 #include "components/tile_set_component.hpp"
 #include "components/transform_component.hpp"
 #include "components/velocity_component.hpp"
-#include "core/texture_manager.hpp"
+#include "graphics/texture_manager.hpp"
 #include "core/trim.hpp"
 #include "core/vector_2d.hpp"
 #include "entt/entity/fwd.hpp"
@@ -25,7 +25,7 @@
 #include <string>
 
 
-void LevelParser::parseLevel(entt::registry &registry, const char *levelFile) {
+void TMXLoader::loadLevel(entt::registry &registry, const char *levelFile) {
   // create a TinyXML document and load the map XML
   XMLDocument levelDocument;
   levelDocument.LoadFile(levelFile);
@@ -36,32 +36,32 @@ void LevelParser::parseLevel(entt::registry &registry, const char *levelFile) {
   m_height = pRoot->IntAttribute("height");
 
   XMLElement *pProperties = pRoot->FirstChildElement();
-  // parse the textures
+  // load the textures
   for (XMLElement *e = pProperties->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
     if (e->Value() == std::string("property")) {
-      parseTextures(registry, e);
+      loadTextures(registry, e);
     }
   }
-  // parse the tilesets
+  // load the tilesets
   for (XMLElement *e = pRoot->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
     if (e->Value() == std::string("tileset")) {
-      parseTilesets(registry, e);
+      loadTilesets(registry, e);
     }
   }
-  // parse any object layers
+  // load any object layers
   for (XMLElement *e = pRoot->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
     if (e->Value() == std::string("objectgroup") ||
         e->Value() == std::string("layer")) {
       if (e->FirstChildElement()->Value() == std::string("object")) {
-        parseObjectLayer(registry, e);
+        loadObjectLayer(registry, e);
       } else if (e->FirstChildElement()->Value() == std::string("data") ||
                  (e->FirstChildElement()->NextSiblingElement() != 0 &&
                   e->FirstChildElement()->NextSiblingElement()->Value() ==
                       std::string("data"))) {
-        parseTileLayer(registry, e);
+        loadTileLayer(registry, e);
       }
     }
   }
@@ -72,7 +72,7 @@ void LevelParser::parseLevel(entt::registry &registry, const char *levelFile) {
   m_pEntities->push_back(levelEntity);
 }
 
-void LevelParser::parseTextures(entt::registry &registry,
+void TMXLoader::loadTextures(entt::registry &registry,
                                 XMLElement *pTextureRoot) {
   // load the textures
   std::string path = pTextureRoot->Attribute("value");
@@ -81,7 +81,7 @@ void LevelParser::parseTextures(entt::registry &registry,
                                    registry.ctx().get<SDL_Renderer *>());
 }
 
-void LevelParser::parseTilesets(entt::registry &registry,
+void TMXLoader::loadTilesets(entt::registry &registry,
                                 XMLElement *pTilesetRoot) {
 
   auto *pRenderer = registry.ctx().get<SDL_Renderer *>();
@@ -109,7 +109,7 @@ void LevelParser::parseTilesets(entt::registry &registry,
   m_pEntities->push_back(tileSetEntity);
 }
 
-void LevelParser::parseObjectLayer(entt::registry &registry,
+void TMXLoader::loadObjectLayer(entt::registry &registry,
                                    XMLElement *pObjectElement) {
   for (XMLElement *e = pObjectElement->FirstChildElement(); e != NULL;
        e = e->NextSiblingElement()) {
@@ -168,7 +168,7 @@ void LevelParser::parseObjectLayer(entt::registry &registry,
   }
 }
 
-void LevelParser::parseTileLayer(entt::registry &registry,
+void TMXLoader::loadTileLayer(entt::registry &registry,
                                  XMLElement *pTileElement) {
   std::string decodedIDs;
   XMLElement *pDataNode;

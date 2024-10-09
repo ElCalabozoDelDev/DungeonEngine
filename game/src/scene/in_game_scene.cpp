@@ -1,7 +1,6 @@
 #include "scene/in_game_scene.hpp"
 #include "loaders/config.hpp"
-#include "world/level_parser.hpp"
-#include "components/level_component.hpp"
+#include "loaders/tmx_loader.hpp"
 
 // Este método se ejecuta cuando se entra a la escena
 void InGameScene::onEnter(entt::registry& registry) {
@@ -11,13 +10,13 @@ void InGameScene::onEnter(entt::registry& registry) {
 
     // Siguiendo al jugador
     // Todo: desacoplar logica de level y dejarlo mas cercano a ECS
-    LevelParser levelParser = LevelParser(&m_entities);
-    levelParser.parseLevel(registry, config.levels["level1"].c_str());
+    TMXLoader tmxLoader = TMXLoader(&m_entities);
+    tmxLoader.loadLevel(registry, config.levels["level1"].c_str());
 
 
     // Inicializar la cámara
-    int mapWidth = levelParser.getWidth() * levelParser.getTileSize();
-    int mapHeight = levelParser.getHeight() * levelParser.getTileSize();
+    int mapWidth = tmxLoader.getWidth() * tmxLoader.getTileSize();
+    int mapHeight = tmxLoader.getHeight() * tmxLoader.getTileSize();
     initializeCamera(registry, mapWidth, mapHeight);
     
     initializeQuadtrees(registry, mapWidth, mapHeight);

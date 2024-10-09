@@ -10,7 +10,7 @@
 #include "components/camera_component.hpp"
 #include "components/tile_layer_component.hpp"
 #include "components/tile_set_component.hpp"
-#include "core/texture_manager.hpp"
+#include "graphics/texture_manager.hpp"
 #include "components/transform_component.hpp"
 #include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
