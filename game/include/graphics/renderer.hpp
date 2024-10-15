@@ -4,9 +4,6 @@
 // #include "SDL2/SDL.h"
 #include "components/tile_component.hpp"
 #include "entt/entt.hpp"
-#include "graphics/render.hpp"
-#include "imgui.h"
-#include "imgui/imgui_impl_sdlrenderer2.h"
 #include "components/camera_component.hpp"
 #include "components/tile_layer_component.hpp"
 #include "components/tile_set_component.hpp"
@@ -15,7 +12,6 @@
 #include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
 #include "loaders/config.hpp"
-#include "widgets/gui.hpp"
 #include <iostream>
 #include <ostream>
 
@@ -82,23 +78,6 @@ public:
         SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 255);  // Fondo negro
     }
 
-    static void renderGUI(entt::registry &registry) {
-        SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
-        registry.view<std::unique_ptr<gui::WidgetComponent>>().each([&registry](auto entity, auto &widget_component) {
-            widget_component->frame_begin();
-            widget_component->frame_update(registry);
-            widget_component->frame_end();
-        });
-        ImGui::Render();
-        ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
-    }
-    static void renderGraphics(entt::registry &registry, AABB &cameraView) {
-        registry.view<std::shared_ptr<Render>>().each([&registry, &cameraView](entt::entity entity, std::shared_ptr<Render> &render) {
-            if (render) {
-                render->draw(registry, cameraView);
-            }
-        });
-    }
 private:
     static entt::entity getTilesetByID(entt::registry& registry, int tileID)
     {
