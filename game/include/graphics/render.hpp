@@ -6,7 +6,7 @@
 
 class Render {
 public:
-    virtual void draw(entt::registry &registry, AABB cameraView, float offsetX, float offsetY) = 0;
+    virtual void draw(entt::registry &registry, AABB cameraView, float offsetX, float offsetY, float zoomLevel) = 0;
     virtual ~Render() = default;
 };
 

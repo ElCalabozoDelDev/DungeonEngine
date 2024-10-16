@@ -7,6 +7,6 @@
 
 class RenderCollision : public Render {
 public:
-    void draw(entt::registry& registry, AABB cameraView, float offsetX, float offsetY) override;
+    void draw(entt::registry& registry, AABB cameraView, float offsetX, float offsetY, float zoomLevel) override;
 };
 #endif // RENDER_COLLISION_HPP

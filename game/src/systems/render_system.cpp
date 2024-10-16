@@ -28,25 +28,29 @@ void RenderSystem::renderGUI(entt::registry& registry) {
 }
 void RenderSystem::renderGraphics(entt::registry& registry) {
 	const auto& view = registry.view<CameraComponent, TransformComponent>();
-	auto cameraEntity = *view.begin();
-	auto& camera = view.get<CameraComponent>(cameraEntity);
-	auto& cameraPos = view.get<TransformComponent>(cameraEntity).position;
-	auto& dimension = registry.get<DimensionComponent>(cameraEntity);
+    auto cameraEntity = *view.begin();
+    auto& camera = view.get<CameraComponent>(cameraEntity);
+    auto& cameraPos = view.get<TransformComponent>(cameraEntity).position;
+    auto& dimension = registry.get<DimensionComponent>(cameraEntity);
 
-	// Obtener el nivel de zoom
-	float zoomLevel = camera.zoomLevel;
+    // Obtener el nivel de zoom
+    float zoomLevel = camera.zoomLevel;
 
-	// Calcular la posición ajustada por el zoom
-	int adjustedCameraWidth = static_cast<int>(dimension.width / zoomLevel);
-	int adjustedCameraHeight = static_cast<int>(dimension.height / zoomLevel);
+    // Calcular el ancho y alto ajustados por el zoom
+    int adjustedCameraWidth = static_cast<int>(dimension.width / zoomLevel);
+    int adjustedCameraHeight = static_cast<int>(dimension.height / zoomLevel);
 
-	// Obtener área de cámara visible
-	AABB cameraView{
-		static_cast<int>(cameraPos.getX() - adjustedCameraWidth / 2.0f),  // Ajustar el centro de la cámara
-		static_cast<int>(cameraPos.getY() - adjustedCameraHeight / 2.0f), // Ajustar el centro de la cámara
-		adjustedCameraWidth,  // Ajustar el ancho con zoom
-		adjustedCameraHeight  // Ajustar el alto con zoom
-	};
+    // Calcular la posición ajustada por el zoom para centrar la cámara
+    float halfAdjustedWidth = adjustedCameraWidth / 2.0f;
+    float halfAdjustedHeight = adjustedCameraHeight / 2.0f;
+	int margin = 32;
+    // Ajustar el área visible de la cámara
+    AABB cameraView{
+        static_cast<int>(cameraPos.getX() - halfAdjustedWidth),  // Ajustar el centro de la cámara en X
+        static_cast<int>(cameraPos.getY() - halfAdjustedHeight), // Ajustar el centro de la cámara en Y
+        adjustedCameraWidth,  // Ajustar el ancho con zoom
+        adjustedCameraHeight  // Ajustar el alto con zoom
+    };
 
 
 
@@ -55,7 +59,7 @@ void RenderSystem::renderGraphics(entt::registry& registry) {
 		[&registry, &cameraView, camera](entt::entity entity,
 			std::shared_ptr<Render>& render) {
 				if (render) {
-					render->draw(registry, cameraView, camera.viewportOffsetX, camera.viewportOffsetY);
+					render->draw(registry, cameraView, camera.viewportOffsetX, camera.viewportOffsetY, camera.zoomLevel);
 				}
 		});
 }

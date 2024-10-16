@@ -18,7 +18,7 @@
 
 class Renderer {
 public:
-	static void renderSprites(entt::registry& registry, std::vector<entt::entity> visibleSprites, float offsetX, float offsetY) {
+	static void renderSprites(entt::registry& registry, std::vector<entt::entity> visibleSprites, float offsetX, float offsetY, float zoomLevel) {
 		SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
 		auto config = registry.ctx().get<Config>();
 		// Obtener la posición de la cámara
@@ -29,15 +29,15 @@ public:
 			auto& spr = registry.get<SpriteComponent>(entity);
 			auto& dim = registry.get<DimensionComponent>(entity);
 			// Ajustar la posición del sprite en base a la cámara
-			int renderX = static_cast<int>(trf.position.getX() - cameraPos.getX() + config.screenWidth / 2.0f) + offsetX;
-			int renderY = static_cast<int>(trf.position.getY() - cameraPos.getY() + config.screenHeight / 2.0f) + offsetY;
+			int renderX = static_cast<int>((trf.position.getX() - cameraPos.getX()) * zoomLevel + config.screenWidth / 2.0f + offsetX);
+			int renderY = static_cast<int>((trf.position.getY() - cameraPos.getY()) * zoomLevel + config.screenHeight / 2.0f + offsetY);
 
-			TextureManager::Instance()->drawFrame(tex.id, renderX, renderY, dim.width, dim.height, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
+			TextureManager::Instance()->drawFrame(tex.id, renderX, renderY, dim.width, dim.height, spr.spriteRow, spr.currentSprite, renderer, 0, 255, zoomLevel, SDL_FLIP_NONE);
 		}
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	}
 
-	static void renderTiles(entt::registry& registry, std::vector<entt::entity> visibleTiles, float offsetX, float offsetY) {
+	static void renderTiles(entt::registry& registry, std::vector<entt::entity> visibleTiles, float offsetX, float offsetY, float zoomLevel) {
 		auto config = registry.ctx().get<Config>();
 		auto* pRenderer = registry.ctx().get<SDL_Renderer*>();
 		// Obtener la posición de la cámara
@@ -55,8 +55,8 @@ public:
 			auto& dimension = registry.get<DimensionComponent>(tilesetId);
 
 			// Calcular la posición del tile ajustada por la cámara
-			int renderX = static_cast<int>(trf.position.getX() - cameraPos.getX() + config.screenWidth / 2.0f) + offsetX;
-			int renderY = static_cast<int>(trf.position.getY() - cameraPos.getY() + config.screenHeight / 2.0f) + offsetY;
+			int renderX = static_cast<int>((trf.position.getX() - cameraPos.getX()) * zoomLevel + config.screenWidth / 2.0f + offsetX);
+			int renderY = static_cast<int>((trf.position.getY() - cameraPos.getY()) * zoomLevel + config.screenHeight / 2.0f + offsetY);
 
 			// Calcular la posición del tile dentro del tileset
 			int tileIndex = tile.tileId - tileset.firstGridID;
@@ -67,7 +67,7 @@ public:
 			TextureManager::Instance()->drawTile(
 				texture.id, tileset.margin, tileset.spacing,
 				renderX, renderY, dimension.width, dimension.height,
-				tileRow, tileCol, pRenderer
+				tileRow, tileCol, zoomLevel, pRenderer
 			);
 		}
 
