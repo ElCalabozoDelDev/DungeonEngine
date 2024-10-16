@@ -5,6 +5,7 @@
 #include "imgui/imgui_impl_sdlrenderer2.h"
 #include "widgets/gui.hpp"
 #include "components/camera_component.hpp"
+#include <components/dimension_component.hpp>
 void RenderSystem::run(entt::registry& registry) {
 	SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
 
@@ -30,13 +31,26 @@ void RenderSystem::renderGraphics(entt::registry& registry) {
 	auto cameraEntity = *view.begin();
 	auto& camera = view.get<CameraComponent>(cameraEntity);
 	auto& cameraPos = view.get<TransformComponent>(cameraEntity).position;
+	auto& dimension = registry.get<DimensionComponent>(cameraEntity);
+
+	// Obtener el nivel de zoom
+	float zoomLevel = camera.zoomLevel;
+
+	// Calcular la posición ajustada por el zoom
+	int adjustedCameraWidth = static_cast<int>(dimension.width / zoomLevel);
+	int adjustedCameraHeight = static_cast<int>(dimension.height / zoomLevel);
 
 	// Obtener área de cámara visible
 	AABB cameraView{
-		static_cast<int>(cameraPos.getX() - camera.cameraWidth / 2.0f), // Centrar la cámara en X
-		static_cast<int>(cameraPos.getY() - camera.cameraHeight / 2.0f), // Centrar la cámara en Y
-		camera.cameraWidth, camera.cameraHeight 
+		static_cast<int>(cameraPos.getX() - adjustedCameraWidth / 2.0f),  // Ajustar el centro de la cámara
+		static_cast<int>(cameraPos.getY() - adjustedCameraHeight / 2.0f), // Ajustar el centro de la cámara
+		adjustedCameraWidth,  // Ajustar el ancho con zoom
+		adjustedCameraHeight  // Ajustar el alto con zoom
 	};
+
+
+
+
 	registry.view<std::shared_ptr<Render>>().each(
 		[&registry, &cameraView, camera](entt::entity entity,
 			std::shared_ptr<Render>& render) {

@@ -6,9 +6,10 @@
 #include "components/velocity_component.hpp"
 #include "core/delta_time.hpp"
 #include "core/vector_2d.hpp"
+#include <components/dimension_component.hpp>
 
 void CameraSystem::run(entt::registry& registry) {
-    auto view = registry.view<CameraComponent, FollowComponent, CameraBoundsComponent, TransformComponent>();
+    auto view = registry.view<CameraComponent, FollowComponent, CameraBoundsComponent, TransformComponent, DimensionComponent>();
     auto &dt = registry.ctx().get<DeltaTime>().value;
 
     for (auto entity : view) {
@@ -18,6 +19,7 @@ void CameraSystem::run(entt::registry& registry) {
         auto& transform = view.get<TransformComponent>(entity);
         auto& targetTransform = registry.get<TransformComponent>(follow.target);
         auto& targetVelocity = registry.get<VelocityComponent>(follow.target);
+		auto& dimension = view.get<DimensionComponent>(entity);
 
         // Predecir la posición del jugador
         Vector2D predictedPosition = targetTransform.position;
@@ -32,8 +34,8 @@ void CameraSystem::run(entt::registry& registry) {
         transform.position.setY(transform.position.getY() + (predictedPosition.getY() - transform.position.getY()) * camera.followSpeed * dt);
 
         // Limitar la cámara a los límites del nivel
-        float halfScreenWidth = camera.cameraWidth / 2.0f;
-        float halfScreenHeight = camera.cameraHeight / 2.0f;
+        float halfScreenWidth = (dimension.width / 2.0f) / camera.zoomLevel;
+        float halfScreenHeight = (dimension.height / 2.0f) / camera.zoomLevel;
         transform.position.setX(std::max(halfScreenWidth, std::min(transform.position.getX(), static_cast<float>(bounds.levelWidth - halfScreenWidth))));
         transform.position.setY(std::max(halfScreenHeight, std::min(transform.position.getY(), static_cast<float>(bounds.levelHeight - halfScreenHeight))));
     }

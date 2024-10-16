@@ -14,6 +14,7 @@ struct Config {
 	float cameraHeight;
 	float viewportOffsetX;
 	float viewportOffsetY;
+	float zoomLevel;
     std::map<std::string, std::string> levels;
 };
 

@@ -22,6 +22,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <components/dimension_component.hpp>
 
 class InGameScene : public Scene {
 private:
@@ -74,11 +75,11 @@ private:
     void initializeCamera(entt::registry& registry, int mapWidth, int mapHeight, Config config) {
 
         auto cameraEntity = registry.create();
+		registry.emplace<DimensionComponent>(cameraEntity, config.cameraWidth, config.cameraHeight);
         auto & camera = registry.emplace<CameraComponent>(cameraEntity);
-		camera.cameraWidth = config.cameraWidth;
-		camera.cameraHeight = config.cameraHeight;
 		camera.viewportOffsetX = config.viewportOffsetX;
 		camera.viewportOffsetY = config.viewportOffsetY;
+		camera.zoomLevel = config.zoomLevel;
         registry.emplace<CameraBoundsComponent>(cameraEntity, mapWidth, mapHeight);
         auto view = registry.view<PlayerComponent>();
         if(view.empty()) {

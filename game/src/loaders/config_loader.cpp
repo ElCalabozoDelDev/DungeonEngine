@@ -60,5 +60,6 @@ bool ConfigLoader::loadConfigFromXML(const char* path, Config& config) {
 	config.cameraHeight = camera->FloatAttribute("height");
 	config.viewportOffsetX = camera->FloatAttribute("offsetX");
 	config.viewportOffsetY = camera->FloatAttribute("offsetY");
+	config.zoomLevel = camera->FloatAttribute("zoomLevel");
     return true;
 }

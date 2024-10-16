@@ -14,6 +14,7 @@
 #include "loaders/config.hpp"
 #include <iostream>
 #include <ostream>
+#include <components/dimension_component.hpp>
 
 class Renderer {
 public:
@@ -26,11 +27,12 @@ public:
 			auto& trf = registry.get<TransformComponent>(entity);
 			auto& tex = registry.get<TextureComponent>(entity);
 			auto& spr = registry.get<SpriteComponent>(entity);
+			auto& dim = registry.get<DimensionComponent>(entity);
 			// Ajustar la posición del sprite en base a la cámara
 			int renderX = static_cast<int>(trf.position.getX() - cameraPos.getX() + config.screenWidth / 2.0f) + offsetX;
 			int renderY = static_cast<int>(trf.position.getY() - cameraPos.getY() + config.screenHeight / 2.0f) + offsetY;
 
-			TextureManager::Instance()->drawFrame(tex.id, renderX, renderY, spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
+			TextureManager::Instance()->drawFrame(tex.id, renderX, renderY, dim.width, dim.height, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
 		}
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	}
@@ -50,16 +52,11 @@ public:
 			entt::entity tilesetId = getTilesetByID(registry, tile.tileId);
 			auto& tileset = registry.get<TileSetComponent>(tilesetId);
 			auto& texture = registry.get<TextureComponent>(tilesetId);
+			auto& dimension = registry.get<DimensionComponent>(tilesetId);
 
 			// Calcular la posición del tile ajustada por la cámara
 			int renderX = static_cast<int>(trf.position.getX() - cameraPos.getX() + config.screenWidth / 2.0f) + offsetX;
 			int renderY = static_cast<int>(trf.position.getY() - cameraPos.getY() + config.screenHeight / 2.0f) + offsetY;
-
-			// Verificar si el tile está dentro del área visible de la pantalla
-			if (renderX + tileset.tileWidth < 0 || renderX > config.screenWidth ||
-				renderY + tileset.tileHeight < 0 || renderY > config.screenHeight) {
-				continue;  // Tile fuera de la pantalla, no dibujar
-			}
 
 			// Calcular la posición del tile dentro del tileset
 			int tileIndex = tile.tileId - tileset.firstGridID;
@@ -69,7 +66,7 @@ public:
 			// Renderizar el tile
 			TextureManager::Instance()->drawTile(
 				texture.id, tileset.margin, tileset.spacing,
-				renderX, renderY, tileset.tileWidth, tileset.tileHeight,
+				renderX, renderY, dimension.width, dimension.height,
 				tileRow, tileCol, pRenderer
 			);
 		}

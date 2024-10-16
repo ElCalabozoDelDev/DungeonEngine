@@ -5,8 +5,6 @@ struct CameraComponent
 {
     float followSpeed = 5.0f;
     float zoomLevel = 1.0f;
-    int cameraWidth = 400;
-    int cameraHeight = 300;
     float predictionFactor = 0.1f;
     float minZoom = 0.5f;
     float maxZoom = 2.0f;

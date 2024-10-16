@@ -7,6 +7,7 @@
 #include "loaders/config.hpp"
 #include "core/quadtree.hpp"
 #include "core/constants.hpp"
+#include <components/dimension_component.hpp>
 
 void TransformSystem::run(entt::registry& registry) {
     DeltaTime deltaTime = registry.ctx().get<DeltaTime>();
@@ -16,11 +17,12 @@ void TransformSystem::run(entt::registry& registry) {
     auto cameraEntity = *camView.begin();
     auto& camera = registry.get<CameraBoundsComponent>(cameraEntity);
 
-    auto view = registry.view<TransformComponent, VelocityComponent, SpriteComponent>();
+    auto view = registry.view<TransformComponent, VelocityComponent, SpriteComponent, DimensionComponent>();
     for (auto entity : view) {
         auto& trf = view.get<TransformComponent>(entity);
         auto& vel = view.get<VelocityComponent>(entity);
         auto& spr = view.get<SpriteComponent>(entity);
+		auto& dim = view.get<DimensionComponent>(entity);
 
         trf.position += vel.velocity * deltaTime.value;
 
@@ -30,13 +32,13 @@ void TransformSystem::run(entt::registry& registry) {
 
         if(trf.position.getX() < 0) {
             trf.position.setX(0);
-        } else if(trf.position.getX() + spr.spriteWidth > levelWidth) {
-            trf.position.setX(levelWidth - spr.spriteWidth);
+        } else if(trf.position.getX() + dim.width > levelWidth) {
+            trf.position.setX(levelWidth - dim.width);
         }
         if(trf.position.getY() < 0) {
             trf.position.setY(0);
-        } else if(trf.position.getY() + spr.spriteHeight > levelHeight) {
-            trf.position.setY(levelHeight - spr.spriteHeight);
+        } else if(trf.position.getY() + dim.height > levelHeight) {
+            trf.position.setY(levelHeight - dim.height);
         }
         updateSpritePosition(registry, entity, trf.position);
     }
