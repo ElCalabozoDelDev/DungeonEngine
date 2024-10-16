@@ -2,11 +2,11 @@
 #include "graphics/renderer.hpp"
 #include "core/constants.hpp"
 
-void RenderOverlay::draw(entt::registry &registry, AABB cameraView) {
+void RenderOverlay::draw(entt::registry& registry, AABB cameraView, float offsetX, float offsetY) {
     // Obtener Quadtrees desde el contexto
     auto &overlayQuadtree = registry.ctx().get<std::vector<std::shared_ptr<Quadtree>>>()[LayerType::OVERLAY];
 
     std::vector<entt::entity> visibleOverlayTiles;
     overlayQuadtree->query(cameraView, visibleOverlayTiles, registry);
-    Renderer::renderTiles(registry, visibleOverlayTiles);
+    Renderer::renderTiles(registry, visibleOverlayTiles, offsetX, offsetY);
 }

@@ -1,5 +1,4 @@
 #include "scene/in_game_scene.hpp"
-#include "loaders/config.hpp"
 #include "loaders/tmx_loader.hpp"
 
 // Este método se ejecuta cuando se entra a la escena
@@ -17,7 +16,7 @@ void InGameScene::onEnter(entt::registry& registry) {
     // Inicializar la cámara
     int mapWidth = tmxLoader.getWidth() * tmxLoader.getTileSize();
     int mapHeight = tmxLoader.getHeight() * tmxLoader.getTileSize();
-    initializeCamera(registry, mapWidth, mapHeight);
+    initializeCamera(registry, mapWidth, mapHeight, config);
     
     initializeQuadtrees(registry, mapWidth, mapHeight);
     populateTileQuadtree(registry);

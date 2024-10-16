@@ -10,6 +10,8 @@ struct CameraComponent
     float predictionFactor = 0.1f;
     float minZoom = 0.5f;
     float maxZoom = 2.0f;
+    float viewportOffsetX = -200;
+    float viewportOffsetY = -100;
 };
 
 #endif

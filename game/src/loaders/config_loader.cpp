@@ -37,6 +37,11 @@ bool ConfigLoader::loadConfigFromXML(const char* path, Config& config) {
         std::cerr << "Failed to load debug data from XML" << std::endl;
         return false;
     }
+	tinyxml2::XMLElement* camera = root->FirstChildElement("Camera");
+	if (camera == nullptr) {
+		std::cerr << "Failed to load camera data from XML" << std::endl;
+		return false;
+	}
     tinyxml2::XMLElement* levels = root->FirstChildElement("Levels");
     if (levels == nullptr) {
         std::cerr << "Failed to load levels data from XML" << std::endl;
@@ -51,5 +56,9 @@ bool ConfigLoader::loadConfigFromXML(const char* path, Config& config) {
     config.screenHeight = screen->IntAttribute("height");
     config.frameRate = frameRate->IntText();
     config.debug = debug->BoolText();
+	config.cameraWidth = camera->FloatAttribute("width");
+	config.cameraHeight = camera->FloatAttribute("height");
+	config.viewportOffsetX = camera->FloatAttribute("offsetX");
+	config.viewportOffsetY = camera->FloatAttribute("offsetY");
     return true;
 }

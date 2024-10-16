@@ -17,97 +17,97 @@
 
 class Renderer {
 public:
-    static void renderSprites(entt::registry &registry, std::vector<entt::entity> visibleSprites) {
-        SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
-        auto config = registry.ctx().get<Config>();
-        // Obtener la posición de la cámara
-        auto cameraPos = registry.get<TransformComponent>(registry.view<CameraComponent>().front()).position;
-        for (auto entity : visibleSprites) {
-            auto &trf = registry.get<TransformComponent>(entity);
-            auto &tex = registry.get<TextureComponent>(entity);
-            auto &spr = registry.get<SpriteComponent>(entity);
-            // Ajustar la posición del sprite en base a la cámara
-            int renderX = static_cast<int>(trf.position.getX() - cameraPos.getX() + config.screenWidth / 2.0f);
-            int renderY = static_cast<int>(trf.position.getY() - cameraPos.getY() + config.screenHeight / 2.0f);
+	static void renderSprites(entt::registry& registry, std::vector<entt::entity> visibleSprites, float offsetX, float offsetY) {
+		SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
+		auto config = registry.ctx().get<Config>();
+		// Obtener la posición de la cámara
+		auto cameraPos = registry.get<TransformComponent>(registry.view<CameraComponent>().front()).position;
+		for (auto entity : visibleSprites) {
+			auto& trf = registry.get<TransformComponent>(entity);
+			auto& tex = registry.get<TextureComponent>(entity);
+			auto& spr = registry.get<SpriteComponent>(entity);
+			// Ajustar la posición del sprite en base a la cámara
+			int renderX = static_cast<int>(trf.position.getX() - cameraPos.getX() + config.screenWidth / 2.0f) + offsetX;
+			int renderY = static_cast<int>(trf.position.getY() - cameraPos.getY() + config.screenHeight / 2.0f) + offsetY;
 
-            TextureManager::Instance()->drawFrame(tex.id, renderX, renderY, spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
-        }
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    }
+			TextureManager::Instance()->drawFrame(tex.id, renderX, renderY, spr.spriteWidth, spr.spriteHeight, spr.spriteRow, spr.currentSprite, renderer, 0, 255, SDL_FLIP_NONE);
+		}
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	}
 
-    static void renderTiles(entt::registry& registry, std::vector<entt::entity> visibleTiles) {
-        auto config = registry.ctx().get<Config>();
-        auto *pRenderer = registry.ctx().get<SDL_Renderer *>();
-        // Obtener la posición de la cámara
-        auto cameraPos = registry.get<TransformComponent>(registry.view<CameraComponent>().front()).position;
+	static void renderTiles(entt::registry& registry, std::vector<entt::entity> visibleTiles, float offsetX, float offsetY) {
+		auto config = registry.ctx().get<Config>();
+		auto* pRenderer = registry.ctx().get<SDL_Renderer*>();
+		// Obtener la posición de la cámara
+		auto cameraPos = registry.get<TransformComponent>(registry.view<CameraComponent>().front()).position;
 
-        for (auto entity : visibleTiles) {
-            // Obtener los componentes del tile
-            auto& trf = registry.get<TransformComponent>(entity);
-            auto& tile = registry.get<TileComponent>(entity);
+		for (auto entity : visibleTiles) {
+			// Obtener los componentes del tile
+			auto& trf = registry.get<TransformComponent>(entity);
+			auto& tile = registry.get<TileComponent>(entity);
 
-            // Encontrar el tileset correspondiente al tile
-            entt::entity tilesetId = getTilesetByID(registry, tile.tileId);
-            auto& tileset = registry.get<TileSetComponent>(tilesetId);
-            auto& texture = registry.get<TextureComponent>(tilesetId);
+			// Encontrar el tileset correspondiente al tile
+			entt::entity tilesetId = getTilesetByID(registry, tile.tileId);
+			auto& tileset = registry.get<TileSetComponent>(tilesetId);
+			auto& texture = registry.get<TextureComponent>(tilesetId);
 
-            // Calcular la posición del tile ajustada por la cámara
-            int renderX = static_cast<int>(trf.position.getX() - cameraPos.getX() + config.screenWidth / 2.0f);
-            int renderY = static_cast<int>(trf.position.getY() - cameraPos.getY() + config.screenHeight / 2.0f);
+			// Calcular la posición del tile ajustada por la cámara
+			int renderX = static_cast<int>(trf.position.getX() - cameraPos.getX() + config.screenWidth / 2.0f) + offsetX;
+			int renderY = static_cast<int>(trf.position.getY() - cameraPos.getY() + config.screenHeight / 2.0f) + offsetY;
 
-            // Verificar si el tile está dentro del área visible de la pantalla
-            if (renderX + tileset.tileWidth < 0 || renderX > config.screenWidth ||
-                renderY + tileset.tileHeight < 0 || renderY > config.screenHeight) {
-                continue;  // Tile fuera de la pantalla, no dibujar
-            }
+			// Verificar si el tile está dentro del área visible de la pantalla
+			if (renderX + tileset.tileWidth < 0 || renderX > config.screenWidth ||
+				renderY + tileset.tileHeight < 0 || renderY > config.screenHeight) {
+				continue;  // Tile fuera de la pantalla, no dibujar
+			}
 
-            // Calcular la posición del tile dentro del tileset
-            int tileIndex = tile.tileId - tileset.firstGridID;
-            int tileRow = tileIndex / tileset.numColumns;
-            int tileCol = tileIndex % tileset.numColumns;
+			// Calcular la posición del tile dentro del tileset
+			int tileIndex = tile.tileId - tileset.firstGridID;
+			int tileRow = tileIndex / tileset.numColumns;
+			int tileCol = tileIndex % tileset.numColumns;
 
-            // Renderizar el tile
-            TextureManager::Instance()->drawTile(
-                texture.id, tileset.margin, tileset.spacing,
-                renderX, renderY, tileset.tileWidth, tileset.tileHeight,
-                tileRow, tileCol, pRenderer
-            );
-        }
+			// Renderizar el tile
+			TextureManager::Instance()->drawTile(
+				texture.id, tileset.margin, tileset.spacing,
+				renderX, renderY, tileset.tileWidth, tileset.tileHeight,
+				tileRow, tileCol, pRenderer
+			);
+		}
 
-        // Opcional: establecer el color de fondo del renderizador
-        SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 255);  // Fondo negro
-    }
+		// Opcional: establecer el color de fondo del renderizador
+		SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 255);  // Fondo negro
+	}
 
 private:
-    static entt::entity getTilesetByID(entt::registry& registry, int tileID)
-    {
-        auto view = registry.view<TileLayerComponent>();
-        for (auto entity : view)
-        {
-            auto& layer = view.get<TileLayerComponent>(entity);
-            auto& tilesets = layer.tileSetEntities;
-            for(int i = 0; i < tilesets.size(); i++)
-            {
-                if( i + 1 <= tilesets.size() - 1)
-                {
-                    auto tileset = registry.get<TileSetComponent>( tilesets.at(i));
-                    auto nextTileset = registry.get<TileSetComponent>(tilesets.at(i + 1));
-                    if(tileID >= tileset.firstGridID && tileID <nextTileset.firstGridID)
-                    {
-                        return tilesets.at(i);
-                    }
-                }
-                else
-                {
-                    return tilesets.at(i);
-                }
-            }
+	static entt::entity getTilesetByID(entt::registry& registry, int tileID)
+	{
+		auto view = registry.view<TileLayerComponent>();
+		for (auto entity : view)
+		{
+			auto& layer = view.get<TileLayerComponent>(entity);
+			auto& tilesets = layer.tileSetEntities;
+			for (int i = 0; i < tilesets.size(); i++)
+			{
+				if (i + 1 <= tilesets.size() - 1)
+				{
+					auto tileset = registry.get<TileSetComponent>(tilesets.at(i));
+					auto nextTileset = registry.get<TileSetComponent>(tilesets.at(i + 1));
+					if (tileID >= tileset.firstGridID && tileID < nextTileset.firstGridID)
+					{
+						return tilesets.at(i);
+					}
+				}
+				else
+				{
+					return tilesets.at(i);
+				}
+			}
 
-        }
-        
-        std::cerr << "did not find tileset, returning empty tileset\n";
-        entt::entity t;
-        return t;
-    }
+		}
+
+		std::cerr << "did not find tileset, returning empty tileset\n";
+		entt::entity t;
+		return t;
+	}
 };
 #endif // RENDERER_HPP

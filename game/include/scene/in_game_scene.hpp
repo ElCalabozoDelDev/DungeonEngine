@@ -14,6 +14,7 @@
 #include "graphics/render_collision.hpp"
 #include "graphics/render_object.hpp"
 #include "graphics/render_overlay.hpp"
+#include "loaders/config.hpp"
 #include "scene.hpp"
 #include "core/quadtree.hpp"
 #include "core/constants.hpp"
@@ -70,11 +71,15 @@ private:
         }
     }
 
-    void initializeCamera(entt::registry& registry, int mapWidth, int mapHeight) {
+    void initializeCamera(entt::registry& registry, int mapWidth, int mapHeight, Config config) {
 
-        auto camera = registry.create();
-        registry.emplace<CameraComponent>(camera);
-        registry.emplace<CameraBoundsComponent>(camera, mapWidth, mapHeight);
+        auto cameraEntity = registry.create();
+        auto & camera = registry.emplace<CameraComponent>(cameraEntity);
+		camera.cameraWidth = config.cameraWidth;
+		camera.cameraHeight = config.cameraHeight;
+		camera.viewportOffsetX = config.viewportOffsetX;
+		camera.viewportOffsetY = config.viewportOffsetY;
+        registry.emplace<CameraBoundsComponent>(cameraEntity, mapWidth, mapHeight);
         auto view = registry.view<PlayerComponent>();
         if(view.empty()) {
             std::cerr << "No player found in the scene" << std::endl;
@@ -82,9 +87,9 @@ private:
         }
         auto player = *view.begin();
         auto& playerTransform = registry.get<TransformComponent>(player).position;
-        registry.emplace<TransformComponent>(camera, playerTransform);
-        registry.emplace<FollowComponent>(camera, player);
-        m_entities.push_back(camera);
+        registry.emplace<TransformComponent>(cameraEntity, playerTransform);
+        registry.emplace<FollowComponent>(cameraEntity, player);
+        m_entities.push_back(cameraEntity);
     }
 
     void initializeRenderers(entt::registry& registry) {
