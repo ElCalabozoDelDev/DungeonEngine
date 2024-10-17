@@ -7,7 +7,7 @@
 			<FrameRate>60</FrameRate>
 			<Screen width="800" height="600" />
 			<Debug>true</Debug>
-			<Camera width="400" height="600" offsetX="-200" offsetY="0" zoomLevel="3" />
+			<Camera width="600" height="600" offsetX="-100" offsetY="0" zoomLevel="3" />
 			<Levels>
 				<Level name="level1" path="../assets/Levels/dungeon1.tmx" />
 			</Levels>

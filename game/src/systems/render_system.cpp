@@ -52,9 +52,6 @@ void RenderSystem::renderGraphics(entt::registry& registry) {
         adjustedCameraHeight  // Ajustar el alto con zoom
     };
 
-
-
-
 	registry.view<std::shared_ptr<Render>>().each(
 		[&registry, &cameraView, camera](entt::entity entity,
 			std::shared_ptr<Render>& render) {
