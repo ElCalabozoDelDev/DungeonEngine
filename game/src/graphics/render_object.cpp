@@ -1,12 +1,9 @@
 #include "graphics/render_object.hpp"
 #include "graphics/renderer.hpp"
 #include "core/constants.hpp"
+#include "core/quadtree_manager.hpp"
 
-void RenderObject::draw(entt::registry& registry, AABB cameraView, float offsetX, float offsetY, float zoomLevel) {
-    // Obtener Quadtrees desde el contexto
-    auto &objectQuadtree = registry.ctx().get<std::vector<std::shared_ptr<Quadtree>>>()[LayerType::OBJECT];
-
-    std::vector<entt::entity> visibleSprites;
-    objectQuadtree->query(cameraView, visibleSprites, registry);
-    Renderer::renderSprites(registry, visibleSprites, offsetX, offsetY, zoomLevel);
+void RenderObject::draw(entt::registry &registry, quadtree::Box<float> cameraView, float offsetX, float offsetY, float zoomLevel) {
+    std::vector<entt::entity> visibleTiles = QuadtreeManager::Instance()->query(LayerType::OBJECT, cameraView);
+    Renderer::renderSprites(registry, visibleTiles, offsetX, offsetY, zoomLevel);
 }

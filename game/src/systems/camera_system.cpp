@@ -9,9 +9,8 @@
 #include <components/dimension_component.hpp>
 
 void CameraSystem::run(entt::registry& registry) {
-	auto view = registry.view<CameraComponent, FollowComponent, CameraBoundsComponent, TransformComponent, DimensionComponent>();
 	auto& dt = registry.ctx().get<DeltaTime>().value;
-
+	auto view = registry.view<CameraComponent, FollowComponent, CameraBoundsComponent, TransformComponent, DimensionComponent>();
 	for (auto entity : view) {
 		auto& camera = view.get<CameraComponent>(entity);
 		auto& follow = view.get<FollowComponent>(entity);
@@ -22,8 +21,8 @@ void CameraSystem::run(entt::registry& registry) {
 		auto& dimension = view.get<DimensionComponent>(entity);
 
 		// Predecir la posición del jugador
-		Vector2D predictedPosition = targetTransform.position;
-		Vector2D velocity = targetVelocity.velocity;
+		Vector2D<float> predictedPosition = targetTransform.position;
+		Vector2D<float> velocity = targetVelocity.velocity;
 
 		// Predicción de la posición futura
 		predictedPosition.setX(predictedPosition.getX() + velocity.getX() * camera.predictionFactor * dt);

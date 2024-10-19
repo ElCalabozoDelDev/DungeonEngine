@@ -1,10 +1,10 @@
 #ifndef POSITION_COMPONENT_HPP
 #define POSITION_COMPONENT_HPP
 
-#include "core/vector_2d.hpp"
+#include "Quadtree.hpp"
 
 struct TransformComponent {
-    Vector2D position;
+    Vector2D<float> position;
 };
 
 #endif // POSITION_HPP

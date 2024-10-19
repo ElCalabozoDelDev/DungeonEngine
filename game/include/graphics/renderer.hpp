@@ -30,9 +30,7 @@ public:
 			auto& dim = registry.get<DimensionComponent>(entity);
 			// Ajustar la posición del sprite en base a la cámara
 			int renderX = static_cast<int>((trf.position.getX() - cameraPos.getX()) * zoomLevel + config.screenWidth / 2.0f + offsetX);
-			int renderY = static_cast<int>((trf.position.getY() - cameraPos.getY()) * zoomLevel + config.screenHeight / 2.0f + offsetY);
-
-			TextureManager::Instance()->drawFrame(tex.id, renderX, renderY, dim.width, dim.height, spr.spriteRow, spr.currentSprite, renderer, 0, 255, zoomLevel, SDL_FLIP_NONE);
+			int renderY = static_cast<int>((trf.position.getY() - cameraPos.getY()) * zoomLevel + config.screenHeight / 2.0f + offsetY);			TextureManager::Instance()->drawFrame(tex.id, renderX, renderY, dim.width, dim.height, spr.spriteRow, spr.currentSprite, renderer, 0, 255, zoomLevel, SDL_FLIP_NONE);
 		}
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	}

@@ -1,10 +1,12 @@
 #include "systems/render_system.hpp"
-#include "core/quadtree.hpp"
+#include "Quadtree.hpp"
+#include "components/transform_component.hpp"
 #include "graphics/render.hpp"
 #include "imgui.h"
 #include "imgui/imgui_impl_sdlrenderer2.h"
 #include "widgets/gui.hpp"
 #include "components/camera_component.hpp"
+#include <SDL_render.h>
 #include <components/dimension_component.hpp>
 void RenderSystem::run(entt::registry& registry) {
 	SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
@@ -37,17 +39,17 @@ void RenderSystem::renderGraphics(entt::registry& registry) {
     float zoomLevel = camera.zoomLevel;
 
     // Calcular el ancho y alto ajustados por el zoom
-    int adjustedCameraWidth = static_cast<int>(dimension.width / zoomLevel);
-    int adjustedCameraHeight = static_cast<int>(dimension.height / zoomLevel);
+    float adjustedCameraWidth = (dimension.width / zoomLevel);
+    float adjustedCameraHeight = (dimension.height / zoomLevel);
 
     // Calcular la posición ajustada por el zoom para centrar la cámara
     float halfAdjustedWidth = adjustedCameraWidth / 2.0f;
     float halfAdjustedHeight = adjustedCameraHeight / 2.0f;
 	int margin = 32;
     // Ajustar el área visible de la cámara
-    AABB cameraView{
-        static_cast<int>(cameraPos.getX() - halfAdjustedWidth),  // Ajustar el centro de la cámara en X
-        static_cast<int>(cameraPos.getY() - halfAdjustedHeight), // Ajustar el centro de la cámara en Y
+    quadtree::Box<float> cameraView{
+        (cameraPos.getX() - halfAdjustedWidth),  // Ajustar el centro de la cámara en X
+        (cameraPos.getY() - halfAdjustedHeight), // Ajustar el centro de la cámara en Y
         adjustedCameraWidth,  // Ajustar el ancho con zoom
         adjustedCameraHeight  // Ajustar el alto con zoom
     };

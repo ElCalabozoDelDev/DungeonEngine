@@ -3,8 +3,8 @@
 
 struct DimensionComponent
 {
-	int width;
-	int height;
+    int width;
+    int height;
 };
 
 #endif // !DIMENSION_COMPONENT_HPP
