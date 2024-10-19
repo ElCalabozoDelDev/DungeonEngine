@@ -2,7 +2,7 @@
 #define COLLISION_COMPONENT_HPP
 
 struct CollisionComponent {
-    bool isCollidable = true;  // Por defecto, la entidad será colisionable
+    bool isCollidable = false;  // Por defecto, la entidad será colisionable
 };
 
 #endif
