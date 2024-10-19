@@ -1,4 +1,5 @@
 #include "loaders/tmx_loader.hpp"
+#include "Quadtree.hpp"
 #include "base64.h"
 #include "components/animation_component.hpp"
 #include "components/bottom_layer_component.hpp"
@@ -32,7 +33,8 @@ void TMXLoader::loadLevel(entt::registry& registry, const char* levelFile) {
 	levelDocument.LoadFile(levelFile);
 	// get the root node
 	XMLElement* pRoot = levelDocument.RootElement();
-	m_tileSize = pRoot->IntAttribute("tilewidth");
+	m_tilewidth = pRoot->IntAttribute("tilewidth");
+	m_tileheight = pRoot->IntAttribute("tileheight");
 	m_width = pRoot->IntAttribute("width");
 	m_height = pRoot->IntAttribute("height");
 
@@ -157,12 +159,11 @@ void TMXLoader::loadObjectLayer(entt::registry& registry,
 				}
 			}
 			// add the object to the object list
-			registry.emplace<TransformComponent>(entity, Vector2D<T>(x, y));
+			registry.emplace<TransformComponent>(entity, Vector2D<float> (x, y));
 			registry.emplace<TextureComponent>(entity, textureID);
-
-			registry.emplace<SpriteComponent>(entity, spriteRow, spriteCol, 0);
 			registry.emplace<DimensionComponent>(entity, width, height);
-			registry.emplace<VelocityComponent>(entity, Vector2D<T>(0, 0));
+			registry.emplace<SpriteComponent>(entity, spriteRow, spriteCol, 0);
+			registry.emplace<VelocityComponent>(entity, Vector2D<float>(0, 0));
 			registry.emplace<AnimationComponent>(entity, spriteCol, numFrames,
 				animationTime, 0);
 			if (type == "Player") {
@@ -234,11 +235,12 @@ void TMXLoader::loadTileLayer(entt::registry& registry,
 				continue; // Ignorar tiles vacíos (tileId == 0)
 			}
 			auto tileEntity = registry.create();
-			int tileX = cols * m_tileSize;
-			int tileY = rows * m_tileSize;
+			int tileX = cols * m_tilewidth;
+			int tileY = rows * m_tileheight;
 
 			auto& tile = registry.emplace<TileComponent>(tileEntity);
-			registry.emplace<TransformComponent>(tileEntity, Vector2D<T>(tileX, tileY));
+			registry.emplace<TransformComponent>(tileEntity, Vector2D<float>(tileX, tileY));
+			registry.emplace<DimensionComponent>(tileEntity, m_tilewidth, m_tileheight);
 			tile.tileId = tileId;
 
 			tileLayer.tileEntities.push_back(tileEntity);

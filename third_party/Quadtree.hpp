@@ -56,6 +56,10 @@ public:
           m_height(size.getY())
     {
     }
+    constexpr void setLeft(T left) noexcept { m_left = left; }
+    constexpr void setTop(T top) noexcept { m_top = top; }
+    constexpr void setWidth(T width) noexcept { m_width = width; }
+    constexpr void setHeight(T height) noexcept { m_height = height; }
     constexpr T getLeft() const noexcept { return m_left; }
     constexpr T getTop() const noexcept { return m_top; }
     constexpr T getRight() const noexcept { return m_left + m_width; }
@@ -158,15 +162,15 @@ private:
         // North East
         case 1:
             return Box<Float>(
-                Vector2D<T>(origin.getX() + childSize.getX(), origin.getY()), childSize);  // Fix for NE
+                Vector2D<Float>(origin.getX() + childSize.getX(), origin.getY()), childSize);  // Fix for NE
         // South West
         case 2:
             return Box<Float>(
-                Vector2D<T>(origin.getX(), origin.getY() + childSize.getY()), childSize);  // Fix for SW
+                Vector2D<Float>(origin.getX(), origin.getY() + childSize.getY()), childSize);  // Fix for SW
         // South East
         case 3:
             return Box<Float>(
-                Vector2D<T>(origin.getX() + childSize.getX(), origin.getY() + childSize.getY()), childSize); // Fix for SE
+                Vector2D<Float>(origin.getX() + childSize.getX(), origin.getY() + childSize.getY()), childSize); // Fix for SE
         default:
             assert(false && "Invalid child index");
             return Box<Float>();
@@ -184,20 +188,20 @@ private:
             if (valueBox.getBottom() < center.getY())
                 return 0;
             // South West
-            else if (valueBox.m_top >= center.getY())
+            else if (valueBox.getTop() >= center.getY())
                 return 2;
             // Not contained in any quadrant
             else
                 return -1;
         }
         // East
-        else if (valueBox.m_left >= center.getX())
+        else if (valueBox.getLeft() >= center.getX())
         {
             // North East
             if (valueBox.getBottom() < center.getY())
                 return 1;
             // South East
-            else if (valueBox.m_top >= center.getY())
+            else if (valueBox.getTop() >= center.getY())
                 return 3;
             // Not contained in any quadrant
             else
@@ -214,8 +218,8 @@ private:
         assert(node != nullptr);
         
         if (!box.contains(mGetBox(value))) {
-            std::cerr << "Error: Value box " << mGetBox(value).m_left << ", " << mGetBox(value).m_top 
-                    << " exceeds node box " << box.m_left << ", " << box.m_top << std::endl;
+            std::cerr << "Error: Value box " << mGetBox(value).getLeft() << ", " << mGetBox(value).getTop() 
+                    << " exceeds node box " << box.getLeft() << ", " << box.getTop() << std::endl;
         }
         
         assert(box.contains(mGetBox(value)));

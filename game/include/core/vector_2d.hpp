@@ -13,17 +13,17 @@ private:
     T m_y;
 public:
 
-    constexpr Vector2D<T>(float x, float y) noexcept : m_x(x), m_y(y) {}
+    constexpr Vector2D<T>(T x, T y) noexcept : m_x(x), m_y(y) {}
 
-    const float getX() const { return m_x; }
-    const float getY() const { return m_y; }
+    constexpr T getX() const noexcept { return m_x; }
+    constexpr T getY() const noexcept { return m_y; }
 
-    void setX(float x) { m_x = x; }
-    void setY(float y) { m_y = y; }
+    constexpr void setX(T x) noexcept { m_x = x; }
+    constexpr void setY(T y) noexcept { m_y = y; }
 
-    int length() { return sqrt(m_x * m_x + m_y * m_y); }
+    constexpr int length() const noexcept { return sqrt(m_x * m_x + m_y * m_y); }
 
-    Vector2D<T> operator+(const Vector2D<T>& v2) const
+    constexpr Vector2D<T> operator+(const Vector2D<T>& v2) const noexcept
     {
         return Vector2D<T>(m_x + v2.m_x, m_y + v2.m_y);
     }
@@ -35,7 +35,7 @@ public:
         return v1;
     }
 
-    Vector2D<T> operator-(const Vector2D<T>& v2) const
+    constexpr Vector2D<T> operator-(const Vector2D<T>& v2) const noexcept
     {
         return Vector2D<T>(m_x - v2.m_x, m_y - v2.m_y);
     }
@@ -47,12 +47,12 @@ public:
         return v1;
     }
 
-    Vector2D<T> operator*(float scalar) const
+    constexpr Vector2D<T> operator*(T scalar) const noexcept
     {
         return Vector2D<T>(m_x * scalar, m_y * scalar);
     }
 
-    Vector2D<T>& operator*=(float scalar)
+    constexpr Vector2D<T>& operator*=(T scalar) const noexcept
     {
         m_x *= scalar;
         m_y *= scalar;
@@ -60,12 +60,12 @@ public:
         return *this;
     }
 
-    Vector2D<T> operator/(float scalar) const
+    constexpr Vector2D<T> operator/(T scalar) const noexcept
     {
         return Vector2D<T>(m_x / scalar, m_y / scalar);
     }
 
-    Vector2D<T>& operator/=(float scalar)
+    constexpr Vector2D<T>& operator/=(T scalar) const noexcept
     {
         m_x /= scalar;
         m_y /= scalar;

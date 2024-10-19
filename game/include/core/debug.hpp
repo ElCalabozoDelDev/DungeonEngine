@@ -16,9 +16,9 @@ ComponentEditorWidget<PlayerComponent>(entt::registry& registry,
                                        entt::registry::entity_type entity)
 {
     auto& trf = registry.get<TransformComponent>(entity);
-    float x = trf.box.getLeft();
+    float x = trf.position.getX();
     ImGui::InputFloat("X: ", &x);
-    float y = trf.box.getTop();
+    float y = trf.position.getY();
     ImGui::InputFloat("Y: ", &y);
 }
 
@@ -29,9 +29,9 @@ ComponentEditorWidget<CameraComponent>(entt::registry& registry,
 {
     auto& trf = registry.get<TransformComponent>(entity);
     auto& bounds = registry.get<CameraBoundsComponent>(entity);
-    float x = trf.box.getLeft();
+    float x = trf.position.getX();
     ImGui::InputFloat("X: ", &x);
-    float y = trf.box.getTop();
+    float y = trf.position.getY();
     ImGui::InputFloat("Y: ", &y);
     ImGui::InputFloat("Follow Speed: ",
                       &registry.get<CameraComponent>(entity).followSpeed);

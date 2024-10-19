@@ -4,7 +4,7 @@
 #include "Quadtree.hpp"
 
 struct TransformComponent {
-    quadtree::Box<float> box;
+    Vector2D<float> position;
 };
 
 #endif // POSITION_HPP

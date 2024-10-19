@@ -4,8 +4,9 @@
 #include "components/sprite_component.hpp"
 #include "components/velocity_component.hpp"
 #include "core/delta_time.hpp"
+#include "core/quadtree_manager.hpp"
 #include "loaders/config.hpp"
-#include "core/quadtree.hpp"
+// #include "core/quadtree.hpp"
 #include "core/constants.hpp"
 #include <components/dimension_component.hpp>
 
@@ -44,20 +45,13 @@ void TransformSystem::run(entt::registry& registry) {
     }
 }
 
-void TransformSystem::updateSpritePosition(entt::registry& registry, entt::entity entity, const Vector2D<T>& newPosition) {
-        auto& objectQuadtree = registry.ctx().get<std::vector<std::shared_ptr<Quadtree>>>()[LayerType::OBJECT];
+void TransformSystem::updateSpritePosition(entt::registry& registry, entt::entity entity, const Vector2D<float>& newPosition) {
 
         // Verificar que la entidad sea válida antes de operar con ella
         if (!registry.valid(entity) || !registry.all_of<TransformComponent>(entity)) {
             return;  // La entidad no es válida, no se puede actualizar
         }
 
-        // Primero eliminamos la entidad del Quadtree antiguo
-        objectQuadtree->remove(entity, registry.get<TransformComponent>(entity));
-
         // Actualizamos la posición de la entidad
         registry.get<TransformComponent>(entity).position = newPosition;
-
-        // Insertamos la entidad de nuevo en el Quadtree con la nueva posición
-        objectQuadtree->insert(entity, registry.get<TransformComponent>(entity));
     }

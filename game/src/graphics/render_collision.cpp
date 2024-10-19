@@ -1,12 +1,9 @@
 #include "graphics/render_collision.hpp"
 #include "graphics/renderer.hpp"
 #include "core/constants.hpp"
+#include "core/quadtree_manager.hpp"
 
-void RenderCollision::draw(entt::registry& registry, AABB cameraView, float offsetX, float offsetY, float zoomLevel) {
-    // Obtener Quadtrees desde el contexto
-    auto &collisionQuadtree =  registry.ctx().get<std::vector<std::shared_ptr<Quadtree>>>()[LayerType::COLLISION];
-
-    std::vector<entt::entity> visibleCollisions;
-    collisionQuadtree->query(cameraView, visibleCollisions, registry);
-    Renderer::renderTiles(registry, visibleCollisions, offsetX, offsetY, zoomLevel);
+void RenderCollision::draw(entt::registry &registry, quadtree::Box<float> cameraView, float offsetX, float offsetY, float zoomLevel) {
+    std::vector<entt::entity> visibleTiles = QuadtreeManager::Instance()->query(LayerType::COLLISION, cameraView);
+    Renderer::renderTiles(registry, visibleTiles, offsetX, offsetY, zoomLevel);
 }
