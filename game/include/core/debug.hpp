@@ -8,21 +8,33 @@
 #include "imgui_entt_entity_editor.hpp"
 #include <entt/entity/fwd.hpp>
 
-namespace MM {
+namespace MM
+{
 template <>
-inline void ComponentEditorWidget<PlayerComponent>(entt::registry &registry, entt::registry::entity_type entity) {
-    auto &trf = registry.get<TransformComponent>(entity);
-    ImGui::InputFloat("X: ", &trf.position.m_x);
-    ImGui::InputFloat("Y: ", &trf.position.m_y);
+inline void
+ComponentEditorWidget<PlayerComponent>(entt::registry& registry,
+                                       entt::registry::entity_type entity)
+{
+    auto& trf = registry.get<TransformComponent>(entity);
+    float x = trf.position.getX();
+    ImGui::InputFloat("X: ", &x);
+    float y = trf.position.getY();
+    ImGui::InputFloat("Y: ", &y);
 }
 
 template <>
-inline void ComponentEditorWidget<CameraComponent>(entt::registry &registry, entt::registry::entity_type entity) {
-    auto &trf = registry.get<TransformComponent>(entity);
+inline void
+ComponentEditorWidget<CameraComponent>(entt::registry& registry,
+                                       entt::registry::entity_type entity)
+{
+    auto& trf = registry.get<TransformComponent>(entity);
     auto& bounds = registry.get<CameraBoundsComponent>(entity);
-    ImGui::InputFloat("X: ", &trf.position.m_x);
-    ImGui::InputFloat("Y: ", &trf.position.m_y);
-    ImGui::InputFloat("Follow Speed: ", &registry.get<CameraComponent>(entity).followSpeed);
+    float x = trf.position.getX();
+    ImGui::InputFloat("X: ", &x);
+    float y = trf.position.getY();
+    ImGui::InputFloat("Y: ", &y);
+    ImGui::InputFloat("Follow Speed: ",
+                      &registry.get<CameraComponent>(entity).followSpeed);
     float levelWidth = static_cast<float>(bounds.levelWidth);
     ImGui::InputFloat("Level Width: ", &levelWidth);
     float levelHeight = static_cast<float>(bounds.levelHeight);

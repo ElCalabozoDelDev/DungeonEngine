@@ -1,85 +1,86 @@
 #ifndef VECTOR_2D_HPP
 #define VECTOR_2D_HPP
 
-#include <math.h>
 #include "core/q_rsqrt.hpp"
+#include <math.h>
 
+template<typename T>
 class Vector2D
 {
+
+private:
+    T m_x;
+    T m_y;
 public:
-    Vector2D()
+
+    constexpr Vector2D<T>(T x, T y) noexcept : m_x(x), m_y(y) {}
+
+    constexpr T getX() const noexcept { return m_x; }
+    constexpr T getY() const noexcept { return m_y; }
+
+    constexpr void setX(T x) noexcept { m_x = x; }
+    constexpr void setY(T y) noexcept { m_y = y; }
+
+    constexpr int length() const noexcept { return sqrt(m_x * m_x + m_y * m_y); }
+
+    constexpr Vector2D<T> operator+(const Vector2D<T>& v2) const noexcept
     {
-        m_x = 0;
-        m_y = 0;
+        return Vector2D<T>(m_x + v2.m_x, m_y + v2.m_y);
     }
-    
-    Vector2D(float x, float y): m_x(x), m_y(y) {}
-    
-    const float getX() { return m_x; }
-    const float getY() { return m_y; }
-    
-    void setX(float x) { m_x = x; }
-    void setY(float y) { m_y = y; }
-    
-    int length() { return sqrt(m_x * m_x + m_y * m_y); }
-    
-    Vector2D operator+(const Vector2D& v2) const { return Vector2D(m_x + v2.m_x, m_y + v2.m_y); }
-    friend Vector2D& operator+=(Vector2D& v1, const Vector2D& v2)
+    friend Vector2D<T>& operator+=(Vector2D<T>& v1, const Vector2D<T>& v2)
     {
         v1.m_x += v2.m_x;
         v1.m_y += v2.m_y;
-        
+
         return v1;
     }
-    
-    Vector2D operator-(const Vector2D& v2) const { return Vector2D(m_x - v2.m_x, m_y - v2.m_y); }
-    friend Vector2D& operator-=(Vector2D& v1, const Vector2D& v2)
+
+    constexpr Vector2D<T> operator-(const Vector2D<T>& v2) const noexcept
+    {
+        return Vector2D<T>(m_x - v2.m_x, m_y - v2.m_y);
+    }
+    friend Vector2D<T>& operator-=(Vector2D<T>& v1, const Vector2D<T>& v2)
     {
         v1.m_x -= v2.m_x;
         v1.m_y -= v2.m_y;
-        
+
         return v1;
     }
 
-    
-    Vector2D operator*(float scalar)
+    constexpr Vector2D<T> operator*(T scalar) const noexcept
     {
-        return Vector2D(m_x * scalar, m_y * scalar);
+        return Vector2D<T>(m_x * scalar, m_y * scalar);
     }
-    
-    Vector2D& operator*=(float scalar)
+
+    constexpr Vector2D<T>& operator*=(T scalar) const noexcept
     {
         m_x *= scalar;
         m_y *= scalar;
-        
-        return *this;
-    }
-    
-    Vector2D operator/(float scalar)
-    {
-        return Vector2D(m_x / scalar, m_y / scalar);
-    }
-    
-    Vector2D& operator/=(float scalar)
-    {
-        m_x /= scalar;
-        m_y /= scalar;
-        
+
         return *this;
     }
 
-    
+    constexpr Vector2D<T> operator/(T scalar) const noexcept
+    {
+        return Vector2D<T>(m_x / scalar, m_y / scalar);
+    }
+
+    constexpr Vector2D<T>& operator/=(T scalar) const noexcept
+    {
+        m_x /= scalar;
+        m_y /= scalar;
+
+        return *this;
+    }
+
     void normalize()
     {
         int l = length();
-        if ( l > 0)
+        if (l > 0)
         {
             (*this) *= Q_rsqrt(l);
         }
     }
-    
-    float m_x;
-    float m_y;
 };
 
 #endif

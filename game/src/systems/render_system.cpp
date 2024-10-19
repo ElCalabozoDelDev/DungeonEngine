@@ -1,23 +1,64 @@
 #include "systems/render_system.hpp"
-#include "core/quadtree.hpp"
-#include "graphics/renderer.hpp"
-#include "loaders/config.hpp"
-#include <iostream>
+#include "Quadtree.hpp"
+#include "components/transform_component.hpp"
+#include "graphics/render.hpp"
+#include "imgui.h"
+#include "imgui/imgui_impl_sdlrenderer2.h"
+#include "widgets/gui.hpp"
+#include "components/camera_component.hpp"
+#include <SDL_render.h>
+#include <components/dimension_component.hpp>
+void RenderSystem::run(entt::registry& registry) {
+	SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
 
-void RenderSystem::run(entt::registry &registry) {
-  SDL_Renderer *renderer = registry.ctx().get<SDL_Renderer *>();
-  auto config = registry.ctx().get<Config>();
+	renderGraphics(registry);
+	renderGUI(registry);
 
-  auto &cameraPos = registry.get<TransformComponent>(registry.view<CameraComponent>().front()).position;
-  
-  // Obtener área de cámara visible
-  AABB cameraView{
-    static_cast<int>(cameraPos.getX() - config.screenWidth / 2.0f),  // Centrar la cámara en X
-    static_cast<int>(cameraPos.getY() - config.screenHeight / 2.0f), // Centrar la cámara en Y
-    config.screenWidth, config.screenHeight};
-  Renderer::renderGraphics(registry, cameraView);
-  Renderer::renderGUI(registry);
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+}
 
-  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+void RenderSystem::renderGUI(entt::registry& registry) {
+	SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
+	registry.view<std::unique_ptr<gui::WidgetComponent>>().each(
+		[&registry](auto entity, auto& widget_component) {
+			widget_component->frame_begin();
+			widget_component->frame_update(registry);
+			widget_component->frame_end();
+		});
+	ImGui::Render();
+	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+}
+void RenderSystem::renderGraphics(entt::registry& registry) {
+	const auto& view = registry.view<CameraComponent, TransformComponent>();
+    auto cameraEntity = *view.begin();
+    auto& camera = view.get<CameraComponent>(cameraEntity);
+    auto& cameraPos = view.get<TransformComponent>(cameraEntity).position;
+    auto& dimension = registry.get<DimensionComponent>(cameraEntity);
 
+    // Obtener el nivel de zoom
+    float zoomLevel = camera.zoomLevel;
+
+    // Calcular el ancho y alto ajustados por el zoom
+    float adjustedCameraWidth = (dimension.width / zoomLevel);
+    float adjustedCameraHeight = (dimension.height / zoomLevel);
+
+    // Calcular la posición ajustada por el zoom para centrar la cámara
+    float halfAdjustedWidth = adjustedCameraWidth / 2.0f;
+    float halfAdjustedHeight = adjustedCameraHeight / 2.0f;
+	int margin = 32;
+    // Ajustar el área visible de la cámara
+    quadtree::Box<float> cameraView{
+        (cameraPos.getX() - halfAdjustedWidth),  // Ajustar el centro de la cámara en X
+        (cameraPos.getY() - halfAdjustedHeight), // Ajustar el centro de la cámara en Y
+        adjustedCameraWidth,  // Ajustar el ancho con zoom
+        adjustedCameraHeight  // Ajustar el alto con zoom
+    };
+
+	registry.view<std::shared_ptr<Render>>().each(
+		[&registry, &cameraView, camera](entt::entity entity,
+			std::shared_ptr<Render>& render) {
+				if (render) {
+					render->draw(registry, cameraView, camera.viewportOffsetX, camera.viewportOffsetY, camera.zoomLevel);
+				}
+		});
 }

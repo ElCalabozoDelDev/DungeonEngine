@@ -3,39 +3,45 @@
 #include "components/camera_bounds_component.hpp"
 #include "components/camera_component.hpp"
 #include "components/transform_component.hpp"
+#include "components/velocity_component.hpp"
 #include "core/delta_time.hpp"
 #include "core/vector_2d.hpp"
-#include "loaders/config.hpp"
+#include <components/dimension_component.hpp>
 
 void CameraSystem::run(entt::registry& registry) {
-    auto view = registry.view<CameraComponent, FollowComponent, CameraBoundsComponent, TransformComponent>();
-    auto &dt = registry.ctx().get<DeltaTime>().value;
+	auto& dt = registry.ctx().get<DeltaTime>().value;
+	auto view = registry.view<CameraComponent, FollowComponent, CameraBoundsComponent, TransformComponent, DimensionComponent>();
+	for (auto entity : view) {
+		auto& camera = view.get<CameraComponent>(entity);
+		auto& follow = view.get<FollowComponent>(entity);
+		auto& bounds = view.get<CameraBoundsComponent>(entity);
+		auto& transform = view.get<TransformComponent>(entity);
+		auto& targetTransform = registry.get<TransformComponent>(follow.target);
+		auto& targetVelocity = registry.get<VelocityComponent>(follow.target);
+		auto& dimension = view.get<DimensionComponent>(entity);
 
-    for (auto entity : view) {
-        auto& camera = view.get<CameraComponent>(entity);
-        auto& follow = view.get<FollowComponent>(entity);
-        auto& bounds = view.get<CameraBoundsComponent>(entity);
-        auto& transform = view.get<TransformComponent>(entity);
+		// Predecir la posición del jugador
+		Vector2D<float> predictedPosition = targetTransform.position;
+		Vector2D<float> velocity = targetVelocity.velocity;
 
-        // Obtenemos la posición del jugador
-        Vector2D targetPosition = registry.get<TransformComponent>(follow.target).position;
+		// Predicción de la posición futura
+		predictedPosition.setX(predictedPosition.getX() + velocity.getX() * camera.predictionFactor * dt);
+		predictedPosition.setY(predictedPosition.getY() + velocity.getY() * camera.predictionFactor * dt);
 
-        // Aplicamos LERP para un seguimiento suave
-        transform.position.m_x += (targetPosition.m_x - transform.position.m_x) * camera.followSpeed * dt;
-        transform.position.m_y += (targetPosition.m_y - transform.position.m_y) * camera.followSpeed * dt;
+		// Aplicar LERP hacia la posición predicha
+		transform.position.setX(transform.position.getX() + (predictedPosition.getX() - transform.position.getX()) * camera.followSpeed * dt);
+		transform.position.setY(transform.position.getY() + (predictedPosition.getY() - transform.position.getY()) * camera.followSpeed * dt);
 
-        // Obtenemos la configuración de la pantalla
-        auto config = registry.ctx().get<Config>();
-        float screenWidth = config.screenWidth;
-        float screenHeight = config.screenHeight;
-
-        // Ajustar los límites en el eje X y Y teniendo en cuenta la mitad del tamaño de la pantalla
-        float halfScreenWidth = screenWidth / 2.0f;
-        float halfScreenHeight = screenHeight / 2.0f;
-
-        transform.position.m_x = std::max(halfScreenWidth, std::min(transform.position.m_x, static_cast<float>(bounds.levelWidth - halfScreenWidth)));
-        transform.position.m_y = std::max(halfScreenHeight, std::min(transform.position.m_y, static_cast<float>(bounds.levelHeight - halfScreenHeight)));
-
-    }
+		// Limitar la cámara a los límites del nivel
+		float halfScreenWidth = (dimension.width / 2.0f) / camera.zoomLevel;
+		float halfScreenHeight = (dimension.height / 2.0f) / camera.zoomLevel;
+		transform.position.setX(std::max(halfScreenWidth, std::min(transform.position.getX(), static_cast<float>(bounds.levelWidth - halfScreenWidth))));
+		transform.position.setY(std::max(halfScreenHeight, std::min(transform.position.getY(), static_cast<float>(bounds.levelHeight - halfScreenHeight))));
+	}
 }
+
+
+
+
+
 
