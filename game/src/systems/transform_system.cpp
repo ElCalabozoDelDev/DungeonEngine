@@ -44,7 +44,7 @@ void TransformSystem::run(entt::registry& registry) {
     }
 }
 
-void TransformSystem::updateSpritePosition(entt::registry& registry, entt::entity entity, const Vector2D& newPosition) {
+void TransformSystem::updateSpritePosition(entt::registry& registry, entt::entity entity, const Vector2D<T>& newPosition) {
         auto& objectQuadtree = registry.ctx().get<std::vector<std::shared_ptr<Quadtree>>>()[LayerType::OBJECT];
 
         // Verificar que la entidad sea válida antes de operar con ella

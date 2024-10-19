@@ -3,7 +3,6 @@
 
 #include "systems/system.hpp"
 #include "entt/entt.hpp"
-#include "graphics/render.hpp"
 
 class RenderSystem final : public System {
     public:

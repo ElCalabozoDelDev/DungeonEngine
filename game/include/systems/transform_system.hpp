@@ -8,6 +8,6 @@
 class TransformSystem final : public System {
 public:
     void run(entt::registry& registry) override;
-    void updateSpritePosition(entt::registry& registry, entt::entity entity, const Vector2D& newPosition);
+    void updateSpritePosition(entt::registry& registry, entt::entity entity, const Vector2D<T>& newPosition);
 };
 #endif // UPDATE_POSITION_HPP

@@ -22,8 +22,8 @@ void CameraSystem::run(entt::registry& registry) {
 		auto& dimension = view.get<DimensionComponent>(entity);
 
 		// Predecir la posición del jugador
-		Vector2D predictedPosition = targetTransform.position;
-		Vector2D velocity = targetVelocity.velocity;
+		Vector2D<T> predictedPosition = targetTransform.position;
+		Vector2D<T> velocity = targetVelocity.velocity;
 
 		// Predicción de la posición futura
 		predictedPosition.setX(predictedPosition.getX() + velocity.getX() * camera.predictionFactor * dt);

@@ -4,7 +4,7 @@
 #include "core/vector_2d.hpp"
 
 struct VelocityComponent {
-    Vector2D velocity;
+    Vector2D<T> velocity;
 };
 
 #endif // VELOCITY_HPP

@@ -157,12 +157,12 @@ void TMXLoader::loadObjectLayer(entt::registry& registry,
 				}
 			}
 			// add the object to the object list
-			registry.emplace<TransformComponent>(entity, Vector2D(x, y));
+			registry.emplace<TransformComponent>(entity, Vector2D<T>(x, y));
 			registry.emplace<TextureComponent>(entity, textureID);
 
 			registry.emplace<SpriteComponent>(entity, spriteRow, spriteCol, 0);
 			registry.emplace<DimensionComponent>(entity, width, height);
-			registry.emplace<VelocityComponent>(entity, Vector2D(0, 0));
+			registry.emplace<VelocityComponent>(entity, Vector2D<T>(0, 0));
 			registry.emplace<AnimationComponent>(entity, spriteCol, numFrames,
 				animationTime, 0);
 			if (type == "Player") {
@@ -238,7 +238,7 @@ void TMXLoader::loadTileLayer(entt::registry& registry,
 			int tileY = rows * m_tileSize;
 
 			auto& tile = registry.emplace<TileComponent>(tileEntity);
-			registry.emplace<TransformComponent>(tileEntity, Vector2D(tileX, tileY));
+			registry.emplace<TransformComponent>(tileEntity, Vector2D<T>(tileX, tileY));
 			tile.tileId = tileId;
 
 			tileLayer.tileEntities.push_back(tileEntity);

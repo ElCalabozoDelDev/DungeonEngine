@@ -22,12 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-// 2024-10-18 - Modified by FJBC to use Vector2D instead of Vector2
+// 2024-10-18 - Modified by FJBC to use Vector2D<T> instead of Vector2
 
 #pragma once
 
 #include "core/vector_2d.hpp"
 #include <algorithm>
+#include <iostream>
 #include <array>
 #include <cassert>
 #include <memory>
@@ -39,46 +40,47 @@ namespace quadtree
 template <typename T>
 class Box
 {
+private:
+    T m_left;
+    T m_top;
+    T m_width;
+    T m_height;
 public:
-    T left;
-    T top;
-    T width;  // Must be positive
-    T height; // Must be positive
-
     constexpr Box(T Left = 0, T Top = 0, T Width = 0, T Height = 0) noexcept
-        : left(Left), top(Top), width(Width), height(Height)
+        : m_left(Left), m_top(Top), m_width(Width), m_height(Height)
     {
     }
 
-    constexpr Box(const Vector2D& position, const Vector2D& size) noexcept
-        : left(position.getX()), top(position.getY()), width(size.getX()),
-          height(size.getY())
+    constexpr Box(const Vector2D<T>& position, const Vector2D<T>& size) noexcept
+        : m_left(position.getX()), m_top(position.getY()), m_width(size.getX()),
+          m_height(size.getY())
     {
     }
+    constexpr T getLeft() const noexcept { return m_left; }
+    constexpr T getTop() const noexcept { return m_top; }
+    constexpr T getRight() const noexcept { return m_left + m_width; }
 
-    constexpr T getRight() const noexcept { return left + width; }
+    constexpr T getBottom() const noexcept { return m_top + m_height; }
 
-    constexpr T getBottom() const noexcept { return top + height; }
+    const Vector2D<T> getTopLeft() const noexcept { return Vector2D<T>(m_left, m_top); }
 
-    const Vector2D getTopLeft() const noexcept { return Vector2D(left, top); }
-
-    const Vector2D getCenter() const noexcept
+    const Vector2D<T> getCenter() const noexcept
     {
-        return Vector2D(left + width / 2, top + height / 2);
+        return Vector2D<T>(m_left + m_width / 2, m_top + m_height / 2);
     }
 
-    const Vector2D getSize() const noexcept { return Vector2D(width, height); }
+    const Vector2D<T> getSize() const noexcept { return Vector2D<T>(m_width, m_height); }
 
     constexpr bool contains(const Box<T>& box) const noexcept
     {
-        return left <= box.left && box.getRight() <= getRight() &&
-               top <= box.top && box.getBottom() <= getBottom();
+        return m_left <= box.m_left && box.getRight() <= getRight() &&
+               m_top <= box.m_top && box.getBottom() <= getBottom();
     }
 
     constexpr bool intersects(const Box<T>& box) const noexcept
     {
-        return !(left >= box.getRight() || getRight() <= box.left ||
-                 top >= box.getBottom() || getBottom() <= box.top);
+        return !(m_left >= box.getRight() || getRight() <= box.m_left ||
+                 m_top >= box.getBottom() || getBottom() <= box.m_top);
     }
 };
 
@@ -145,57 +147,57 @@ private:
     }
 
     Box<Float> computeBox(const Box<Float>& box, int i) const
+{
+    auto origin = box.getTopLeft();
+    auto childSize = box.getSize() / static_cast<Float>(2);
+    switch (i)
     {
-        auto origin = box.getTopLeft();
-        auto childSize = box.getSize() / static_cast<Float>(2);
-        switch (i)
-        {
-                // North West
-            case 0:
-                return Box<Float>(origin, childSize);
-                // Norst East
-            case 1:
-                return Box<Float>(
-                    Vector2<Float>(origin.x + childSize.x, origin.y),
-                    childSize);
-                // South West
-            case 2:
-                return Box<Float>(
-                    Vector2<Float>(origin.x, origin.y + childSize.y),
-                    childSize);
-                // South East
-            case 3:
-                return Box<Float>(origin + childSize, childSize);
-            default:
-                assert(false && "Invalid child index");
-                return Box<Float>();
-        }
+        // North West
+        case 0:
+            return Box<Float>(origin, childSize);
+        // North East
+        case 1:
+            return Box<Float>(
+                Vector2D<T>(origin.getX() + childSize.getX(), origin.getY()), childSize);  // Fix for NE
+        // South West
+        case 2:
+            return Box<Float>(
+                Vector2D<T>(origin.getX(), origin.getY() + childSize.getY()), childSize);  // Fix for SW
+        // South East
+        case 3:
+            return Box<Float>(
+                Vector2D<T>(origin.getX() + childSize.getX(), origin.getY() + childSize.getY()), childSize); // Fix for SE
+        default:
+            assert(false && "Invalid child index");
+            return Box<Float>();
     }
+}
+
 
     int getQuadrant(const Box<Float>& nodeBox, const Box<Float>& valueBox) const
     {
         auto center = nodeBox.getCenter();
         // West
-        if (valueBox.getRight() < center.x)
+        if (valueBox.getRight() < center.getX())
         {
             // North West
-            if (valueBox.getBottom() < center.y)
+            if (valueBox.getBottom() < center.getY())
                 return 0;
             // South West
-            else if (valueBox.top >= center.y)
+            else if (valueBox.m_top >= center.getY())
                 return 2;
             // Not contained in any quadrant
             else
                 return -1;
         }
         // East
-        else if (valueBox.left >= center.x)
+        else if (valueBox.m_left >= center.getX())
         {
             // North East
-            if (valueBox.getBottom() < center.y)
+            if (valueBox.getBottom() < center.getY())
                 return 1;
             // South East
-            else if (valueBox.top >= center.y)
+            else if (valueBox.m_top >= center.getY())
                 return 3;
             // Not contained in any quadrant
             else
@@ -210,6 +212,12 @@ private:
              const T& value)
     {
         assert(node != nullptr);
+        
+        if (!box.contains(mGetBox(value))) {
+            std::cerr << "Error: Value box " << mGetBox(value).m_left << ", " << mGetBox(value).m_top 
+                    << " exceeds node box " << box.m_left << ", " << box.m_top << std::endl;
+        }
+        
         assert(box.contains(mGetBox(value)));
         if (isLeaf(node))
         {

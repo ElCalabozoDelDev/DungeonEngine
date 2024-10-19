@@ -1,7 +1,6 @@
 #define SDL_MAIN_HANDLED
 
 #include "core/game_loop.hpp"
-#include "loaders/config.hpp"
 #include "plugins/base_plugin.hpp"
 #include "plugins/game_plugin.hpp"
 
