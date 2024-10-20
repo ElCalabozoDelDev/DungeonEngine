@@ -35,6 +35,20 @@ file(GLOB_RECURSE THIRD_PARTY_SOURCES ${CMAKE_SOURCE_DIR}/third_party/*.cpp)
 # Agrega los archivos de implementación de third_party al proyecto
 target_sources(${PROJECT_NAME} PRIVATE ${THIRD_PARTY_SOURCES})
 
+
+# Ruta a los archivos de Box2D
+set(BOX2D_DIR ${CMAKE_SOURCE_DIR}/third_party/box2d)
+
+# Agregar los archivos de Box2D
+add_subdirectory(${BOX2D_DIR} EXCLUDE_FROM_ALL)
+
+# Incluir los headers de Box2D
+include_directories(${BOX2D_DIR}/include)
+
+# Vincular Box2D a tu ejecutable
+target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
+
+
 # Busca e incluye las dependencias desde vcpkg
 find_package(SDL2 CONFIG REQUIRED)
 find_package(sdl2_image CONFIG REQUIRED)

@@ -3,9 +3,16 @@
 #include "core/game_loop.hpp"
 #include "plugins/base_plugin.hpp"
 #include "plugins/game_plugin.hpp"
+#include <box2d/box2d.h>
 
+void crear_mundo() {
+    b2WorldDef worldDef = b2DefaultWorldDef();
+
+    // Creación de cuerpos, fixtures, y más.
+}
 
 int main(int argc, char* argv[]) {
+	crear_mundo();
 	GameLoop gameLoop;
 	BasePlugin basePlugin("../assets/game.xml");
 	GamePlugin gamePlugin;
