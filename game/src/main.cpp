@@ -5,69 +5,49 @@
 #include "plugins/game_plugin.hpp"
 #include <box2d/box2d.h>
 
-void crear_mundo() {
+void crear_ground_box(b2WorldId worldId)
+{
+    b2BodyDef groundBodyDef = b2DefaultBodyDef();
+    groundBodyDef.position = (b2Vec2){0.0f, -10.0f};
+
+    b2BodyId groundId = b2CreateBody(worldId, &groundBodyDef);
+
+    b2Polygon groundBox = b2MakeBox(50.0f, 10.0f);
+    b2ShapeDef groundShapeDef = b2DefaultShapeDef();
+    b2CreatePolygonShape(groundId, &groundShapeDef, &groundBox);
+}
+
+void crear_dynamic_body(b2WorldId worldId)
+{
+    b2BodyDef bodyDef = b2DefaultBodyDef();
+    bodyDef.type = b2_dynamicBody;
+    bodyDef.position = (b2Vec2){0.0f, 4.0f};
+    b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+
+    b2Polygon dynamicBox = b2MakeBox(1.0f, 1.0f);
+    b2ShapeDef shapeDef = b2DefaultShapeDef();
+    shapeDef.density = 1.0f;
+    shapeDef.friction = 0.3f;
+    b2CreatePolygonShape(bodyId, &shapeDef, &dynamicBox);
+}
+
+void crear_mundo()
+{
     b2WorldDef worldDef = b2DefaultWorldDef();
-
-    // Creación de cuerpos, fixtures, y más.
+    worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+    b2WorldId worldId = b2CreateWorld(&worldDef);
+    crear_ground_box(worldId);
+    crear_dynamic_body(worldId);
 }
 
-int main(int argc, char* argv[]) {
-	crear_mundo();
-	GameLoop gameLoop;
-	BasePlugin basePlugin("../assets/game.xml");
-	GamePlugin gamePlugin;
-	gameLoop.addPlugin(basePlugin);
-	gameLoop.addPlugin(gamePlugin);
-	gameLoop.run();
-	return 0;
+int main(int argc, char* argv[])
+{
+    crear_mundo();
+    GameLoop gameLoop;
+    BasePlugin basePlugin("../assets/game.xml");
+    GamePlugin gamePlugin;
+    gameLoop.addPlugin(basePlugin);
+    gameLoop.addPlugin(gamePlugin);
+    gameLoop.run();
+    return 0;
 }
-
-// #include <iostream>
-// #include <vector>
-// #include <functional>
-// #include "quadtree.hpp"
-
-// using namespace quadtree;
-// struct Entity {
-//     int id;
-//     Box<float> collisionBox;
-
-//     Entity(int id, const Box<float>& box) : id(id), collisionBox(box) {}
-
-//     bool operator==(const Entity& other) const {
-//         return id == other.id;
-//     }
-// };
-
-// int main() {
-//     // Definir el área del Quadtree
-//     Box<float> quadtreeArea(0.0f, 0.0f, 100.0f, 100.0f);
-
-//     // Definir la función para obtener el Box de la entidad
-//     auto getBox = [](const Entity& entity) -> Box<float> {
-//         return entity.collisionBox;
-//     };
-
-//     // Crear el Quadtree para manejar colisiones
-//     Quadtree<Entity, decltype(getBox)> quadtree(quadtreeArea, getBox);
-
-//     // Crear y agregar entidades al Quadtree
-//     Entity e1(1, Box<float>(10.0f, 10.0f, 10.0f, 10.0f));  // Entidad 1
-//     Entity e2(2, Box<float>(15.0f, 15.0f, 10.0f, 10.0f));  // Entidad 2 (se intersecta con e1)
-//     Entity e3(3, Box<float>(50.0f, 50.0f, 10.0f, 10.0f));  // Entidad 3 (no se intersecta)
-
-//     quadtree.add(e1);
-//     quadtree.add(e2);
-//     quadtree.add(e3);
-
-//     // Encontrar todas las intersecciones en el Quadtree
-//     auto intersections = quadtree.findAllIntersections();
-
-//     // Imprimir las intersecciones encontradas
-//     for (const auto& pair : intersections) {
-//         std::cout << "Colisión entre entidades " << pair.first.id
-//                   << " y " << pair.second.id << std::endl;
-//     }
-
-//     return 0;
-// }

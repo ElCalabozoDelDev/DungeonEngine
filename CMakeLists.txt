@@ -35,18 +35,19 @@ file(GLOB_RECURSE THIRD_PARTY_SOURCES ${CMAKE_SOURCE_DIR}/third_party/*.cpp)
 # Agrega los archivos de implementación de third_party al proyecto
 target_sources(${PROJECT_NAME} PRIVATE ${THIRD_PARTY_SOURCES})
 
+# Agrega box2d como una dependencia de FetchContent
+include(FetchContent)
 
-# Ruta a los archivos de Box2D
-set(BOX2D_DIR ${CMAKE_SOURCE_DIR}/third_party/box2d)
+FetchContent_Declare(
+  box2d
+  GIT_REPOSITORY https://github.com/erincatto/box2d.git
+  GIT_TAG v3.0.0
+)
 
-# Agregar los archivos de Box2D
-add_subdirectory(${BOX2D_DIR} EXCLUDE_FROM_ALL)
+FetchContent_MakeAvailable(box2d)
 
-# Incluir los headers de Box2D
-include_directories(${BOX2D_DIR}/include)
-
-# Vincular Box2D a tu ejecutable
-target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
+# Vincular Box2D con tu ejecutable
+target_link_libraries(DungeonEngine PRIVATE box2d)
 
 
 # Busca e incluye las dependencias desde vcpkg
