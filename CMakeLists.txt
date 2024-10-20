@@ -45,6 +45,7 @@ find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 
+
 # Enlaza las dependencias
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2::SDL2main)
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_image::SDL2_image)
@@ -56,7 +57,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE tinyxml2::tinyxml2)
 
 # Configura los directorios de inclusión
 target_include_directories(${PROJECT_NAME} PRIVATE 
-    ${CMAKE_SOURCE_DIR}/game/include
+${CMAKE_SOURCE_DIR}/game/include
 )
 
 # Copia el archivo SDL2.dll y otras DLL necesarias a la carpeta _bin
