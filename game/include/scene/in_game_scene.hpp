@@ -23,6 +23,7 @@ private:
     void initializeQuadtrees(entt::registry& registry, float mapWidth, float mapHeight);
     void populateTileQuadtree(entt::registry& registry);
     void populateSpriteQuadtree(entt::registry& registry);
+    void populateCollisionQuadtree(entt::registry& registry);
     void initializeCamera(entt::registry& registry, int mapWidth, int mapHeight, Config config);
     void initializeRenderers(entt::registry& registry);
     void initializeDebug(entt::registry& registry, bool open);

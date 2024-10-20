@@ -3,6 +3,7 @@
 #include "components/bottom_layer_component.hpp"
 #include "components/camera_bounds_component.hpp"
 #include "components/camera_component.hpp"
+#include "components/collision_component.hpp"
 #include "components/collision_layer_component.hpp"
 #include "components/follow_component.hpp"
 #include "components/overlay_layer_component.hpp"
@@ -18,7 +19,6 @@
 #include "graphics/render_overlay.hpp"
 #include "loaders/tmx_loader.hpp"
 #include "systems/debug_system.hpp"
-
 
 InGameScene::InGameScene()
 {
@@ -44,6 +44,7 @@ void InGameScene::onEnter(entt::registry& registry)
     initializeQuadtrees(registry, mapWidth, mapHeight);
     populateTileQuadtree(registry);
     populateSpriteQuadtree(registry);
+    populateCollisionQuadtree(registry);
     initializeRenderers(registry);
     initializeDebug(registry, config.debug);
 }
@@ -86,6 +87,10 @@ void InGameScene::initializeQuadtrees(entt::registry& registry, float mapWidth,
         Box<float>(0.0f, 0.0f, mapWidth, mapHeight));
     QuadtreeManager::Instance()->createQuadtree(
         getBox, LayerType::OBJECT, Box<float>(0.0f, 0.0f, mapWidth, mapHeight));
+
+    QuadtreeManager::Instance()->createQuadtree(
+        getBox, LayerType::COLLIDABLE,
+        Box<float>(0.0f, 0.0f, mapWidth, mapHeight));
 }
 
 // Población del Quadtree con entidades de tile
@@ -132,6 +137,16 @@ void InGameScene::populateSpriteQuadtree(entt::registry& registry)
     for (auto entity : view)
     {
         QuadtreeManager::Instance()->insertIntoQuadtree(LayerType::OBJECT,
+                                                        entity);
+    }
+}
+
+void InGameScene::populateCollisionQuadtree(entt::registry& registry)
+{
+    auto view = registry.view<CollisionComponent>();
+    for (auto entity : view)
+    {
+        QuadtreeManager::Instance()->insertIntoQuadtree(LayerType::COLLIDABLE,
                                                         entity);
     }
 }

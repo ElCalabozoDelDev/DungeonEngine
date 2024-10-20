@@ -1,9 +1,11 @@
 #include "plugins/base_plugin.hpp"
 #include "loaders/config_loader.hpp"
+#include "systems/collision_system.hpp"
 #include "systems/movement_system.hpp"
 #include "systems/render_system.hpp"
 #include "systems/transform_system.hpp"
 #include "systems/update_animation_system.hpp"
+#include <iostream>
 #include <string>
 
 BasePlugin::BasePlugin(const std::string& configPath) {
@@ -23,5 +25,6 @@ void BasePlugin::mount(GameLoop& gameLoop) {
 	gameLoop.addSystem(std::make_shared<MovementSystem>());
 	gameLoop.addSystem(std::make_shared<TransformSystem>());
 	gameLoop.addSystem(std::make_shared<UpdateAnimationSystem>());
+	gameLoop.addSystemLast(std::make_shared<CollisionSystem>());
 	gameLoop.addSystemLast(std::make_shared<RenderSystem>());
 }

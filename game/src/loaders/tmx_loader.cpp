@@ -8,6 +8,7 @@
 #include "components/level_component.hpp"
 #include "components/overlay_layer_component.hpp"
 #include "components/player_component.hpp"
+#include "components/enemy_component.hpp"
 #include "components/sprite_component.hpp"
 #include "components/texture_component.hpp"
 #include "components/tile_component.hpp"
@@ -22,7 +23,7 @@
 #include "tinyxml2.h"
 #include "zlib.h"
 #include <SDL.h>
-#include <iostream>
+#include <SDL_stdinc.h>
 #include <string>
 #include <components/dimension_component.hpp>
 
@@ -168,6 +169,11 @@ void TMXLoader::loadObjectLayer(entt::registry& registry,
 				animationTime, 0);
 			if (type == "Player") {
 				registry.emplace<PlayerComponent>(entity);
+				registry.emplace<CollisionComponent>(entity);
+			}
+			else if (type == "Enemy") {
+				registry.emplace<EnemyComponent>(entity);
+				registry.emplace<CollisionComponent>(entity);
 			}
 			m_pEntities->push_back(entity);
 			m_layers.push_back(entity);
@@ -179,6 +185,7 @@ void TMXLoader::loadTileLayer(entt::registry& registry,
 	XMLElement* pTileElement) {
 	std::string decodedIDs;
 	XMLElement* pDataNode;
+	bool collidable = false;
 	for (XMLElement* e = pTileElement->FirstChildElement(); e != NULL;
 		e = e->NextSiblingElement()) {
 		if (e->Value() == std::string("data")) {
@@ -220,7 +227,7 @@ void TMXLoader::loadTileLayer(entt::registry& registry,
 					std::string value = prop->Attribute("value");
 					if (name == "Collidable") {
 						if (value == "true") {
-							registry.emplace<CollisionComponent>(layerEntity);
+							collidable = true;
 						}
 					}
 				}
@@ -241,6 +248,7 @@ void TMXLoader::loadTileLayer(entt::registry& registry,
 			auto& tile = registry.emplace<TileComponent>(tileEntity);
 			registry.emplace<TransformComponent>(tileEntity, Vector2D<float>(tileX, tileY));
 			registry.emplace<DimensionComponent>(tileEntity, m_tilewidth, m_tileheight);
+			registry.emplace<CollisionComponent>(tileEntity, collidable);
 			tile.tileId = tileId;
 
 			tileLayer.tileEntities.push_back(tileEntity);

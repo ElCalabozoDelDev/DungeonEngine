@@ -73,7 +73,7 @@ public:
         return *this;
     }
 
-    void normalize()
+    constexpr void normalize() noexcept
     {
         int l = length();
         if (l > 0)
