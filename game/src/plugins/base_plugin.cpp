@@ -25,6 +25,6 @@ void BasePlugin::mount(GameLoop& gameLoop) {
 	gameLoop.addSystem(std::make_shared<MovementSystem>());
 	gameLoop.addSystem(std::make_shared<TransformSystem>());
 	gameLoop.addSystem(std::make_shared<UpdateAnimationSystem>());
-	gameLoop.addSystemLast(std::make_shared<CollisionSystem>());
+	gameLoop.addSystem(std::make_shared<CollisionSystem>());
 	gameLoop.addSystemLast(std::make_shared<RenderSystem>());
 }
