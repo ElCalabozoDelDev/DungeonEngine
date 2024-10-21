@@ -196,8 +196,10 @@ void CollisionSystem::resolvePlayerEnemyCollision(
     }
 
     // Aplicar daño o efectos al jugador tras la colisión
-    std::cout << "El jugador ha colisionado con un enemigo, aplica el efecto correspondiente." << std::endl;
-    
+    std::cout << "El jugador ha colisionado con un enemigo, aplica el efecto "
+                 "correspondiente."
+              << std::endl;
+
     // Actualizar el Box de colisión del jugador
     playerBox.setLeft(playerTransform.position.getX());
     playerBox.setTop(playerTransform.position.getY());
