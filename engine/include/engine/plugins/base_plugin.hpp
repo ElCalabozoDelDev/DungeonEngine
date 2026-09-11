@@ -1,27 +1,24 @@
 #ifndef DE_PLUGINS_BASE_PLUGIN_HPP
 #define DE_PLUGINS_BASE_PLUGIN_HPP
 
-#include <SDL.h>
 #include <engine/core/asset_paths.hpp>
 #include <engine/core/game_loop.hpp>
 #include <engine/loaders/config.hpp>
-#include <engine/plugins/imgui_plugin.hpp>
 #include <engine/plugins/plugin.hpp>
-#include <engine/plugins/sdl_plugin.hpp>
-#include <engine/plugins/widget_plugin.hpp>
-#include <entt/entt.hpp>
 #include <utility>
 
 namespace de
 {
-/// The engine's default bundle: window and renderer, Dear ImGui, the widget
-/// layer, and the systems every 2D game here needs (transform integration,
-/// sprite animation, rendering).
+/// The engine's default bundle: window and renderer, input, Dear ImGui, the
+/// widget layer, and the systems every 2D game here needs.
 ///
 /// Takes an already-validated Config rather than a path to parse: loading can
 /// fail, and a constructor cannot report that. main() loads the config and
-/// exits with a message if it is bad, so this type cannot be built from one
-/// that never parsed.
+/// exits with a message if it is bad.
+///
+/// The sub-plugins it needs are created in mount() and handed to the loop,
+/// which owns them, instead of being members whose lifetime this type has to
+/// guarantee.
 class BasePlugin final : public Plugin
 {
 public:
@@ -33,9 +30,6 @@ public:
     void mount(GameLoop& gameLoop) override;
 
 private:
-    SDLPlugin m_sdl;
-    ImGuiPlugin m_imgui;
-    WidgetPlugin m_widget;
     Config m_config;
     AssetPaths m_assets;
 };

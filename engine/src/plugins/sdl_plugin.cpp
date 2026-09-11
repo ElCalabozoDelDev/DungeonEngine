@@ -21,6 +21,7 @@ void SDLPlugin::mount(GameLoop& gameLoop)
                 return;
             }
 
+            m_vsync = config.vsync;
             int flags = config.fullScreen ? SDL_WINDOW_FULLSCREEN : 0;
             WindowPtr window(
                 SDL_CreateWindow(config.title.c_str(), SDL_WINDOWPOS_CENTERED,
@@ -33,9 +34,16 @@ void SDLPlugin::mount(GameLoop& gameLoop)
                 return;
             }
 
-            RendererPtr renderer(SDL_CreateRenderer(
-                window.get(), -1,
-                SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC));
+            // Either vsync paces the frame or the manual limiter does --
+            // never both. Enabling both meant SDL_Delay sleeping on top of a
+            // present that had already blocked, which produced judder.
+            Uint32 rendererFlags = SDL_RENDERER_ACCELERATED;
+            if (m_vsync)
+            {
+                rendererFlags |= SDL_RENDERER_PRESENTVSYNC;
+            }
+            RendererPtr renderer(
+                SDL_CreateRenderer(window.get(), -1, rendererFlags));
             if (!renderer)
             {
                 registry.ctx().emplace<StartupError>(
@@ -64,10 +72,13 @@ void SDLPlugin::mount(GameLoop& gameLoop)
         [this](entt::registry& registry)
         {
             SDL_RenderPresent(registry.ctx().get<MainRenderer>().get());
-            m_frameTime = SDL_GetTicks() - m_frameStart;
-            if (m_frameTime < m_frameDelay)
+            if (!m_vsync)
             {
-                SDL_Delay(m_frameDelay - m_frameTime);
+                m_frameTime = SDL_GetTicks() - m_frameStart;
+                if (m_frameTime < m_frameDelay)
+                {
+                    SDL_Delay(m_frameDelay - m_frameTime);
+                }
             }
         });
 

@@ -86,6 +86,8 @@ ConfigLoader::load(const std::filesystem::path& path)
     {
         return std::unexpected(screen.error());
     }
+    // Optional: absent means keep the default (on).
+    result.vsync = (*screen)->BoolAttribute("vsync", result.vsync);
     result.screenWidth = (*screen)->IntAttribute("width", result.screenWidth);
     result.screenHeight =
         (*screen)->IntAttribute("height", result.screenHeight);

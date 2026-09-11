@@ -7,6 +7,7 @@
 
 add_library(engine STATIC
     src/core/asset_paths.cpp
+    src/input/action_map.cpp
     src/graphics/render_bottom.cpp
     src/graphics/render_collision.cpp
     src/graphics/render_object.cpp
@@ -16,6 +17,7 @@ add_library(engine STATIC
     src/loaders/tmx_loader.cpp
     src/plugins/base_plugin.cpp
     src/plugins/imgui_plugin.cpp
+    src/plugins/input_plugin.cpp
     src/plugins/sdl_plugin.cpp
     src/plugins/widget_plugin.cpp
     src/scene/scene_system.cpp

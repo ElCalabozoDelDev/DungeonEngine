@@ -1,42 +1,34 @@
-#include <SDL.h>
 #include <engine/components/velocity_component.hpp>
+#include <engine/core/vector_2d.hpp>
+#include <engine/input/action_map.hpp>
+#include <engine/input/input_state.hpp>
 #include <game/components/player_component.hpp>
+#include <game/components/speed_component.hpp>
 #include <game/systems/movement_system.hpp>
 
 using namespace de;
 
-namespace
-{
-constexpr float PlayerSpeed = 200.0f;
-}
-
 void MovementSystem::run(entt::registry& registry)
 {
-    auto view = registry.view<VelocityComponent, PlayerComponent>();
-    const Uint8* state = SDL_GetKeyboardState(nullptr);
+    const auto& input = registry.ctx().get<InputState>();
+    const auto& actions = registry.ctx().get<ActionMap>();
+
+    auto view =
+        registry.view<VelocityComponent, SpeedComponent, PlayerComponent>();
 
     for (auto entity : view)
     {
-        auto& vel = view.get<VelocityComponent>(entity);
+        auto& velocity = view.get<VelocityComponent>(entity);
+        const auto& speed = view.get<SpeedComponent>(entity);
 
-        vel.velocity.setX(0);
-        vel.velocity.setY(0);
+        Vector2D<float> direction(
+            actions.axis(input, "move_left", "move_right"),
+            actions.axis(input, "move_up", "move_down"));
 
-        if (state[SDL_SCANCODE_UP])
-        {
-            vel.velocity.setY(-PlayerSpeed);
-        }
-        if (state[SDL_SCANCODE_DOWN])
-        {
-            vel.velocity.setY(PlayerSpeed);
-        }
-        if (state[SDL_SCANCODE_LEFT])
-        {
-            vel.velocity.setX(-PlayerSpeed);
-        }
-        if (state[SDL_SCANCODE_RIGHT])
-        {
-            vel.velocity.setX(PlayerSpeed);
-        }
+        // Without this, holding two directions moved the player 1.41x faster
+        // than holding one.
+        direction.normalize();
+
+        velocity.velocity = direction * speed.value;
     }
 }

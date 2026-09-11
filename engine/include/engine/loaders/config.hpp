@@ -18,6 +18,10 @@ struct Config
     int screenWidth = 800;
     int screenHeight = 600;
     int frameRate = 60;
+
+    /// When true the renderer presents with vsync and frameRate only acts as
+    /// a hint; when false the loop paces itself to frameRate with SDL_Delay.
+    bool vsync = true;
     bool debug = false;
     float cameraWidth = 800.0f;
     float cameraHeight = 600.0f;

@@ -24,10 +24,12 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
             ImGui::CreateContext();
             ImGuiIO& io = ImGui::GetIO();
             (void)io;
-            io.ConfigFlags |=
-                ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-            io.ConfigFlags |=
-                ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+            // Keyboard and gamepad navigation are deliberately NOT enabled.
+            // With them on, ImGui reports WantCaptureKeyboard for as long as
+            // any window is focused; gameplay input honours that flag, so the
+            // player would freeze for as long as the inspector is open. The
+            // inspector is mouse-driven, and its text fields still capture
+            // the keyboard on their own while being edited.
             ImGui::StyleColorsDark();
 
             // SDL2 backend setup

@@ -20,6 +20,7 @@
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/systems/debug_system.hpp>
 #include <game/components/player_component.hpp>
+#include <game/components/speed_component.hpp>
 #include <game/debug/player_editor.hpp>
 #include <game/scene/in_game_scene.hpp>
 #include <iostream>
@@ -104,6 +105,7 @@ void InGameScene::tagObjectsByType(entt::registry& registry)
         if (objectType.type == "Player")
         {
             registry.emplace<PlayerComponent>(entity);
+            registry.emplace<SpeedComponent>(entity);
         }
     }
 }

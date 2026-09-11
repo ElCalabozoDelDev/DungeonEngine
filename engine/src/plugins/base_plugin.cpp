@@ -1,8 +1,13 @@
 #include <engine/plugins/base_plugin.hpp>
+#include <engine/plugins/imgui_plugin.hpp>
+#include <engine/plugins/input_plugin.hpp>
+#include <engine/plugins/sdl_plugin.hpp>
+#include <engine/plugins/widget_plugin.hpp>
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/systems/render_system.hpp>
 #include <engine/systems/transform_system.hpp>
 #include <engine/systems/update_animation_system.hpp>
+#include <memory>
 
 namespace de
 {
@@ -18,10 +23,17 @@ void BasePlugin::mount(GameLoop& gameLoop)
             registry.ctx().emplace<SpatialIndex>();
         });
 
-    gameLoop.addPlugin(m_sdl);
-    gameLoop.addPlugin(m_imgui);
-    gameLoop.addPlugin(m_widget);
-    gameLoop.addSystem(std::make_shared<TransformSystem>());
+    // Order matters: SDL creates the window, input drains the event queue,
+    // and only then does ImGui start its frame with those events already
+    // delivered.
+    gameLoop.addPlugin(std::make_unique<SDLPlugin>());
+    gameLoop.addPlugin(std::make_unique<InputPlugin>());
+    gameLoop.addPlugin(std::make_unique<ImGuiPlugin>());
+    gameLoop.addPlugin(std::make_unique<WidgetPlugin>());
+
+    // Integration advances by a fixed step so movement does not depend on
+    // frame rate; animation and rendering follow the frame.
+    gameLoop.addFixedSystem(std::make_shared<TransformSystem>());
     gameLoop.addSystem(std::make_shared<UpdateAnimationSystem>());
     gameLoop.addSystemLast(std::make_shared<RenderSystem>());
 }

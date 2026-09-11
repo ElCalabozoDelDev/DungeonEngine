@@ -6,6 +6,7 @@
 #include <engine/plugins/base_plugin.hpp>
 #include <game/plugins/game_plugin.hpp>
 #include <iostream>
+#include <memory>
 
 int main(int /*argc*/, char* /*argv*/[])
 {
@@ -26,11 +27,9 @@ int main(int /*argc*/, char* /*argv*/[])
     }
 
     de::GameLoop gameLoop;
-    de::BasePlugin basePlugin(std::move(*config), *assets);
-    GamePlugin gamePlugin;
-
-    gameLoop.addPlugin(basePlugin);
-    gameLoop.addPlugin(gamePlugin);
+    gameLoop.addPlugin(
+        std::make_unique<de::BasePlugin>(std::move(*config), *assets));
+    gameLoop.addPlugin(std::make_unique<GamePlugin>());
 
     return gameLoop.run() ? 0 : 1;
 }

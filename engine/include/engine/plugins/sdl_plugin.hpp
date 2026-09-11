@@ -9,7 +9,10 @@ namespace de
 class SDLPlugin : public Plugin
 {
 private:
-    Uint32 m_frameStart, m_frameTime, m_frameDelay = 0;
+    Uint32 m_frameStart = 0;
+    Uint32 m_frameTime = 0;
+    Uint32 m_frameDelay = 0;
+    bool m_vsync = true;
 
 public:
     SDLPlugin() {}
