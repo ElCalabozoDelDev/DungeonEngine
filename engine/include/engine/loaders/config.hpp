@@ -23,10 +23,10 @@ struct Config
     /// a hint; when false the loop paces itself to frameRate with SDL_Delay.
     bool vsync = true;
     bool debug = false;
+    /// Logical render size: the coordinate space the game draws in, scaled
+    /// by SDL to fit the window.
     float cameraWidth = 800.0f;
     float cameraHeight = 600.0f;
-    float viewportOffsetX = 0.0f;
-    float viewportOffsetY = 0.0f;
     float zoomLevel = 1.0f;
     std::map<std::string, std::string> levels;
 };

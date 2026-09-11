@@ -71,7 +71,9 @@ reference the game even by accident. To reuse it, drop `game/` and write your
 own against `engine`.
 
 `assets/game.xml` holds the window, framerate, camera and level settings read at
-startup.
+startup. `<Screen>` is the window size; `<Camera width/height>` is the logical
+resolution the game draws in, which SDL scales to the window, and `zoomLevel`
+is how many logical pixels one world unit occupies.
 
 ## Dependencies
 

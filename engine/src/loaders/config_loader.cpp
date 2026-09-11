@@ -100,10 +100,6 @@ ConfigLoader::load(const std::filesystem::path& path)
     result.cameraWidth = (*camera)->FloatAttribute("width", result.cameraWidth);
     result.cameraHeight =
         (*camera)->FloatAttribute("height", result.cameraHeight);
-    result.viewportOffsetX =
-        (*camera)->FloatAttribute("offsetX", result.viewportOffsetX);
-    result.viewportOffsetY =
-        (*camera)->FloatAttribute("offsetY", result.viewportOffsetY);
     result.zoomLevel = (*camera)->FloatAttribute("zoomLevel", result.zoomLevel);
 
     auto levels = child(root, "Levels");

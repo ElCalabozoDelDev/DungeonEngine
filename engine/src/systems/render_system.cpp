@@ -1,83 +1,62 @@
-#include "imgui.h"
-#include "imgui/imgui_impl_sdlrenderer2.h"
 #include <SDL_render.h>
-#include <engine/components/camera_component.hpp>
-#include <engine/components/dimension_component.hpp>
-#include <engine/components/transform_component.hpp>
+#include <algorithm>
+#include <engine/graphics/camera2d.hpp>
 #include <engine/graphics/render.hpp>
 #include <engine/graphics/sdl_resources.hpp>
-#include <engine/spatial/quadtree.hpp>
 #include <engine/systems/render_system.hpp>
-#include <engine/widgets/gui.hpp>
+#include <engine/widgets/widget.hpp>
+#include <imgui.h>
+#include <imgui/imgui_impl_sdlrenderer2.h>
 
 namespace de
 {
 void RenderSystem::run(entt::registry& registry)
 {
-    SDL_Renderer* renderer = registry.ctx().get<MainRenderer>().get();
-
     renderGraphics(registry);
     renderGUI(registry);
+}
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+void RenderSystem::renderGraphics(entt::registry& registry)
+{
+    const auto camera = activeCamera(registry);
+    if (!camera)
+    {
+        // No camera yet (a scene that has not loaded): nothing to draw.
+        return;
+    }
+
+    // Draw order is explicit. It used to be whatever order EnTT iterated the
+    // pool in, so the background landing behind the overlay was luck. Sorting
+    // every frame keeps it correct when a scene adds a pass later; with a
+    // handful of passes the cost is nothing.
+    registry.sort<RenderPass>([](const RenderPass& lhs, const RenderPass& rhs)
+                              { return lhs.order < rhs.order; });
+
+    for (auto&& [entity, renderPass] : registry.view<RenderPass>().each())
+    {
+        if (renderPass.pass)
+        {
+            renderPass.pass->draw(registry, *camera);
+        }
+    }
 }
 
 void RenderSystem::renderGUI(entt::registry& registry)
 {
     SDL_Renderer* renderer = registry.ctx().get<MainRenderer>().get();
-    registry.view<std::unique_ptr<gui::WidgetComponent>>().each(
-        [&registry](auto entity, auto& widget_component)
+
+    for (auto&& [entity, widget] : registry.view<Widget>().each())
+    {
+        if (widget.widget)
         {
-            widget_component->frame_begin();
-            widget_component->frame_update(registry);
-            widget_component->frame_end();
-        });
+            widget.widget->frame_begin();
+            widget.widget->frame_update(registry);
+            widget.widget->frame_end();
+        }
+    }
+
     ImGui::Render();
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
-}
-void RenderSystem::renderGraphics(entt::registry& registry)
-{
-    const auto& view = registry.view<CameraComponent, TransformComponent>();
-    if (view.begin() == view.end())
-    {
-        // No camera yet (a scene that has not loaded, or one without one):
-        // dereferencing begin() here was undefined behaviour.
-        return;
-    }
-    auto cameraEntity = *view.begin();
-    auto& camera = view.get<CameraComponent>(cameraEntity);
-    auto& cameraPos = view.get<TransformComponent>(cameraEntity).position;
-    auto& dimension = registry.get<DimensionComponent>(cameraEntity);
-
-    // Zoom level
-    float zoomLevel = camera.zoomLevel;
-
-    // Visible extents at this zoom
-    float adjustedCameraWidth = (dimension.width / zoomLevel);
-    float adjustedCameraHeight = (dimension.height / zoomLevel);
-
-    // Half extents, used to centre the view
-    float halfAdjustedWidth = adjustedCameraWidth / 2.0f;
-    float halfAdjustedHeight = adjustedCameraHeight / 2.0f;
-    int margin = 32;
-    // Visible area of the camera
-    Box<float> cameraView{
-        (cameraPos.getX() - halfAdjustedWidth),  // camera centre X
-        (cameraPos.getY() - halfAdjustedHeight), // camera centre Y
-        adjustedCameraWidth,                     // zoomed width
-        adjustedCameraHeight                     // zoomed height
-    };
-
-    registry.view<std::shared_ptr<Render>>().each(
-        [&registry, &cameraView, camera](entt::entity entity,
-                                         std::shared_ptr<Render>& render)
-        {
-            if (render)
-            {
-                render->draw(registry, cameraView, camera.viewportOffsetX,
-                             camera.viewportOffsetY, camera.zoomLevel);
-            }
-        });
 }
 
 } // namespace de

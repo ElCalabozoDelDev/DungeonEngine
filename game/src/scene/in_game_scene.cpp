@@ -19,10 +19,12 @@
 #include <engine/loaders/tmx_loader.hpp>
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/systems/debug_system.hpp>
+#include <engine/widgets/widget.hpp>
 #include <game/components/player_component.hpp>
 #include <game/components/speed_component.hpp>
 #include <game/debug/player_editor.hpp>
 #include <game/scene/in_game_scene.hpp>
+#include <game/widgets/counter_widget.hpp>
 #include <iostream>
 
 using namespace de;
@@ -182,13 +184,10 @@ void InGameScene::initializeCamera(entt::registry& registry, int mapWidth,
                                    int mapHeight, const Config& config)
 {
     auto cameraEntity = registry.create();
-    registry.emplace<DimensionComponent>(cameraEntity,
-                                         static_cast<int>(config.cameraWidth),
-                                         static_cast<int>(config.cameraHeight));
+    registry.emplace<DimensionComponent>(cameraEntity, config.cameraWidth,
+                                         config.cameraHeight);
 
     auto& camera = registry.emplace<CameraComponent>(cameraEntity);
-    camera.viewportOffsetX = config.viewportOffsetX;
-    camera.viewportOffsetY = config.viewportOffsetY;
     camera.zoomLevel = config.zoomLevel;
     registry.emplace<CameraBoundsComponent>(cameraEntity, mapWidth, mapHeight);
 
@@ -210,19 +209,19 @@ void InGameScene::initializeCamera(entt::registry& registry, int mapWidth,
 
 void InGameScene::initializeRenderers(entt::registry& registry)
 {
-    auto bottomEntity = registry.create();
-    auto overlayEntity = registry.create();
-    auto collisionEntity = registry.create();
-    auto objectEntity = registry.create();
+    // Order is declared, not implied by creation order. They are created here
+    // deliberately out of draw order to make that obvious.
+    const auto addPass = [&](std::unique_ptr<Render> pass, int order)
+    {
+        auto entity = registry.create();
+        registry.emplace<RenderPass>(entity, std::move(pass), order);
+        m_entities.push_back(entity);
+    };
 
-    registry.emplace<std::shared_ptr<Render>>(
-        collisionEntity, std::make_shared<RenderCollision>());
-    registry.emplace<std::shared_ptr<Render>>(objectEntity,
-                                              std::make_shared<RenderObject>());
-    registry.emplace<std::shared_ptr<Render>>(
-        overlayEntity, std::make_shared<RenderOverlay>());
-    registry.emplace<std::shared_ptr<Render>>(bottomEntity,
-                                              std::make_shared<RenderBottom>());
+    addPass(std::make_unique<RenderOverlay>(), render_order::Overlay);
+    addPass(std::make_unique<RenderObject>(), render_order::Object);
+    addPass(std::make_unique<RenderBottom>(), render_order::Bottom);
+    addPass(std::make_unique<RenderCollision>(), render_order::Collision);
 }
 
 void InGameScene::initializeDebug(entt::registry& registry, bool open)
@@ -234,4 +233,10 @@ void InGameScene::initializeDebug(entt::registry& registry, bool open)
     debugSystem.setOpen(open);
     debugSystem.register_component<PlayerComponent>("Player");
     debugSystem.register_component<CameraComponent>("Camera");
+
+    // The hook-based widget layer, actually in use: WidgetPlugin used to be
+    // an empty shell and CounterWidget was never instantiated.
+    auto widgetEntity = registry.create();
+    registry.emplace<Widget>(widgetEntity, std::make_unique<CounterWidget>());
+    m_entities.push_back(widgetEntity);
 }

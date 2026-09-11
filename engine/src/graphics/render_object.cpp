@@ -4,13 +4,13 @@
 
 namespace de
 {
-void RenderObject::draw(entt::registry& registry, Box<float> cameraView,
-                        float offsetX, float offsetY, float zoomLevel)
+void RenderObject::draw(entt::registry& registry, const Camera2D& camera)
 {
     const auto& spatial = registry.ctx().get<SpatialIndex>();
-    std::vector<entt::entity> visible =
-        spatial.query(Layer::Object, cameraView);
-    Renderer::renderSprites(registry, visible, offsetX, offsetY, zoomLevel);
+    // One margin of a tile so entities straddling the edge still draw.
+    const std::vector<entt::entity> visible =
+        spatial.query(Layer::Object, camera.visibleWorld(32.0f));
+    Renderer::renderSprites(registry, visible, camera);
 }
 
 } // namespace de

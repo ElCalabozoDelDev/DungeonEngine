@@ -8,6 +8,7 @@
 add_library(engine STATIC
     src/core/asset_paths.cpp
     src/input/action_map.cpp
+    src/graphics/camera2d.cpp
     src/graphics/render_bottom.cpp
     src/graphics/render_collision.cpp
     src/graphics/render_object.cpp
@@ -19,7 +20,6 @@ add_library(engine STATIC
     src/plugins/imgui_plugin.cpp
     src/plugins/input_plugin.cpp
     src/plugins/sdl_plugin.cpp
-    src/plugins/widget_plugin.cpp
     src/scene/scene_system.cpp
     src/spatial/spatial_index.cpp
     src/systems/camera_system.cpp

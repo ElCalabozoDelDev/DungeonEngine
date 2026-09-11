@@ -2,7 +2,6 @@
 #include <engine/plugins/imgui_plugin.hpp>
 #include <engine/plugins/input_plugin.hpp>
 #include <engine/plugins/sdl_plugin.hpp>
-#include <engine/plugins/widget_plugin.hpp>
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/systems/render_system.hpp>
 #include <engine/systems/transform_system.hpp>
@@ -29,7 +28,6 @@ void BasePlugin::mount(GameLoop& gameLoop)
     gameLoop.addPlugin(std::make_unique<SDLPlugin>());
     gameLoop.addPlugin(std::make_unique<InputPlugin>());
     gameLoop.addPlugin(std::make_unique<ImGuiPlugin>());
-    gameLoop.addPlugin(std::make_unique<WidgetPlugin>());
 
     // Integration advances by a fixed step so movement does not depend on
     // frame rate; animation and rendering follow the frame.

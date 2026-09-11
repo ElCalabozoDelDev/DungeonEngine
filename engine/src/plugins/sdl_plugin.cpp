@@ -54,6 +54,13 @@ void SDLPlugin::mount(GameLoop& gameLoop)
 
             SDL_Renderer* rawRenderer = renderer.get();
 
+            // Draw in the camera's coordinate space and let SDL scale it to
+            // the window. Everything downstream works in these logical
+            // pixels, so window size stops leaking into the draw maths.
+            SDL_RenderSetLogicalSize(rawRenderer,
+                                     static_cast<int>(config.cameraWidth),
+                                     static_cast<int>(config.cameraHeight));
+
             registry.ctx().emplace<DeltaTime>(DeltaTime{0.0f});
             registry.ctx().emplace<Window>(Window{std::move(window)});
             registry.ctx().emplace<MainRenderer>(

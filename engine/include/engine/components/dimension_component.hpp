@@ -3,10 +3,14 @@
 
 namespace de
 {
+/// Size in world units.
+///
+/// Floats, not ints: the camera's size comes from Config as a float and was
+/// being truncated on the way in, and the spatial index needs floats anyway.
 struct DimensionComponent
 {
-    int width;
-    int height;
+    float width = 0.0f;
+    float height = 0.0f;
 };
 
 } // namespace de
