@@ -30,6 +30,9 @@ SOFTWARE.
 //   2026-09-11         moved into namespace de, dropped the <iostream>
 //                      dependency, and made add()/remove() report failure
 //                      instead of relying on asserts that vanish under NDEBUG
+//   2026-09-11         added removeAt(), which locates a value by a supplied
+//                      box rather than its current bounds, so values that
+//                      have moved can be re-filed
 
 #ifndef DE_SPATIAL_QUADTREE_HPP
 #define DE_SPATIAL_QUADTREE_HPP
@@ -99,6 +102,12 @@ public:
                m_top <= box.m_top && box.getBottom() <= getBottom();
     }
 
+    constexpr bool operator==(const Box<T>& box) const noexcept
+    {
+        return m_left == box.m_left && m_top == box.m_top &&
+               m_width == box.m_width && m_height == box.m_height;
+    }
+
     constexpr bool intersects(const Box<T>& box) const noexcept
     {
         return !(m_left >= box.getRight() || getRight() <= box.m_left ||
@@ -144,13 +153,22 @@ public:
         return true;
     }
 
-    /// Removes `value`. Returns false when it was out of bounds or absent.
-    bool remove(const T& value)
+    /// Removes `value`, located by its current bounds.
+    bool remove(const T& value) { return removeAt(value, m_getBox(value)); }
+
+    /// Removes `value`, navigating with `valueBox` rather than the bounds
+    /// GetBox reports now.
+    ///
+    /// This is what makes moving values possible. The tree filed the value
+    /// under the box it had when it was added; once it moves, its current box
+    /// leads down a different branch and the value is never found. Callers
+    /// that move things must remove with the old box and add with the new one.
+    bool removeAt(const T& value, const Box<Float>& valueBox)
     {
-        if (!m_box.contains(m_getBox(value)))
+        if (!m_box.contains(valueBox))
             return false;
         bool removed = false;
-        remove(m_root.get(), m_box, value, removed);
+        remove(m_root.get(), m_box, valueBox, value, removed);
         return removed;
     }
 
@@ -311,8 +329,8 @@ private:
 
     /// Returns whether the caller should try to merge `node`; `removed` reports
     /// whether the value was actually found.
-    bool remove(Node* node, const Box<Float>& box, const T& value,
-                bool& removed)
+    bool remove(Node* node, const Box<Float>& box, const Box<Float>& valueBox,
+                const T& value, bool& removed)
     {
         assert(node != nullptr);
         if (isLeaf(node))
@@ -320,11 +338,11 @@ private:
             removed = removeValue(node, value);
             return true;
         }
-        auto i = getQuadrant(box, m_getBox(value));
+        auto i = getQuadrant(box, valueBox);
         if (i != -1)
         {
             if (remove(node->children[static_cast<std::size_t>(i)].get(),
-                       computeBox(box, i), value, removed))
+                       computeBox(box, i), valueBox, value, removed))
                 return tryMerge(node);
         }
         else

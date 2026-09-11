@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <engine/core/startup_error.hpp>
 #include <engine/input/action_map.hpp>
+#include <engine/input/input_state.hpp>
 #include <engine/scene/scene_system.hpp>
 #include <engine/systems/camera_system.hpp>
 #include <engine/systems/debug_system.hpp>
@@ -35,10 +36,37 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
             actions.bind("move_left", SDL_SCANCODE_A);
             actions.bind("move_right", SDL_SCANCODE_RIGHT);
             actions.bind("move_right", SDL_SCANCODE_D);
+            actions.bind("reload_scene", SDL_SCANCODE_F5);
 
-            registry.ctx().emplace<std::shared_ptr<SceneSystem>>(sceneSystem);
-            registry.ctx().emplace<std::shared_ptr<DebugSystem>>(debugSystem);
-            sceneSystem->changeScene(registry, std::make_unique<InGameScene>());
+            // The loop owns these systems; the context holds a reference so
+            // there is one owner instead of a second shared_ptr.
+            registry.ctx().emplace<SceneSystem&>(*sceneSystem);
+            registry.ctx().emplace<DebugSystem&>(*debugSystem);
+
+            // Immediate, not requested: this runs during setup, where a
+            // failure to load still has to reach GameLoop as a StartupError
+            // before the first frame.
+            sceneSystem->setScene(registry, std::make_unique<InGameScene>());
+        });
+
+    // F5 rebuilds the level. Useful while iterating on a map, and it is what
+    // exercises the deferred scene switch: the request is made here, at frame
+    // begin, and applied by SceneSystem rather than tearing the level down
+    // underneath the systems that have not run yet.
+    gameLoop.addFrameBeginCallback(
+        [](entt::registry& registry)
+        {
+            auto* scenes = registry.ctx().find<SceneSystem>();
+            auto* input = registry.ctx().find<InputState>();
+            auto* actions = registry.ctx().find<ActionMap>();
+            if (scenes == nullptr || input == nullptr || actions == nullptr)
+            {
+                return;
+            }
+            if (actions->wasPressed(*input, "reload_scene"))
+            {
+                scenes->requestScene(std::make_unique<InGameScene>());
+            }
         });
 
     // Turning input into velocity advances with the fixed step, alongside the

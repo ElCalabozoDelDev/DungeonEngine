@@ -25,6 +25,7 @@ add_library(engine STATIC
     src/systems/camera_system.cpp
     src/systems/debug_system.cpp
     src/systems/render_system.cpp
+    src/systems/spatial_sync_system.cpp
     src/systems/transform_system.cpp
     src/systems/update_animation_system.cpp
 )

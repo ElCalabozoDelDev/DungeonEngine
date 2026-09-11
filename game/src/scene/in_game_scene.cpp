@@ -229,7 +229,7 @@ void InGameScene::initializeDebug(entt::registry& registry, bool open)
     if (!open)
         return;
 
-    auto& debugSystem = *registry.ctx().get<std::shared_ptr<DebugSystem>>();
+    auto& debugSystem = registry.ctx().get<DebugSystem>();
     debugSystem.setOpen(open);
     debugSystem.register_component<PlayerComponent>("Player");
     debugSystem.register_component<CameraComponent>("Camera");

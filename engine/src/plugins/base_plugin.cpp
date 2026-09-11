@@ -4,6 +4,7 @@
 #include <engine/plugins/sdl_plugin.hpp>
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/systems/render_system.hpp>
+#include <engine/systems/spatial_sync_system.hpp>
 #include <engine/systems/transform_system.hpp>
 #include <engine/systems/update_animation_system.hpp>
 #include <memory>
@@ -32,6 +33,9 @@ void BasePlugin::mount(GameLoop& gameLoop)
     // Integration advances by a fixed step so movement does not depend on
     // frame rate; animation and rendering follow the frame.
     gameLoop.addFixedSystem(std::make_shared<TransformSystem>());
+    // Immediately after integration: whatever moved must be re-filed before
+    // anything queries the index.
+    gameLoop.addFixedSystem(std::make_shared<SpatialSyncSystem>());
     gameLoop.addSystem(std::make_shared<UpdateAnimationSystem>());
     gameLoop.addSystemLast(std::make_shared<RenderSystem>());
 }

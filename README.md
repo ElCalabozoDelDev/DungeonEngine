@@ -47,7 +47,7 @@ The executable is written to `build/bin/` and the assets are mirrored to
 Assets are located relative to the executable, so it runs from any working
 directory — double-clicking it in the file explorer works too.
 
-Arrow keys or WASD move the character.
+Arrow keys or WASD move the character. F5 reloads the level.
 
 If `assets/game.xml` is missing or malformed, the game exits with a message
 naming the problem instead of crashing.
