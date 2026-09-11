@@ -1,60 +1,65 @@
-#include "scene/in_game_scene.hpp"
-#include "SDL_render.h"
-#include "components/bottom_layer_component.hpp"
-#include "components/camera_bounds_component.hpp"
-#include "components/camera_component.hpp"
-#include "components/collision_layer_component.hpp"
-#include "components/follow_component.hpp"
-#include "components/overlay_layer_component.hpp"
-#include "components/player_component.hpp"
-#include "components/sprite_component.hpp"
-#include "components/tile_layer_component.hpp"
-#include "components/transform_component.hpp"
-#include "core/constants.hpp"
-#include "core/quadtree_manager.hpp"
-#include "graphics/render_bottom.hpp"
-#include "graphics/render_collision.hpp"
-#include "graphics/render_object.hpp"
-#include "graphics/render_overlay.hpp"
-#include "loaders/tmx_loader.hpp"
-#include "systems/debug_system.hpp"
+#include <SDL_render.h>
+#include <engine/components/bottom_layer_component.hpp>
+#include <engine/components/camera_bounds_component.hpp>
+#include <engine/components/camera_component.hpp>
+#include <engine/components/collision_layer_component.hpp>
+#include <engine/components/dimension_component.hpp>
+#include <engine/components/follow_component.hpp>
+#include <engine/components/object_type_component.hpp>
+#include <engine/components/overlay_layer_component.hpp>
+#include <engine/components/sprite_component.hpp>
+#include <engine/components/tile_layer_component.hpp>
+#include <engine/components/transform_component.hpp>
+#include <engine/core/constants.hpp>
+#include <engine/graphics/render_bottom.hpp>
+#include <engine/graphics/render_collision.hpp>
+#include <engine/graphics/render_object.hpp>
+#include <engine/graphics/render_overlay.hpp>
+#include <engine/loaders/tmx_loader.hpp>
+#include <engine/spatial/quadtree_manager.hpp>
+#include <engine/systems/debug_system.hpp>
+#include <game/components/player_component.hpp>
+#include <game/debug/player_editor.hpp>
+#include <game/scene/in_game_scene.hpp>
+#include <iostream>
 
+using namespace de;
 
 InGameScene::InGameScene()
 {
-    // Inicialización de la escena del juego
+    // Nothing to set up until onEnter: the registry does not exist yet.
 }
 
-// Método que se ejecuta cuando se entra a la escena
 void InGameScene::onEnter(entt::registry& registry)
 {
-    SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
-    auto config = registry.ctx().get<Config>();
+    const auto& config = registry.ctx().get<Config>();
 
-    // Cargar el nivel
+    // Load the level
     TMXLoader tmxLoader(&m_entities);
-    tmxLoader.loadLevel(registry, config.levels["level1"].c_str());
+    tmxLoader.loadLevel(registry, config.levels.at("level1").c_str());
 
-    // Inicializar la cámara
+    // Turn the Tiled object types into this game's components
+    tagObjectsByType(registry);
+
+    // Set up the camera
     int mapWidth = tmxLoader.getWidth() * tmxLoader.getTileWidth();
     int mapHeight = tmxLoader.getHeight() * tmxLoader.getTileHeight();
     initializeCamera(registry, mapWidth, mapHeight, config);
 
-    // Inicializar quadtrees y otros componentes
-    initializeQuadtrees(registry, mapWidth, mapHeight);
+    // Spatial indices and render passes
+    initializeQuadtrees(registry, static_cast<float>(mapWidth),
+                        static_cast<float>(mapHeight));
     populateTileQuadtree(registry);
     populateSpriteQuadtree(registry);
     initializeRenderers(registry);
     initializeDebug(registry, config.debug);
 }
 
-// Método que se llama en cada frame para actualizar la escena
 void InGameScene::onUpdate(entt::registry& registry) {}
 
-// Método que se ejecuta cuando se sale de la escena
 void InGameScene::onExit(entt::registry& registry)
 {
-    // Destruir todas las entidades creadas en esta escena
+    // Destroy every entity this scene created
     for (auto entity : m_entities)
     {
         registry.destroy(entity);
@@ -62,7 +67,21 @@ void InGameScene::onExit(entt::registry& registry)
     m_entities.clear();
 }
 
-// Inicializa los Quadtrees para la escena
+// The TMX loader records each object's Tiled `type` without interpreting it;
+// mapping those strings onto gameplay components is this game's decision.
+void InGameScene::tagObjectsByType(entt::registry& registry)
+{
+    auto view = registry.view<ObjectTypeComponent>();
+    for (auto entity : view)
+    {
+        const auto& objectType = view.get<ObjectTypeComponent>(entity);
+        if (objectType.type == "Player")
+        {
+            registry.emplace<PlayerComponent>(entity);
+        }
+    }
+}
+
 void InGameScene::initializeQuadtrees(entt::registry& registry, float mapWidth,
                                       float mapHeight)
 {
@@ -71,13 +90,13 @@ void InGameScene::initializeQuadtrees(entt::registry& registry, float mapWidth,
     {
         auto& transform = registry.get<TransformComponent>(entity);
         auto& dimension = registry.get<DimensionComponent>(entity);
-        return quadtree::Box<float>(transform.position.getX(),
-                                    transform.position.getY(), dimension.width,
-                                    dimension.height);
+        return Box<float>(transform.position.getX(), transform.position.getY(),
+                          static_cast<float>(dimension.width),
+                          static_cast<float>(dimension.height));
     };
+
     QuadtreeManager::Instance()->createQuadtree(
         getBox, LayerType::BOTTOM, Box<float>(0.0f, 0.0f, mapWidth, mapHeight));
-
     QuadtreeManager::Instance()->createQuadtree(
         getBox, LayerType::OVERLAY,
         Box<float>(0.0f, 0.0f, mapWidth, mapHeight));
@@ -88,7 +107,6 @@ void InGameScene::initializeQuadtrees(entt::registry& registry, float mapWidth,
         getBox, LayerType::OBJECT, Box<float>(0.0f, 0.0f, mapWidth, mapHeight));
 }
 
-// Población del Quadtree con entidades de tile
 void InGameScene::populateTileQuadtree(entt::registry& registry)
 {
     auto bottomView = registry.view<TileLayerComponent, BottomLayerComponent>();
@@ -101,6 +119,7 @@ void InGameScene::populateTileQuadtree(entt::registry& registry)
                                                             tile);
         }
     }
+
     auto overlayView =
         registry.view<TileLayerComponent, OverlayLayerComponent>();
     for (auto entity : overlayView)
@@ -112,6 +131,7 @@ void InGameScene::populateTileQuadtree(entt::registry& registry)
                                                             tile);
         }
     }
+
     auto collisionView =
         registry.view<TileLayerComponent, CollisionLayerComponent>();
     for (auto entity : collisionView)
@@ -125,7 +145,6 @@ void InGameScene::populateTileQuadtree(entt::registry& registry)
     }
 }
 
-// Población del Quadtree con entidades de sprite
 void InGameScene::populateSpriteQuadtree(entt::registry& registry)
 {
     auto view = registry.view<SpriteComponent>();
@@ -136,13 +155,13 @@ void InGameScene::populateSpriteQuadtree(entt::registry& registry)
     }
 }
 
-// Inicializa la cámara de la escena
 void InGameScene::initializeCamera(entt::registry& registry, int mapWidth,
-                                   int mapHeight, Config config)
+                                   int mapHeight, const Config& config)
 {
     auto cameraEntity = registry.create();
-    registry.emplace<DimensionComponent>(cameraEntity, config.cameraWidth,
-                                         config.cameraHeight);
+    registry.emplace<DimensionComponent>(cameraEntity,
+                                         static_cast<int>(config.cameraWidth),
+                                         static_cast<int>(config.cameraHeight));
 
     auto& camera = registry.emplace<CameraComponent>(cameraEntity);
     camera.viewportOffsetX = config.viewportOffsetX;
@@ -164,7 +183,6 @@ void InGameScene::initializeCamera(entt::registry& registry, int mapWidth,
     m_entities.push_back(cameraEntity);
 }
 
-// Inicializa los renderizadores de la escena
 void InGameScene::initializeRenderers(entt::registry& registry)
 {
     auto bottomEntity = registry.create();
@@ -182,7 +200,6 @@ void InGameScene::initializeRenderers(entt::registry& registry)
                                               std::make_shared<RenderBottom>());
 }
 
-// Inicializa el sistema de depuración
 void InGameScene::initializeDebug(entt::registry& registry, bool open)
 {
     if (!open)

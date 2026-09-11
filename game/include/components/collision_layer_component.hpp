@@ -1,9 +1,0 @@
-#ifndef COLLISION_LAYER_COMPONENT_HPP
-#define COLLISION_LAYER_COMPONENT_HPP
-
-struct CollisionLayerComponent
-{
-    
-};
-
-#endif // COLLISION_LAYER_COMPONENT_HPP
