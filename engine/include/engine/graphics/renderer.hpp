@@ -7,14 +7,12 @@
 #include <engine/components/sprite_component.hpp>
 #include <engine/components/texture_component.hpp>
 #include <engine/components/tile_component.hpp>
-#include <engine/components/tile_layer_component.hpp>
 #include <engine/components/tile_set_component.hpp>
 #include <engine/components/transform_component.hpp>
 #include <engine/graphics/sdl_resources.hpp>
 #include <engine/graphics/texture_cache.hpp>
 #include <engine/loaders/config.hpp>
 #include <entt/entt.hpp>
-#include <iostream>
 #include <vector>
 
 namespace de
@@ -77,11 +75,14 @@ public:
             auto& trf = registry.get<TransformComponent>(entity);
             auto& tile = registry.get<TileComponent>(entity);
 
-            // Locate the tileset this tile belongs to
-            entt::entity tilesetId = getTilesetByID(registry, tile.tileId);
-            auto& tileset = registry.get<TileSetComponent>(tilesetId);
-            auto& texture = registry.get<TextureComponent>(tilesetId);
-            auto& dimension = registry.get<DimensionComponent>(tilesetId);
+            // The tileset was resolved at load time
+            if (tile.tileset == entt::null)
+            {
+                continue;
+            }
+            auto& tileset = registry.get<TileSetComponent>(tile.tileset);
+            auto& texture = registry.get<TextureComponent>(tile.tileset);
+            auto& dimension = registry.get<DimensionComponent>(tile.tileset);
 
             // Tile position, offset by the camera
             int renderX = static_cast<int>(
@@ -107,40 +108,6 @@ public:
 
         // Restore the draw colour
         SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 255); // black
-    }
-
-private:
-    static entt::entity getTilesetByID(entt::registry& registry, int tileID)
-    {
-        auto view = registry.view<TileLayerComponent>();
-        for (auto entity : view)
-        {
-            auto& layer = view.get<TileLayerComponent>(entity);
-            auto& tilesets = layer.tileSetEntities;
-            for (int i = 0; i < tilesets.size(); i++)
-            {
-                if (i + 1 <= tilesets.size() - 1)
-                {
-                    auto tileset =
-                        registry.get<TileSetComponent>(tilesets.at(i));
-                    auto nextTileset =
-                        registry.get<TileSetComponent>(tilesets.at(i + 1));
-                    if (tileID >= tileset.firstGridID &&
-                        tileID < nextTileset.firstGridID)
-                    {
-                        return tilesets.at(i);
-                    }
-                }
-                else
-                {
-                    return tilesets.at(i);
-                }
-            }
-        }
-
-        std::cerr << "did not find tileset, returning empty tileset\n";
-        entt::entity t;
-        return t;
     }
 };
 

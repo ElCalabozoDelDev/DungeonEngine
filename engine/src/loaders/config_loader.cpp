@@ -1,84 +1,145 @@
-#include "tinyxml2.h"
 #include <engine/loaders/config_loader.hpp>
-#include <iostream>
+#include <tinyxml2.h>
 
 namespace de
 {
-bool ConfigLoader::loadConfigFromXML(const char* path, Config& config)
+namespace
+{
+using tinyxml2::XMLElement;
+
+/// Fetches a required child element, reporting which one was missing rather
+/// than dereferencing a null pointer the way the old chained calls did.
+std::expected<XMLElement*, std::string> child(XMLElement* parent,
+                                              const char* name)
+{
+    XMLElement* element = parent->FirstChildElement(name);
+    if (element == nullptr)
+    {
+        return std::unexpected(std::string("missing <") + name + "> element");
+    }
+    return element;
+}
+
+} // namespace
+
+std::expected<Config, std::string>
+ConfigLoader::load(const std::filesystem::path& path)
 {
     tinyxml2::XMLDocument doc;
-    if (doc.LoadFile(path) != tinyxml2::XML_SUCCESS)
+    if (doc.LoadFile(path.string().c_str()) != tinyxml2::XML_SUCCESS)
     {
-        std::cerr << "Failed to load XML file: " << path << std::endl;
-        return false;
+        return std::unexpected("could not read '" + path.string() +
+                               "': " + doc.ErrorStr());
     }
-    tinyxml2::XMLElement* root = doc.FirstChildElement("Game")
-                                     ->FirstChildElement("Config")
-                                     ->FirstChildElement("Init");
-    if (root == nullptr)
+
+    XMLElement* game = doc.FirstChildElement("Game");
+    if (game == nullptr)
     {
-        std::cerr << "Failed to load game data from XML" << std::endl;
-        return false;
+        return std::unexpected("missing <Game> root element");
     }
-    tinyxml2::XMLElement* title = root->FirstChildElement("Title");
-    if (title == nullptr)
+
+    auto config = child(game, "Config");
+    if (!config)
     {
-        std::cerr << "Failed to load title data from XML" << std::endl;
-        return false;
+        return std::unexpected(config.error());
     }
-    tinyxml2::XMLElement* fullScreen = root->FirstChildElement("FullScreen");
-    if (fullScreen == nullptr)
+    auto init = child(*config, "Init");
+    if (!init)
     {
-        std::cerr << "Failed to load fullScreen data from XML" << std::endl;
-        return false;
+        return std::unexpected(init.error());
     }
-    tinyxml2::XMLElement* screen = root->FirstChildElement("Screen");
-    if (screen == nullptr)
+    XMLElement* root = *init;
+
+    Config result;
+
+    auto title = child(root, "Title");
+    if (!title)
     {
-        std::cerr << "Failed to load screen data from XML" << std::endl;
-        return false;
+        return std::unexpected(title.error());
     }
-    tinyxml2::XMLElement* frameRate = root->FirstChildElement("FrameRate");
-    if (frameRate == nullptr)
+    const char* titleText = (*title)->GetText();
+    result.title = titleText != nullptr ? titleText : result.title;
+
+    auto fullScreen = child(root, "FullScreen");
+    if (!fullScreen)
     {
-        std::cerr << "Failed to load frameRate data from XML" << std::endl;
-        return false;
+        return std::unexpected(fullScreen.error());
     }
-    tinyxml2::XMLElement* debug = root->FirstChildElement("Debug");
-    if (debug == nullptr)
+    result.fullScreen = (*fullScreen)->BoolText(result.fullScreen);
+
+    auto frameRate = child(root, "FrameRate");
+    if (!frameRate)
     {
-        std::cerr << "Failed to load debug data from XML" << std::endl;
-        return false;
+        return std::unexpected(frameRate.error());
     }
-    tinyxml2::XMLElement* camera = root->FirstChildElement("Camera");
-    if (camera == nullptr)
+    result.frameRate = (*frameRate)->IntText(result.frameRate);
+
+    auto debug = child(root, "Debug");
+    if (!debug)
     {
-        std::cerr << "Failed to load camera data from XML" << std::endl;
-        return false;
+        return std::unexpected(debug.error());
     }
-    tinyxml2::XMLElement* levels = root->FirstChildElement("Levels");
-    if (levels == nullptr)
+    result.debug = (*debug)->BoolText(result.debug);
+
+    auto screen = child(root, "Screen");
+    if (!screen)
     {
-        std::cerr << "Failed to load levels data from XML" << std::endl;
-        return false;
+        return std::unexpected(screen.error());
     }
-    for (tinyxml2::XMLElement* level = levels->FirstChildElement("Level");
+    result.screenWidth = (*screen)->IntAttribute("width", result.screenWidth);
+    result.screenHeight =
+        (*screen)->IntAttribute("height", result.screenHeight);
+
+    auto camera = child(root, "Camera");
+    if (!camera)
+    {
+        return std::unexpected(camera.error());
+    }
+    result.cameraWidth = (*camera)->FloatAttribute("width", result.cameraWidth);
+    result.cameraHeight =
+        (*camera)->FloatAttribute("height", result.cameraHeight);
+    result.viewportOffsetX =
+        (*camera)->FloatAttribute("offsetX", result.viewportOffsetX);
+    result.viewportOffsetY =
+        (*camera)->FloatAttribute("offsetY", result.viewportOffsetY);
+    result.zoomLevel = (*camera)->FloatAttribute("zoomLevel", result.zoomLevel);
+
+    auto levels = child(root, "Levels");
+    if (!levels)
+    {
+        return std::unexpected(levels.error());
+    }
+    for (XMLElement* level = (*levels)->FirstChildElement("Level");
          level != nullptr; level = level->NextSiblingElement("Level"))
     {
-        config.levels[level->Attribute("name")] = level->Attribute("path");
+        const char* name = level->Attribute("name");
+        const char* levelPath = level->Attribute("path");
+        if (name == nullptr || levelPath == nullptr)
+        {
+            return std::unexpected(
+                "every <Level> needs both a name and a path attribute");
+        }
+        result.levels[name] = levelPath;
     }
-    config.title = title->GetText();
-    config.fullScreen = fullScreen->BoolText();
-    config.screenWidth = screen->IntAttribute("width");
-    config.screenHeight = screen->IntAttribute("height");
-    config.frameRate = frameRate->IntText();
-    config.debug = debug->BoolText();
-    config.cameraWidth = camera->FloatAttribute("width");
-    config.cameraHeight = camera->FloatAttribute("height");
-    config.viewportOffsetX = camera->FloatAttribute("offsetX");
-    config.viewportOffsetY = camera->FloatAttribute("offsetY");
-    config.zoomLevel = camera->FloatAttribute("zoomLevel");
-    return true;
+
+    // Values the rest of the engine divides by, checked once here instead of
+    // failing far away: frameRate feeds `1000 / frameRate` in SDLPlugin and
+    // zoomLevel divides the camera extents in RenderSystem.
+    if (result.frameRate <= 0)
+    {
+        return std::unexpected("<FrameRate> must be greater than zero, got " +
+                               std::to_string(result.frameRate));
+    }
+    if (result.zoomLevel <= 0.0f)
+    {
+        return std::unexpected("<Camera zoomLevel> must be greater than zero");
+    }
+    if (result.levels.empty())
+    {
+        return std::unexpected("<Levels> contains no <Level> entries");
+    }
+
+    return result;
 }
 
 } // namespace de

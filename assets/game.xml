@@ -9,7 +9,7 @@
 			<Debug>false</Debug>
 			<Camera width="600" height="500" offsetX="-100" offsetY="-50" zoomLevel="3" />
 			<Levels>
-				<Level name="level1" path="../assets/Levels/dungeon1.tmx" />
+				<Level name="level1" path="Levels/dungeon1.tmx" />
 			</Levels>
 		</Init>
 	</Config>

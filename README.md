@@ -38,14 +38,19 @@ few minutes; later ones are cached.
 ## Run
 
 The executable is written to `build/bin/` and the assets are mirrored to
-`build/assets/`. Asset paths are currently resolved relative to the working
-directory, so launch it from the binary's directory:
+`build/assets/`:
 
 ```bash
-cd build/bin && ./DungeonEngine.exe
+./build/bin/DungeonEngine.exe
 ```
 
+Assets are located relative to the executable, so it runs from any working
+directory — double-clicking it in the file explorer works too.
+
 Arrow keys move the character.
+
+If `assets/game.xml` is missing or malformed, the game exits with a message
+naming the problem instead of crashing.
 
 ## Layout
 

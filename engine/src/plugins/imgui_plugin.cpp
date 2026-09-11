@@ -2,6 +2,7 @@
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_sdlrenderer2.h"
 #include <SDL_render.h>
+#include <engine/core/startup_error.hpp>
 #include <engine/graphics/sdl_resources.hpp>
 #include <engine/plugins/imgui_plugin.hpp>
 
@@ -12,6 +13,10 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
     gameLoop.addSetupCallback(
         [](entt::registry& registry)
         {
+            if (registry.ctx().contains<StartupError>())
+            {
+                return;
+            }
             SDL_Renderer* renderer = registry.ctx().get<MainRenderer>().get();
             SDL_Window* window = registry.ctx().get<Window>().get();
             // ImGui initialisation
@@ -41,6 +46,10 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
     gameLoop.addTeardownCallback(
         [](entt::registry& registry)
         {
+            if (ImGui::GetCurrentContext() == nullptr)
+            {
+                return;
+            }
             ImGui_ImplSDLRenderer2_Shutdown();
             ImGui_ImplSDL2_Shutdown();
             ImGui::DestroyContext();

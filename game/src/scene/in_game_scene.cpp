@@ -10,6 +10,8 @@
 #include <engine/components/sprite_component.hpp>
 #include <engine/components/tile_layer_component.hpp>
 #include <engine/components/transform_component.hpp>
+#include <engine/core/asset_paths.hpp>
+#include <engine/core/startup_error.hpp>
 #include <engine/graphics/render_bottom.hpp>
 #include <engine/graphics/render_collision.hpp>
 #include <engine/graphics/render_object.hpp>
@@ -29,13 +31,34 @@ InGameScene::InGameScene()
     // Nothing to set up until onEnter: the registry does not exist yet.
 }
 
+// onEnter runs inside the setup hook, so a failure here is a startup failure:
+// GameLoop reports it and exits rather than leaving an empty black window up.
+void InGameScene::fail(entt::registry& registry, const std::string& reason)
+{
+    registry.ctx().emplace<StartupError>(StartupError{"level: " + reason});
+}
+
 void InGameScene::onEnter(entt::registry& registry)
 {
     const auto& config = registry.ctx().get<Config>();
 
     // Load the level
+    const auto& assets = registry.ctx().get<AssetPaths>();
+    auto level = config.levels.find("level1");
+    if (level == config.levels.end())
+    {
+        fail(registry, "game.xml declares no level named 'level1'");
+        return;
+    }
+
     TMXLoader tmxLoader(&m_entities);
-    tmxLoader.loadLevel(registry, config.levels.at("level1").c_str());
+    if (auto loaded =
+            tmxLoader.loadLevel(registry, assets.resolve(level->second));
+        !loaded)
+    {
+        fail(registry, loaded.error());
+        return;
+    }
 
     // Turn the Tiled object types into this game's components
     tagObjectsByType(registry);
@@ -170,7 +193,9 @@ void InGameScene::initializeCamera(entt::registry& registry, int mapWidth,
     auto view = registry.view<PlayerComponent>();
     if (view.empty())
     {
-        std::cerr << "No player found in the scene" << std::endl;
+        fail(registry,
+             "the level contains no object with type=\"Player\"; there is "
+             "nothing for the camera to follow");
         return;
     }
 

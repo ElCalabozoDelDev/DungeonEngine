@@ -6,6 +6,7 @@
 # target's include path, which is what enforces that.
 
 add_library(engine STATIC
+    src/core/asset_paths.cpp
     src/graphics/render_bottom.cpp
     src/graphics/render_collision.cpp
     src/graphics/render_object.cpp
