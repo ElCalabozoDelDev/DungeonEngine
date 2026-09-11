@@ -8,7 +8,10 @@
         "cacheVariables": {
           "CMAKE_BUILD_TYPE": "Debug",
           "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-          "VCPKG_TARGET_TRIPLET": "x64-windows",
+          "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/toolchain/llvm-mingw.cmake",
+          "VCPKG_TARGET_TRIPLET": "x64-mingw-llvm",
+          "VCPKG_HOST_TRIPLET": "x64-mingw-llvm",
+          "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/toolchain/triplets",
           "CMAKE_MAKE_PROGRAM": "ninja"
         }
       }

@@ -1,65 +1,78 @@
-cmake_minimum_required(VERSION 3.10)
+# Floor is driven by what this build actually uses: presets v2 (3.21),
+# CMAKE_CXX_STANDARD 23 (3.20) and `cmake -E copy_directory_if_different`
+# (3.26) in the asset-copy step below.
+cmake_minimum_required(VERSION 3.26)
 
-# Especifica Clang como compilador
-set(CMAKE_C_COMPILER "clang")
-set(CMAKE_CXX_COMPILER "clang++")
+# The compiler (clang/clang++ from LLVM-MinGW) is set by
+# toolchain/llvm-mingw.cmake, chainloaded from the x64-mingw-llvm vcpkg
+# triplet (see CMakePresets.json). It is deliberately not set here so it
+# does not override what vcpkg.cmake already configured.
+#
+# CMAKE_PREFIX_PATH is likewise not set: the vcpkg toolchain resolves
+# installed packages on its own. Hardcoding it pins both the build
+# directory and the triplet, which breaks any other -B path or triplet.
 
-# # Integración con vcpkg
-set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/vcpkg_installed/x64-windows/share")
-
-# Nombre del proyecto
+# Project name
 project(DungeonEngine VERSION 1.0 LANGUAGES CXX)
 
-# Configuración de CMake
+# CMake configuration
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Configuración de C++ estándar
+# C++ standard
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Recursivamente busca todos los archivos .cpp dentro del directorio src/
-file(GLOB_RECURSE SOURCES game/src/*.cpp)
+# Recursively collect the .cpp files under game/src.
+# CONFIGURE_DEPENDS makes the build re-run the glob when files are added or
+# removed. This is a stopgap: explicit source lists land with the
+# engine/game/third_party target split.
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS game/src/*.cpp)
 
-# Crea el ejecutable en la carpeta _bin
+# Put the executable in build/bin
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
-# Crea el ejecutable
+# Create the executable
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-# Añadir el directorio de third_party a los include directories
+# Expose the third_party directory to the include path
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/third_party)
 
-# Busca recursivamente todos los archivos .cpp en third_party y agrégalos a las fuentes del proyecto
-file(GLOB_RECURSE THIRD_PARTY_SOURCES ${CMAKE_SOURCE_DIR}/third_party/*.cpp)
+# Same for the vendored third_party sources (imgui backends, base64).
+file(GLOB_RECURSE THIRD_PARTY_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/third_party/*.cpp)
 
-# Agrega los archivos de implementación de third_party al proyecto
+# Add the third_party implementation files to the target
 target_sources(${PROJECT_NAME} PRIVATE ${THIRD_PARTY_SOURCES})
 
-# Busca e incluye las dependencias desde vcpkg
+# Find the dependencies provided by vcpkg
 find_package(SDL2 CONFIG REQUIRED)
 find_package(sdl2_image CONFIG REQUIRED)
 find_package(sdl2_mixer CONFIG REQUIRED)
 find_package(entt CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+# ZLIB is used directly (uncompress() on TMX tile data in tmx_loader.cpp).
+# libpng is NOT: SDL2_image pulls it in and owns the PNG decoding, so there
+# is no find_package(PNG) / PNG::PNG here.
 find_package(ZLIB REQUIRED)
-find_package(PNG REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 
-# Enlaza las dependencias
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2::SDL2main)
+# Link the dependencies.
+# Note: SDL2::SDL2main is deliberately NOT linked, because main.cpp defines
+# SDL_MAIN_HANDLED and provides its own main() instead of SDL2main's
+# WinMain -> SDL_main shim. Linking it forces the WinMain symbol, which in
+# turn requires SDL_main and breaks the link step.
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_image::SDL2_image)
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL2_mixer::SDL2_mixer)
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui::imgui)
 target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
-target_link_libraries(${PROJECT_NAME} PRIVATE PNG::PNG)
 target_link_libraries(${PROJECT_NAME} PRIVATE tinyxml2::tinyxml2)
 
-# Configura los directorios de inclusión
+# Include directories
 target_include_directories(${PROJECT_NAME} PRIVATE 
     ${CMAKE_SOURCE_DIR}/game/include
 )
 
-# Copia el archivo SDL2.dll y otras DLL necesarias a la carpeta _bin
+# Copy SDL2.dll and the other required runtime DLLs next to the executable
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}>
@@ -67,11 +80,11 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND_EXPAND_LISTS
 )
 
-# Elimina el directorio assets en el destino si ya existe y luego lo copia
+# Mirror assets next to the build. copy_directory_if_different only touches
+# files whose contents changed, so this is cheap on repeat builds and does
+# not wipe the destination the way remove_directory + copy_directory did.
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E remove_directory
-    ${CMAKE_BINARY_DIR}/assets
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
     ${CMAKE_SOURCE_DIR}/assets
     ${CMAKE_BINARY_DIR}/assets
 )
