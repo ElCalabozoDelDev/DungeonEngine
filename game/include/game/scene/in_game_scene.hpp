@@ -4,6 +4,7 @@
 #include <engine/loaders/config.hpp>
 #include <engine/scene/scene.hpp>
 #include <entt/entity/fwd.hpp>
+#include <string>
 #include <vector>
 
 class InGameScene : public de::Scene
@@ -19,6 +20,7 @@ public:
 private:
     std::vector<entt::entity> m_entities;
 
+    static void fail(entt::registry& registry, const std::string& reason);
     void tagObjectsByType(entt::registry& registry);
     void initializeQuadtrees(entt::registry& registry, float mapWidth,
                              float mapHeight);

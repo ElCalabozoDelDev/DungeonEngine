@@ -38,6 +38,12 @@ void RenderSystem::renderGUI(entt::registry& registry)
 void RenderSystem::renderGraphics(entt::registry& registry)
 {
     const auto& view = registry.view<CameraComponent, TransformComponent>();
+    if (view.begin() == view.end())
+    {
+        // No camera yet (a scene that has not loaded, or one without one):
+        // dereferencing begin() here was undefined behaviour.
+        return;
+    }
     auto cameraEntity = *view.begin();
     auto& camera = view.get<CameraComponent>(cameraEntity);
     auto& cameraPos = view.get<TransformComponent>(cameraEntity).position;

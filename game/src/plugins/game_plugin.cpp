@@ -1,4 +1,5 @@
 #include <SDL_events.h>
+#include <engine/core/startup_error.hpp>
 #include <engine/scene/scene_system.hpp>
 #include <engine/systems/camera_system.hpp>
 #include <engine/systems/debug_system.hpp>
@@ -18,6 +19,10 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
     gameLoop.addSetupCallback(
         [sceneSystem, debugSystem](entt::registry& registry)
         {
+            if (registry.ctx().contains<StartupError>())
+            {
+                return;
+            }
             registry.ctx().emplace<std::shared_ptr<SceneSystem>>(sceneSystem);
             registry.ctx().emplace<std::shared_ptr<DebugSystem>>(debugSystem);
             sceneSystem->changeScene(registry, std::make_unique<InGameScene>());

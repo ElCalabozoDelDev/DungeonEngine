@@ -4,9 +4,11 @@
 #include <SDL_timer.h>
 #include <engine/core/delta_time.hpp>
 #include <engine/core/hook.hpp>
+#include <engine/core/startup_error.hpp>
 #include <engine/plugins/plugin.hpp>
 #include <engine/systems/system.hpp>
 #include <entt/entt.hpp>
+#include <iostream>
 
 namespace de
 {
@@ -73,12 +75,23 @@ public:
         return *this;
     }
 
-    void run()
+    /// Runs setup, then frames until something asks to exit.
+    ///
+    /// Returns false when a setup callback reported a StartupError, in which
+    /// case no frame runs. Teardown runs either way.
+    bool run()
     {
         m_controlFlow = ControlFlow::Loop;
         m_registry.ctx().emplace<ControlFlow&>(m_controlFlow);
 
         m_hookSetup.publish(m_registry);
+
+        if (auto* error = m_registry.ctx().find<StartupError>())
+        {
+            std::cerr << "Startup failed: " << error->message << std::endl;
+            m_hookTeardown.publish(m_registry);
+            return false;
+        }
 
         static Uint32 lastTime = SDL_GetTicks();
         while (m_controlFlow == ControlFlow::Loop)
@@ -105,6 +118,7 @@ public:
         }
 
         m_hookTeardown.publish(m_registry);
+        return true;
     }
 };
 

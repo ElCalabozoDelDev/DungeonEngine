@@ -3,6 +3,9 @@
 
 #include <entt/entity/fwd.hpp>
 #include <entt/entt.hpp>
+#include <expected>
+#include <filesystem>
+#include <string>
 #include <tinyxml2.h>
 #include <vector>
 
@@ -10,6 +13,10 @@ namespace de
 {
 /// Loads a Tiled (.tmx) map into the registry: textures, tilesets, tile layers
 /// and object layers.
+///
+/// Every path inside the file -- tileset images and texture properties alike
+/// -- is resolved relative to the .tmx itself, so a level is self-contained
+/// and does not depend on the working directory.
 ///
 /// Objects are tagged with ObjectTypeComponent carrying their Tiled `type`
 /// string; turning "Player" into a PlayerComponent is the game's job.
@@ -21,7 +28,10 @@ public:
     {
     }
 
-    void loadLevel(entt::registry& registry, const char* levelFile);
+    /// Returns a message describing the problem instead of walking off a null
+    /// element or silently producing a level full of garbage tiles.
+    std::expected<void, std::string>
+    loadLevel(entt::registry& registry, const std::filesystem::path& levelFile);
 
     int getTileWidth() const { return m_tilewidth; }
     int getTileHeight() const { return m_tileheight; }
@@ -35,9 +45,16 @@ private:
                       tinyxml2::XMLElement* pTilesetRoot);
     void loadObjectLayer(entt::registry& registry,
                          tinyxml2::XMLElement* pObjectElement);
-    void loadTileLayer(entt::registry& registry,
-                       tinyxml2::XMLElement* pTileElement);
+    std::expected<void, std::string>
+    loadTileLayer(entt::registry& registry, tinyxml2::XMLElement* pTileElement);
 
+    /// The tileset a global tile id belongs to: the one with the highest
+    /// firstgid not above `gid`. Resolved once per tile at load time and
+    /// cached in TileComponent, instead of being searched for on every tile
+    /// of every frame.
+    entt::entity tilesetFor(entt::registry& registry, int gid) const;
+
+    std::filesystem::path m_levelDir;
     int m_tilewidth = 0;
     int m_tileheight = 0;
     int m_width = 0;

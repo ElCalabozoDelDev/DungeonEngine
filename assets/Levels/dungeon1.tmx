@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="26" height="46" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="8">
  <properties>
-  <property name="player" value="../assets/Player/1-Heroes-Animated.png"/>
+  <property name="player" value="../Player/1-Heroes-Animated.png"/>
  </properties>
  <tileset firstgid="1" name="1-Dungeon" tilewidth="16" tileheight="16" tilecount="100" columns="10">
   <image source="../Tiles/1-Dungeon.png" width="160" height="160"/>

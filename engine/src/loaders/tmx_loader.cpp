@@ -1,8 +1,6 @@
-#include "base64.h"
-#include "entt/entity/fwd.hpp"
-#include "tinyxml2.h"
-#include "zlib.h"
 #include <SDL.h>
+#include <base64.h>
+#include <cstdint>
 #include <engine/components/animation_component.hpp>
 #include <engine/components/bottom_layer_component.hpp>
 #include <engine/components/collision_component.hpp>
@@ -20,210 +18,285 @@
 #include <engine/components/velocity_component.hpp>
 #include <engine/core/trim.hpp>
 #include <engine/core/vector_2d.hpp>
-#include <engine/graphics/sdl_resources.hpp>
 #include <engine/graphics/texture_cache.hpp>
 #include <engine/loaders/tmx_loader.hpp>
-#include <engine/spatial/quadtree.hpp>
+#include <entt/entity/fwd.hpp>
 #include <iostream>
 #include <string>
+#include <zlib.h>
 
 namespace de
 {
 using namespace tinyxml2;
 
-void TMXLoader::loadLevel(entt::registry& registry, const char* levelFile)
+std::expected<void, std::string>
+TMXLoader::loadLevel(entt::registry& registry,
+                     const std::filesystem::path& levelFile)
 {
-    // create a TinyXML document and load the map XML
     XMLDocument levelDocument;
-    levelDocument.LoadFile(levelFile);
-    // get the root node
+    if (levelDocument.LoadFile(levelFile.string().c_str()) != XML_SUCCESS)
+    {
+        return std::unexpected("could not read level '" + levelFile.string() +
+                               "': " + levelDocument.ErrorStr());
+    }
+
     XMLElement* pRoot = levelDocument.RootElement();
+    if (pRoot == nullptr)
+    {
+        return std::unexpected("level '" + levelFile.string() +
+                               "' has no root element");
+    }
+
+    // Paths inside the file are relative to the file itself.
+    m_levelDir = levelFile.parent_path();
+
     m_tilewidth = pRoot->IntAttribute("tilewidth");
     m_tileheight = pRoot->IntAttribute("tileheight");
     m_width = pRoot->IntAttribute("width");
     m_height = pRoot->IntAttribute("height");
-
-    XMLElement* pProperties = pRoot->FirstChildElement();
-    // load the textures
-    for (XMLElement* e = pProperties->FirstChildElement(); e != NULL;
-         e = e->NextSiblingElement())
+    if (m_tilewidth <= 0 || m_tileheight <= 0 || m_width <= 0 || m_height <= 0)
     {
-        if (e->Value() == std::string("property"))
+        return std::unexpected(
+            "level '" + levelFile.string() +
+            "' has a non-positive width/height/tilewidth/tileheight");
+    }
+
+    // Load the textures declared as map properties
+    if (XMLElement* pProperties = pRoot->FirstChildElement("properties");
+        pProperties != nullptr)
+    {
+        for (XMLElement* e = pProperties->FirstChildElement("property");
+             e != nullptr; e = e->NextSiblingElement("property"))
         {
             loadTextures(registry, e);
         }
     }
-    // load the tilesets
-    for (XMLElement* e = pRoot->FirstChildElement(); e != NULL;
+
+    // Load the tilesets
+    for (XMLElement* e = pRoot->FirstChildElement("tileset"); e != nullptr;
+         e = e->NextSiblingElement("tileset"))
+    {
+        loadTilesets(registry, e);
+    }
+
+    // Load the object and tile layers
+    for (XMLElement* e = pRoot->FirstChildElement(); e != nullptr;
          e = e->NextSiblingElement())
     {
-        if (e->Value() == std::string("tileset"))
+        const std::string value = e->Value();
+        if (value != "objectgroup" && value != "layer")
         {
-            loadTilesets(registry, e);
+            continue;
         }
-    }
-    // load any object layers
-    for (XMLElement* e = pRoot->FirstChildElement(); e != NULL;
-         e = e->NextSiblingElement())
-    {
-        if (e->Value() == std::string("objectgroup") ||
-            e->Value() == std::string("layer"))
+        if (e->FirstChildElement("object") != nullptr)
         {
-            if (e->FirstChildElement()->Value() == std::string("object"))
+            loadObjectLayer(registry, e);
+        }
+        else if (e->FirstChildElement("data") != nullptr)
+        {
+            if (auto result = loadTileLayer(registry, e); !result)
             {
-                loadObjectLayer(registry, e);
-            }
-            else if (e->FirstChildElement()->Value() == std::string("data") ||
-                     (e->FirstChildElement()->NextSiblingElement() != 0 &&
-                      e->FirstChildElement()->NextSiblingElement()->Value() ==
-                          std::string("data")))
-            {
-                loadTileLayer(registry, e);
+                return result;
             }
         }
     }
+
     auto levelEntity = registry.create();
     auto& levelComponent = registry.emplace<LevelComponent>(levelEntity);
     levelComponent.tilesets = m_tilesets;
     levelComponent.layers = m_layers;
     m_pEntities->push_back(levelEntity);
+
+    return {};
 }
 
 void TMXLoader::loadTextures(entt::registry& registry, XMLElement* pTextureRoot)
 {
-    // load the textures
-    std::string path = pTextureRoot->Attribute("value");
-    std::string id = pTextureRoot->Attribute("name");
-    registry.ctx().get<TextureCache>().load(id, path);
+    const char* value = pTextureRoot->Attribute("value");
+    const char* name = pTextureRoot->Attribute("name");
+    if (value == nullptr || name == nullptr)
+    {
+        return;
+    }
+    registry.ctx().get<TextureCache>().load(
+        name, (m_levelDir / value).lexically_normal().string());
 }
 
 void TMXLoader::loadTilesets(entt::registry& registry, XMLElement* pTilesetRoot)
 {
-
-    std::string assetsTag = "../assets/Levels/";
-    // The tileset "name" attribute
     const char* nameAttribute = pTilesetRoot->Attribute("name");
-    // create a tileset object
+    XMLElement* pImage = pTilesetRoot->FirstChildElement("image");
+    if (nameAttribute == nullptr || pImage == nullptr)
+    {
+        std::cerr << "TMXLoader: skipping a <tileset> with no name or image\n";
+        return;
+    }
+
     auto tileSetEntity = registry.create();
     auto& tileset = registry.emplace<TileSetComponent>(tileSetEntity);
     auto& dimension = registry.emplace<DimensionComponent>(tileSetEntity);
     registry.emplace<TextureComponent>(tileSetEntity, nameAttribute);
-    int width = pTilesetRoot->FirstChildElement()->IntAttribute("width");
+
+    const int imageWidth = pImage->IntAttribute("width");
     tileset.firstGridID = pTilesetRoot->IntAttribute("firstgid");
     dimension.width = pTilesetRoot->IntAttribute("tilewidth");
     dimension.height = pTilesetRoot->IntAttribute("tileheight");
     tileset.spacing = pTilesetRoot->IntAttribute("spacing");
     tileset.margin = pTilesetRoot->IntAttribute("margin");
     tileset.tileCount = pTilesetRoot->IntAttribute("tilecount");
-    tileset.numColumns = width / (dimension.width + tileset.spacing);
-    registry.ctx().get<TextureCache>().load(
-        nameAttribute,
-        assetsTag.append(
-            pTilesetRoot->FirstChildElement()->Attribute("source")));
+    tileset.numColumns = dimension.width + tileset.spacing > 0
+                             ? imageWidth / (dimension.width + tileset.spacing)
+                             : 0;
+
+    if (const char* source = pImage->Attribute("source"); source != nullptr)
+    {
+        registry.ctx().get<TextureCache>().load(
+            nameAttribute, (m_levelDir / source).lexically_normal().string());
+    }
+
     m_tilesets.push_back(tileSetEntity);
     m_pEntities->push_back(tileSetEntity);
+}
+
+entt::entity TMXLoader::tilesetFor(entt::registry& registry, int gid) const
+{
+    entt::entity best = entt::null;
+    int bestFirstGid = 0;
+    for (auto tilesetEntity : m_tilesets)
+    {
+        const auto& tileset = registry.get<TileSetComponent>(tilesetEntity);
+        if (tileset.firstGridID <= gid && tileset.firstGridID >= bestFirstGid)
+        {
+            best = tilesetEntity;
+            bestFirstGid = tileset.firstGridID;
+        }
+    }
+    return best;
 }
 
 void TMXLoader::loadObjectLayer(entt::registry& registry,
                                 XMLElement* pObjectElement)
 {
-    for (XMLElement* e = pObjectElement->FirstChildElement(); e != NULL;
-         e = e->NextSiblingElement())
+    for (XMLElement* e = pObjectElement->FirstChildElement("object");
+         e != nullptr; e = e->NextSiblingElement("object"))
     {
-        if (e->Value() == std::string("object"))
+        auto entity = registry.create();
+
+        int numFrames = 1;
+        int spriteRow = 0;
+        int spriteCol = 0;
+        float animationTime = 0.0f;
+        std::string textureID;
+
+        const char* typeAttribute = e->Attribute("type");
+        std::string type = typeAttribute != nullptr ? typeAttribute : "";
+
+        const int x = e->IntAttribute("x");
+        const int y = e->IntAttribute("y");
+        const int width = e->IntAttribute("width");
+        const int height = e->IntAttribute("height");
+
+        if (XMLElement* properties = e->FirstChildElement("properties");
+            properties != nullptr)
         {
-            auto entity = registry.create();
-            int x, y, width, height, numFrames, spriteRow = 0, spriteCol = 0;
-            float animationTime = 0;
-            std::string textureID;
-            std::string type = e->Attribute("type");
-            // get the initial node values
-            e->QueryIntAttribute("x", &x);
-            e->QueryIntAttribute("y", &y);
-
-            width = e->IntAttribute("width");
-            height = e->IntAttribute("height");
-
-            // get the property values
-            for (XMLElement* properties = e->FirstChildElement();
-                 properties != NULL;
-                 properties = properties->NextSiblingElement())
+            for (XMLElement* prop = properties->FirstChildElement("property");
+                 prop != nullptr; prop = prop->NextSiblingElement("property"))
             {
-                if (properties->Value() == std::string("properties"))
+                const char* name = prop->Attribute("name");
+                const char* value = prop->Attribute("value");
+                if (name == nullptr || value == nullptr)
                 {
-                    for (XMLElement* prop = properties->FirstChildElement();
-                         prop != NULL; prop = prop->NextSiblingElement())
-                    {
-                        if (prop->Value() == std::string("property"))
-                        {
-                            std::string name = prop->Attribute("name");
-                            std::string value = prop->Attribute("value");
-                            if (name == "totalFrames")
-                            {
-                                numFrames = atoi(value.c_str());
-                            }
-                            else if (name == "textureID")
-                            {
-                                textureID = value;
-                            }
-                            else if (name == "spriteRow")
-                            {
-                                spriteRow = atoi(value.c_str());
-                            }
-                            else if (name == "spriteCol")
-                            {
-                                spriteCol = atoi(value.c_str());
-                            }
-                            else if (name == "animationTime")
-                            {
-                                animationTime = atof(value.c_str());
-                            }
-                        }
-                    }
+                    continue;
+                }
+                const std::string propertyName = name;
+                if (propertyName == "totalFrames")
+                {
+                    numFrames = std::atoi(value);
+                }
+                else if (propertyName == "textureID")
+                {
+                    textureID = value;
+                }
+                else if (propertyName == "spriteRow")
+                {
+                    spriteRow = std::atoi(value);
+                }
+                else if (propertyName == "spriteCol")
+                {
+                    spriteCol = std::atoi(value);
+                }
+                else if (propertyName == "animationTime")
+                {
+                    animationTime = static_cast<float>(std::atof(value));
                 }
             }
-            // add the object to the object list
-            registry.emplace<TransformComponent>(entity, Vector2D<float>(x, y));
-            registry.emplace<TextureComponent>(entity, textureID);
-            registry.emplace<DimensionComponent>(entity, width, height);
-            registry.emplace<SpriteComponent>(entity, spriteRow, spriteCol, 0);
-            registry.emplace<VelocityComponent>(entity, Vector2D<float>(0, 0));
-            registry.emplace<AnimationComponent>(entity, spriteCol, numFrames,
-                                                 animationTime, 0);
-            // Record the Tiled `type` verbatim and let the game decide
-            // what it means; see InGameScene::tagObjectsByType.
-            registry.emplace<ObjectTypeComponent>(entity, type);
-            m_pEntities->push_back(entity);
-            m_layers.push_back(entity);
         }
+
+        registry.emplace<TransformComponent>(
+            entity,
+            Vector2D<float>(static_cast<float>(x), static_cast<float>(y)));
+        registry.emplace<TextureComponent>(entity, textureID);
+        registry.emplace<DimensionComponent>(entity, width, height);
+        registry.emplace<SpriteComponent>(entity, spriteRow, spriteCol, 0);
+        registry.emplace<VelocityComponent>(entity, Vector2D<float>(0, 0));
+        registry.emplace<AnimationComponent>(entity, spriteCol, numFrames,
+                                             animationTime, 0);
+        // Record the Tiled `type` verbatim and let the game decide what it
+        // means; see InGameScene::tagObjectsByType.
+        registry.emplace<ObjectTypeComponent>(entity, type);
+
+        m_pEntities->push_back(entity);
+        m_layers.push_back(entity);
     }
 }
 
-void TMXLoader::loadTileLayer(entt::registry& registry,
-                              XMLElement* pTileElement)
+std::expected<void, std::string>
+TMXLoader::loadTileLayer(entt::registry& registry, XMLElement* pTileElement)
 {
-    std::string decodedIDs;
-    XMLElement* pDataNode;
-    for (XMLElement* e = pTileElement->FirstChildElement(); e != NULL;
-         e = e->NextSiblingElement())
+    XMLElement* pDataNode = pTileElement->FirstChildElement("data");
+    if (pDataNode == nullptr)
     {
-        if (e->Value() == std::string("data"))
+        return std::unexpected("a <layer> has no <data> element");
+    }
+
+    std::string decodedIDs;
+    for (XMLNode* e = pDataNode->FirstChild(); e != nullptr;
+         e = e->NextSibling())
+    {
+        if (XMLText* text = e->ToText(); text != nullptr)
         {
-            pDataNode = e;
+            std::string raw = text->Value();
+            decodedIDs = base64_decode(trim(raw));
         }
     }
-    for (XMLNode* e = pDataNode->FirstChild(); e != NULL; e = e->NextSibling())
+    if (decodedIDs.empty())
     {
-        XMLText* text = e->ToText();
-        std::string t = text->Value();
-        decodedIDs = base64_decode(trim(t));
+        return std::unexpected("a <layer> has an empty or unreadable <data> "
+                               "payload (expected base64 + zlib)");
     }
-    // uncompress zlib compression
-    uLongf numGids = m_width * m_height * sizeof(int);
-    std::vector<unsigned> gids(numGids);
-    uncompress((Bytef*)&gids[0], &numGids, (const Bytef*)decodedIDs.c_str(),
-               decodedIDs.size());
-    std::string name = pTileElement->Attribute("name");
+
+    // One gid per tile. The old code sized the vector with the *byte* count,
+    // allocating four times what it needed.
+    std::vector<std::uint32_t> gids(static_cast<std::size_t>(m_width) *
+                                    static_cast<std::size_t>(m_height));
+    uLongf destinationBytes =
+        static_cast<uLongf>(gids.size() * sizeof(std::uint32_t));
+
+    const int zresult =
+        uncompress(reinterpret_cast<Bytef*>(gids.data()), &destinationBytes,
+                   reinterpret_cast<const Bytef*>(decodedIDs.data()),
+                   static_cast<uLong>(decodedIDs.size()));
+    if (zresult != Z_OK)
+    {
+        return std::unexpected(
+            "could not zlib-decompress a <layer>: uncompress() returned " +
+            std::to_string(zresult) +
+            ". Tiled must export the layer with base64 + zlib compression.");
+    }
+
+    const char* nameAttribute = pTileElement->Attribute("name");
+    const std::string name = nameAttribute != nullptr ? nameAttribute : "";
+
     auto layerEntity = registry.create();
     auto& tileLayer = registry.emplace<TileLayerComponent>(layerEntity);
     tileLayer.tileSetEntities = m_tilesets;
@@ -232,7 +305,7 @@ void TMXLoader::loadTileLayer(entt::registry& registry,
     {
         registry.emplace<BottomLayerComponent>(layerEntity);
     }
-    if (name == "Overlay")
+    else if (name == "Overlay")
     {
         registry.emplace<OverlayLayerComponent>(layerEntity);
     }
@@ -241,49 +314,61 @@ void TMXLoader::loadTileLayer(entt::registry& registry,
         registry.emplace<CollisionLayerComponent>(layerEntity);
     }
 
-    for (XMLElement* e = pTileElement->FirstChildElement(); e != NULL;
-         e = e->NextSiblingElement())
+    if (XMLElement* properties = pTileElement->FirstChildElement("properties");
+        properties != nullptr)
     {
-        if (e->Value() == std::string("properties"))
+        for (XMLElement* prop = properties->FirstChildElement("property");
+             prop != nullptr; prop = prop->NextSiblingElement("property"))
         {
-            for (XMLElement* prop = e->FirstChildElement(); prop != NULL;
-                 prop = prop->NextSiblingElement())
+            const char* propertyName = prop->Attribute("name");
+            const char* value = prop->Attribute("value");
+            if (propertyName != nullptr && value != nullptr &&
+                std::string(propertyName) == "Collidable" &&
+                std::string(value) == "true")
             {
-                if (prop->Value() == std::string("property"))
-                {
-                    std::string name = prop->Attribute("name");
-                    std::string value = prop->Attribute("value");
-                    if (name == "Collidable")
-                    {
-                        if (value == "true")
-                        {
-                            registry.emplace<CollisionComponent>(layerEntity);
-                        }
-                    }
-                }
+                registry.emplace<CollisionComponent>(layerEntity);
             }
         }
     }
 
+    bool reportedMissingTileset = false;
     for (int rows = 0; rows < m_height; rows++)
     {
         for (int cols = 0; cols < m_width; cols++)
         {
-            int tileId = gids[rows * m_width + cols];
+            const int tileId =
+                static_cast<int>(gids[static_cast<std::size_t>(rows) *
+                                          static_cast<std::size_t>(m_width) +
+                                      static_cast<std::size_t>(cols)]);
             if (tileId == 0)
             {
                 continue; // Skip empty tiles (tileId == 0)
             }
-            auto tileEntity = registry.create();
-            int tileX = cols * m_tilewidth;
-            int tileY = rows * m_tileheight;
 
-            auto& tile = registry.emplace<TileComponent>(tileEntity);
-            registry.emplace<TransformComponent>(tileEntity,
-                                                 Vector2D<float>(tileX, tileY));
+            const entt::entity tileset = tilesetFor(registry, tileId);
+            if (tileset == entt::null)
+            {
+                if (!reportedMissingTileset)
+                {
+                    std::cerr << "TMXLoader: layer '" << name
+                              << "' references tile " << tileId
+                              << ", which no tileset covers; skipping it and "
+                                 "any others like it\n";
+                    reportedMissingTileset = true;
+                }
+                continue;
+            }
+
+            auto tileEntity = registry.create();
+            const int tileX = cols * m_tilewidth;
+            const int tileY = rows * m_tileheight;
+
+            registry.emplace<TileComponent>(tileEntity, tileId, tileset);
+            registry.emplace<TransformComponent>(
+                tileEntity, Vector2D<float>(static_cast<float>(tileX),
+                                            static_cast<float>(tileY)));
             registry.emplace<DimensionComponent>(tileEntity, m_tilewidth,
                                                  m_tileheight);
-            tile.tileId = tileId;
 
             tileLayer.tileEntities.push_back(tileEntity);
             m_pEntities->push_back(tileEntity);
@@ -292,6 +377,8 @@ void TMXLoader::loadTileLayer(entt::registry& registry,
 
     m_layers.push_back(layerEntity);
     m_pEntities->push_back(layerEntity);
+
+    return {};
 }
 
 } // namespace de

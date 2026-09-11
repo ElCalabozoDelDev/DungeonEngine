@@ -4,17 +4,21 @@
 #include <engine/components/transform_component.hpp>
 #include <engine/components/velocity_component.hpp>
 #include <engine/core/delta_time.hpp>
-#include <engine/loaders/config.hpp>
 #include <engine/systems/transform_system.hpp>
 
 namespace de
 {
 void TransformSystem::run(entt::registry& registry)
 {
-    DeltaTime deltaTime = registry.ctx().get<DeltaTime>();
-    auto config = registry.ctx().get<Config>();
+    const DeltaTime deltaTime = registry.ctx().get<DeltaTime>();
 
     auto camView = registry.view<CameraBoundsComponent>();
+    if (camView.begin() == camView.end())
+    {
+        // Level bounds come from the camera; without one there is nothing to
+        // clamp against, and *begin() would have been undefined behaviour.
+        return;
+    }
     auto cameraEntity = *camView.begin();
     auto& camera = registry.get<CameraBoundsComponent>(cameraEntity);
 
