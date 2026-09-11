@@ -50,12 +50,20 @@ Arrow keys move the character.
 ## Layout
 
 ```
-game/include/    headers (components, systems, plugins, loaders, graphics, scene)
-game/src/        implementation
-third_party/     vendored sources: imgui SDL2 backends, base64, quadtree
+engine/          reusable 2D engine, built as a static library (namespace de)
+  include/engine/  public headers
+  src/             implementation
+game/            the example game, links engine
+  include/game/    headers
+  src/             implementation
+third_party/     vendored sources: imgui SDL2 backends, base64
 assets/          textures, Tiled (.tmx) levels and game.xml configuration
 toolchain/       LLVM-MinGW CMake toolchain file and the vcpkg triplet
 ```
+
+The engine does not have `game/include` on its include path, so it cannot
+reference the game even by accident. To reuse it, drop `game/` and write your
+own against `engine`.
 
 `assets/game.xml` holds the window, framerate, camera and level settings read at
 startup.

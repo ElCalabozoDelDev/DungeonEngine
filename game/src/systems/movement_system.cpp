@@ -1,30 +1,42 @@
-#include "SDL.h"
-#include "systems/movement_system.hpp"
-#include "components/velocity_component.hpp"
-#include "components/player_component.hpp"
+#include <SDL.h>
+#include <engine/components/velocity_component.hpp>
+#include <game/components/player_component.hpp>
+#include <game/systems/movement_system.hpp>
 
-void MovementSystem::run(entt::registry& registry) {
-	auto view = registry.view<VelocityComponent, PlayerComponent>();
+using namespace de;
 
-	for (auto entity : view) {
-		auto& vel = view.get<VelocityComponent>(entity);
+namespace
+{
+constexpr float PlayerSpeed = 200.0f;
+}
 
-		const Uint8* state = SDL_GetKeyboardState(nullptr);
+void MovementSystem::run(entt::registry& registry)
+{
+    auto view = registry.view<VelocityComponent, PlayerComponent>();
+    const Uint8* state = SDL_GetKeyboardState(nullptr);
 
-		vel.velocity.setX(0);
-		vel.velocity.setY(0);
+    for (auto entity : view)
+    {
+        auto& vel = view.get<VelocityComponent>(entity);
 
-		if (state[SDL_SCANCODE_UP]) {
-			vel.velocity.setY(-200.0f);
-		}
-		if (state[SDL_SCANCODE_DOWN]) {
-			vel.velocity.setY(200.0f);
-		}
-		if (state[SDL_SCANCODE_LEFT]) {
-			vel.velocity.setX(-200.0f);
-		}
-		if (state[SDL_SCANCODE_RIGHT]) {
-			vel.velocity.setX(200.0f);
-		}
-	}
+        vel.velocity.setX(0);
+        vel.velocity.setY(0);
+
+        if (state[SDL_SCANCODE_UP])
+        {
+            vel.velocity.setY(-PlayerSpeed);
+        }
+        if (state[SDL_SCANCODE_DOWN])
+        {
+            vel.velocity.setY(PlayerSpeed);
+        }
+        if (state[SDL_SCANCODE_LEFT])
+        {
+            vel.velocity.setX(-PlayerSpeed);
+        }
+        if (state[SDL_SCANCODE_RIGHT])
+        {
+            vel.velocity.setX(PlayerSpeed);
+        }
+    }
 }
