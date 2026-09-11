@@ -1,12 +1,13 @@
 {
   "dependencies": [
+    "doctest",
     "entt",
     "imgui",
     "libpng",
     "sdl2",
     "sdl2-image",
     "sdl2-mixer",
-    "zlib",
-    "tinyxml2"
+    "tinyxml2",
+    "zlib"
   ]
 }

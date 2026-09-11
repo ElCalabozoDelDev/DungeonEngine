@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="4" height="4" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="3">
+ <properties>
+  <property name="atlas" value="nonexistent.png"/>
+ </properties>
+ <tileset firstgid="1" name="tiles" tilewidth="16" tileheight="16" tilecount="4" columns="2">
+  <image source="nonexistent.png" width="32" height="32"/>
+ </tileset>
+ <layer id="1" name="Bottom" width="4" height="4">
+  <data encoding="base64" compression="zlib">
+   eJxjZGBgYETDIIAuhgsDAAI0ABA=
+  </data>
+ </layer>
+ <objectgroup id="2" name="Objects">
+  <object id="1" name="Hero" type="Player" x="32" y="48" width="16" height="16">
+   <properties>
+    <property name="animationTime" value="0.3"/>
+    <property name="spriteCol" value="0"/>
+    <property name="spriteRow" value="1"/>
+    <property name="textureID" value="atlas"/>
+    <property name="totalFrames" value="3"/>
+   </properties>
+  </object>
+  <object id="2" name="Gem" type="Item" x="16" y="16" width="16" height="16"/>
+ </objectgroup>
+</map>

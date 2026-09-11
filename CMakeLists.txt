@@ -42,3 +42,11 @@ find_package(tinyxml2 CONFIG REQUIRED)
 add_subdirectory(third_party)
 add_subdirectory(engine)
 add_subdirectory(game)
+
+# Tests are on by default; turn them off for a consumer build that only wants
+# the game binary.
+option(DE_BUILD_TESTS "Build the unit tests" ON)
+if(DE_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

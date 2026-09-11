@@ -83,16 +83,17 @@ TMXLoader::loadLevel(entt::registry& registry,
     for (XMLElement* e = pRoot->FirstChildElement(); e != nullptr;
          e = e->NextSiblingElement())
     {
+        // Dispatch on the element name, not on which children it happens to
+        // have. Guessing from the children meant a <layer> with no <data> --
+        // a malformed file -- matched neither branch and was skipped without
+        // a word.
         const std::string value = e->Value();
-        if (value != "objectgroup" && value != "layer")
+        if (value == "objectgroup")
         {
-            continue;
-        }
-        if (e->FirstChildElement("object") != nullptr)
-        {
+            // An object group with no objects is legitimate.
             loadObjectLayer(registry, e);
         }
-        else if (e->FirstChildElement("data") != nullptr)
+        else if (value == "layer")
         {
             if (auto result = loadTileLayer(registry, e); !result)
             {

@@ -41,6 +41,13 @@ void TextureCache::destroyAll() noexcept
 
 bool TextureCache::load(std::string_view id, const std::string& fileName)
 {
+    if (m_renderer == nullptr)
+    {
+        // Constructed without a renderer (tests exercising loaders): there is
+        // nothing to create a texture on.
+        return false;
+    }
+
     SDL_Surface* surface = IMG_Load(fileName.c_str());
     if (surface == nullptr)
     {

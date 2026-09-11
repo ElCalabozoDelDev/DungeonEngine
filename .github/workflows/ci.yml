@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: Build and test (Windows, LLVM-MinGW)
+    runs-on: windows-latest
+
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      # Cache vcpkg's binary artifacts between runs; the first configure
+      # otherwise builds every dependency from source.
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg-cache,readwrite
+
+    steps:
+      # A plain checkout, so this job fails if anything the build needs is
+      # untracked -- which is exactly how the toolchain directory used to
+      # break a fresh clone.
+      - uses: actions/checkout@v4
+
+      - name: Install Ninja
+        run: choco install ninja --no-progress
+
+      - name: Install LLVM-MinGW
+        shell: pwsh
+        run: |
+          # Pin the toolchain so a new upstream release cannot change the
+          # compiler under CI without a commit here.
+          $release = "20260616"
+          $url = "https://github.com/mstorsjo/llvm-mingw/releases/download/$release/llvm-mingw-$release-ucrt-x86_64.zip"
+          Invoke-WebRequest -Uri $url -OutFile llvm-mingw.zip
+          Expand-Archive llvm-mingw.zip -DestinationPath "$env:GITHUB_WORKSPACE\toolchains"
+          $root = (Get-ChildItem "$env:GITHUB_WORKSPACE\toolchains" -Directory)[0].FullName
+          "LLVM_MINGW_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Bootstrap vcpkg
+        shell: pwsh
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$env:VCPKG_ROOT"
+          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
+
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/vcpkg-cache
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'toolchain/**') }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: Configure
+        run: cmake --preset default -B build
+
+      - name: Build
+        run: ninja -C build
+
+      - name: Test
+        # SDL has no display, audio device or GPU on a runner; the dummy
+        # drivers are what let the smoke tests start the real game loop.
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+          SDL_RENDER_DRIVER: software
+        run: ctest --test-dir build --output-on-failure
+
+  format:
+    name: clang-format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check formatting
+        run: |
+          find engine game tests -name '*.cpp' -o -name '*.hpp' \
+            | xargs clang-format --dry-run --Werror

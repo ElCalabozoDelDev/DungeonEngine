@@ -3,6 +3,7 @@
 #include <engine/graphics/texture_cache.hpp>
 #include <engine/loaders/config.hpp>
 #include <engine/plugins/sdl_plugin.hpp>
+#include <iostream>
 
 namespace de
 {
@@ -44,6 +45,18 @@ void SDLPlugin::mount(GameLoop& gameLoop)
             }
             RendererPtr renderer(
                 SDL_CreateRenderer(window.get(), -1, rendererFlags));
+            if (!renderer)
+            {
+                // No accelerated renderer (a headless CI machine, a remote
+                // session, an old driver): software still draws.
+                std::cerr << "SDL_CreateRenderer: no accelerated renderer ("
+                          << SDL_GetError() << "), falling back to software."
+                          << std::endl;
+                rendererFlags = (rendererFlags & ~SDL_RENDERER_ACCELERATED) |
+                                SDL_RENDERER_SOFTWARE;
+                renderer.reset(
+                    SDL_CreateRenderer(window.get(), -1, rendererFlags));
+            }
             if (!renderer)
             {
                 registry.ctx().emplace<StartupError>(

@@ -1,13 +1,40 @@
 # DungeonEngine
 
-A C++23 + SDL2 game engine boilerplate with a small 2D dungeon example.
+A C++23 + SDL2 boilerplate for 2D games, with a small dungeon crawler as the
+worked example.
+
+*[Versión en español](README.es.md)*
+
+The point of the split is that `engine/` knows nothing about the game. Delete
+`game/`, write your own against `engine`, and you have a starting point rather
+than someone else's project to unpick.
+
+---
+
+## What you get
+
+- **ECS** on [EnTT](https://github.com/skypjack/entt), with a plugin/hook
+  system for composing startup, frame and teardown work.
+- **Fixed-timestep loop** — movement and collision advance in fixed steps and
+  do not depend on frame rate; rendering follows the frame.
+- **Tiled (`.tmx`) loading**: tile layers, tilesets, object layers.
+- **Camera** with follow, prediction and level-bounds clamping, over a single
+  world-to-screen transform.
+- **Quadtree spatial index** per layer, kept correct for moving entities.
+- **Input** as named actions with rebindable keys, not scancodes in systems.
+- **Dear ImGui** integration, an entity inspector, and a hook-based widget
+  layer (`use_state` / `use_callback` / `use_effect`).
+- **Audio** through SDL2_mixer.
+- **Scenes** with deferred switching, and pausing handled by the loop.
+- **Tests** on doctest, runnable headlessly, plus a GitHub Actions workflow.
 
 ## Requirements
 
 - Git
 - CMake 3.26 or newer
 - Ninja
-- [vcpkg](https://github.com/microsoft/vcpkg), with `VCPKG_ROOT` set in the environment
+- [vcpkg](https://github.com/microsoft/vcpkg), with `VCPKG_ROOT` set in the
+  environment
 - LLVM-MinGW (UCRT, x86_64) — clang targeting `x86_64-w64-windows-gnu`
 
 No Visual Studio, MSVC or Windows SDK is involved. Install the toolchain with:
@@ -37,9 +64,6 @@ few minutes; later ones are cached.
 
 ## Run
 
-The executable is written to `build/bin/` and the assets are mirrored to
-`build/assets/`:
-
 ```bash
 ./build/bin/DungeonEngine.exe
 ```
@@ -47,7 +71,7 @@ The executable is written to `build/bin/` and the assets are mirrored to
 Assets are located relative to the executable, so it runs from any working
 directory — double-clicking it in the file explorer works too.
 
-The example game: reach the coins without letting the skeletons touch you.
+Reach the three coins without letting the skeletons touch you.
 
 | Key | |
 |---|---|
@@ -56,36 +80,199 @@ The example game: reach the coins without letting the skeletons touch you.
 | Esc | pause, or quit from the menu |
 | F5 | reload the level |
 
-If `assets/game.xml` is missing or malformed, the game exits with a message
-naming the problem instead of crashing.
+Two flags exist for CI and debugging: `--frames N` exits after N frames, and
+`--level` starts in the level instead of the menu.
+
+## Test
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+The unit tests link the engine and the game library directly, so they need no
+window, no input and no desktop session. Two smoke tests run the real binary
+with SDL's dummy drivers to cover startup, level loading, rendering and
+teardown end to end.
+
+---
+
+## Architecture
+
+```
+        third_party            vendored: imgui SDL2 backends, base64
+             |                 headers exposed as SYSTEM includes
+             v
+          engine               static library, namespace de
+             |                 loop, plugins, SDL, input, audio, textures,
+             |                 TMX loading, rendering, camera, quadtree,
+             v                 scenes, widgets
+         game_lib              this game: components, systems, scenes, HUD
+             |
+             v
+           game                main()
+```
+
+**`engine` does not have `game/include` on its include path.** An
+`#include <game/...>` from engine code is a compile error, not a convention
+somebody has to remember. When the engine needs to know something about the
+game, invert it: the TMX loader records Tiled's `type` string in
+`de::ObjectTypeComponent`, and `InGameScene::tagObjectsByType` is what turns
+`"Player"` into a `PlayerComponent`.
+
+Rule of thumb for new code: **if it names a gameplay component, it belongs in
+`game/`.**
+
+### Where the frame goes
+
+```
+frame begin   input (SDL events -> InputState)  ->  ImGui::NewFrame
+fixed steps   movement -> integration -> spatial sync -> collision -> combat
+              (zero or more times, each advancing DeltaTime::fixed)
+frame         animation, camera, scenes, debug
+last          render passes in `order`, then the GUI
+frame end     present
+```
+
+Systems that must not depend on frame rate go in `addFixedSystem`. Everything
+else goes in `addSystem`, and rendering in `addSystemLast`.
+
+---
+
+## Recipes
+
+### Add a component
+
+Components are plain data. Engine-level ones live in
+`engine/include/engine/components/`, gameplay ones in
+`game/include/game/components/`.
+
+```cpp
+// game/include/game/components/mana_component.hpp
+#ifndef GAME_COMPONENTS_MANA_COMPONENT_HPP
+#define GAME_COMPONENTS_MANA_COMPONENT_HPP
+
+struct ManaComponent
+{
+    int current = 10;
+    int max = 10;
+};
+
+#endif // GAME_COMPONENTS_MANA_COMPONENT_HPP
+```
+
+Attach it where the entity is built — for objects coming from a `.tmx`, that is
+`InGameScene::tagObjectsByType`.
+
+### Add a system
+
+```cpp
+// game/include/game/systems/mana_regen_system.hpp
+#include <engine/systems/system.hpp>
+
+class ManaRegenSystem final : public de::System
+{
+public:
+    void run(entt::registry& registry) override;
+};
+```
+
+```cpp
+// game/src/systems/mana_regen_system.cpp
+void ManaRegenSystem::run(entt::registry& registry)
+{
+    const float dt = registry.ctx().get<de::DeltaTime>().fixed;
+    for (auto&& [entity, mana] : registry.view<ManaComponent>().each())
+    {
+        // ...
+    }
+}
+```
+
+Register it in `GamePlugin::mount` and add the `.cpp` to `game/CMakeLists.txt`
+— source lists are explicit, not globbed.
+
+```cpp
+gameLoop.addFixedSystem(std::make_shared<ManaRegenSystem>());
+```
+
+### Add a scene
+
+Implement `de::Scene`: `onEnter` builds the entities, `onExit` destroys them.
+
+```cpp
+class ShopScene : public de::Scene
+{
+public:
+    void onEnter(entt::registry& registry) override;
+    void onUpdate(entt::registry& registry) override;
+    void onExit(entt::registry& registry) override;
+
+private:
+    std::vector<entt::entity> m_entities;
+};
+```
+
+Two things `onExit` must do, both learned the hard way:
+
+```cpp
+void ShopScene::onExit(entt::registry& registry)
+{
+    // The spatial trees hold entity handles. Clear them first, or the next
+    // query hands back destroyed entities.
+    registry.ctx().get<de::SpatialIndex>().clear();
+
+    for (auto entity : m_entities)
+    {
+        // Checked: gameplay may already have destroyed some of them.
+        if (registry.valid(entity))
+        {
+            registry.destroy(entity);
+        }
+    }
+    m_entities.clear();
+}
+```
+
+Switch to it with `requestScene`, which applies between frames:
+
+```cpp
+registry.ctx().get<de::SceneSystem>().requestScene(
+    std::make_unique<ShopScene>());
+```
+
+Use `setScene` only from a setup callback, where there is no frame in progress.
+
+---
 
 ## Layout
 
 ```
-engine/          reusable 2D engine, built as a static library (namespace de)
+engine/          reusable 2D engine, static library (namespace de)
   include/engine/  public headers
   src/             implementation
-game/            the example game, links engine
+game/            the example game
   include/game/    headers
-  src/             implementation
+  src/             implementation, plus main.cpp
+tests/           doctest unit tests and .tmx fixtures
 third_party/     vendored sources: imgui SDL2 backends, base64
-assets/          textures, Tiled (.tmx) levels and game.xml configuration
+assets/          textures, audio, Tiled (.tmx) levels and game.xml
 toolchain/       LLVM-MinGW CMake toolchain file and the vcpkg triplet
 ```
 
-The engine does not have `game/include` on its include path, so it cannot
-reference the game even by accident. To reuse it, drop `game/` and write your
-own against `engine`.
+## Configuration
 
-`assets/game.xml` holds the window, framerate, camera and level settings read at
-startup. `<Screen>` is the window size; `<Camera width/height>` is the logical
-resolution the game draws in, which SDL scales to the window, and `zoomLevel`
-is how many logical pixels one world unit occupies.
+`assets/game.xml` is read at startup. `<Screen>` is the window; `<Camera
+width/height>` is the logical resolution the game draws in, which SDL scales to
+the window, and `zoomLevel` is how many logical pixels one world unit takes.
+`vsync` is optional and defaults to on.
+
+If the file is missing or malformed, the game exits with a message naming the
+problem rather than crashing.
 
 ## Dependencies
 
 Resolved through vcpkg (see `vcpkg.json`): SDL2, SDL2_image, SDL2_mixer, EnTT,
-Dear ImGui, tinyxml2, zlib, libpng.
+Dear ImGui, tinyxml2, zlib, libpng, doctest.
 
 The sound effects in `assets/Audio/` are synthesized placeholders, not
 recordings — see `assets/Audio/README.txt`.
