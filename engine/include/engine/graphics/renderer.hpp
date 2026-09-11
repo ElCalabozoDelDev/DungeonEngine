@@ -1,7 +1,7 @@
 #ifndef DE_GRAPHICS_RENDERER_HPP
 #define DE_GRAPHICS_RENDERER_HPP
-// #include "SDL2/SDL.h"
-#include "entt/entt.hpp"
+
+#include <SDL.h>
 #include <engine/components/camera_component.hpp>
 #include <engine/components/dimension_component.hpp>
 #include <engine/components/sprite_component.hpp>
@@ -10,10 +10,12 @@
 #include <engine/components/tile_layer_component.hpp>
 #include <engine/components/tile_set_component.hpp>
 #include <engine/components/transform_component.hpp>
-#include <engine/graphics/texture_manager.hpp>
+#include <engine/graphics/sdl_resources.hpp>
+#include <engine/graphics/texture_cache.hpp>
 #include <engine/loaders/config.hpp>
+#include <entt/entt.hpp>
 #include <iostream>
-#include <ostream>
+#include <vector>
 
 namespace de
 {
@@ -24,8 +26,9 @@ public:
                               std::vector<entt::entity> visibleSprites,
                               float offsetX, float offsetY, float zoomLevel)
     {
-        SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
-        auto config = registry.ctx().get<Config>();
+        SDL_Renderer* renderer = registry.ctx().get<MainRenderer>().get();
+        const auto& textures = registry.ctx().get<TextureCache>();
+        const auto& config = registry.ctx().get<Config>();
         // Camera position
         auto cameraPos = registry
                              .get<TransformComponent>(
@@ -44,9 +47,13 @@ public:
             int renderY = static_cast<int>(
                 (trf.position.getY() - cameraPos.getY()) * zoomLevel +
                 config.screenHeight / 2.0f + offsetY);
-            TextureManager::Instance()->drawFrame(
-                tex.id, renderX, renderY, dim.width, dim.height, spr.spriteRow,
-                spr.currentSprite, renderer, 0, 255, zoomLevel, SDL_FLIP_NONE);
+
+            TextureCache::DrawParams params;
+            params.source = TextureCache::frameRect(
+                dim.width, dim.height, spr.spriteRow, spr.currentSprite);
+            params.position = SDL_Point{renderX, renderY};
+            params.scale = zoomLevel;
+            textures.draw(tex.id, params);
         }
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     }
@@ -55,8 +62,9 @@ public:
                             std::vector<entt::entity> visibleTiles,
                             float offsetX, float offsetY, float zoomLevel)
     {
-        auto config = registry.ctx().get<Config>();
-        auto* pRenderer = registry.ctx().get<SDL_Renderer*>();
+        SDL_Renderer* pRenderer = registry.ctx().get<MainRenderer>().get();
+        const auto& textures = registry.ctx().get<TextureCache>();
+        const auto& config = registry.ctx().get<Config>();
         // Camera position
         auto cameraPos = registry
                              .get<TransformComponent>(
@@ -88,11 +96,13 @@ public:
             int tileRow = tileIndex / tileset.numColumns;
             int tileCol = tileIndex % tileset.numColumns;
 
-            // Draw the tile
-            TextureManager::Instance()->drawTile(
-                texture.id, tileset.margin, tileset.spacing, renderX, renderY,
-                dimension.width, dimension.height, tileRow, tileCol, zoomLevel,
-                pRenderer);
+            TextureCache::DrawParams params;
+            params.source = TextureCache::tileRect(
+                dimension.width, dimension.height, tileRow, tileCol,
+                tileset.margin, tileset.spacing);
+            params.position = SDL_Point{renderX, renderY};
+            params.scale = zoomLevel;
+            textures.draw(texture.id, params);
         }
 
         // Restore the draw colour

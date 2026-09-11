@@ -1,14 +1,11 @@
 #include <engine/components/camera_bounds_component.hpp>
+#include <engine/components/dimension_component.hpp>
 #include <engine/components/sprite_component.hpp>
 #include <engine/components/transform_component.hpp>
 #include <engine/components/velocity_component.hpp>
 #include <engine/core/delta_time.hpp>
 #include <engine/loaders/config.hpp>
-#include <engine/spatial/quadtree_manager.hpp>
 #include <engine/systems/transform_system.hpp>
-// #include "core/quadtree.hpp"
-#include <engine/components/dimension_component.hpp>
-#include <engine/core/constants.hpp>
 
 namespace de
 {

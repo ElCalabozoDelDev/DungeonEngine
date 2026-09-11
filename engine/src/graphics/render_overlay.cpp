@@ -1,16 +1,16 @@
-#include <engine/core/constants.hpp> // Add this line to include the definition of LayerType
 #include <engine/graphics/render_overlay.hpp>
-#include <engine/graphics/renderer.hpp> // Add this line to include the definition of Renderer
-#include <engine/spatial/quadtree_manager.hpp>
+#include <engine/graphics/renderer.hpp>
+#include <engine/spatial/spatial_index.hpp>
 
 namespace de
 {
 void RenderOverlay::draw(entt::registry& registry, Box<float> cameraView,
                          float offsetX, float offsetY, float zoomLevel)
 {
-    std::vector<entt::entity> visibleTiles =
-        QuadtreeManager::Instance()->query(LayerType::OVERLAY, cameraView);
-    Renderer::renderTiles(registry, visibleTiles, offsetX, offsetY, zoomLevel);
+    const auto& spatial = registry.ctx().get<SpatialIndex>();
+    std::vector<entt::entity> visible =
+        spatial.query(Layer::Overlay, cameraView);
+    Renderer::renderTiles(registry, visible, offsetX, offsetY, zoomLevel);
 }
 
 } // namespace de

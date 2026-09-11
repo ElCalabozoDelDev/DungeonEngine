@@ -5,6 +5,7 @@
 #include <engine/components/dimension_component.hpp>
 #include <engine/components/transform_component.hpp>
 #include <engine/graphics/render.hpp>
+#include <engine/graphics/sdl_resources.hpp>
 #include <engine/spatial/quadtree.hpp>
 #include <engine/systems/render_system.hpp>
 #include <engine/widgets/gui.hpp>
@@ -13,7 +14,7 @@ namespace de
 {
 void RenderSystem::run(entt::registry& registry)
 {
-    SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
+    SDL_Renderer* renderer = registry.ctx().get<MainRenderer>().get();
 
     renderGraphics(registry);
     renderGUI(registry);
@@ -23,7 +24,7 @@ void RenderSystem::run(entt::registry& registry)
 
 void RenderSystem::renderGUI(entt::registry& registry)
 {
-    SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
+    SDL_Renderer* renderer = registry.ctx().get<MainRenderer>().get();
     registry.view<std::unique_ptr<gui::WidgetComponent>>().each(
         [&registry](auto entity, auto& widget_component)
         {

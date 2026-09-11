@@ -2,6 +2,7 @@
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_sdlrenderer2.h"
 #include <SDL_render.h>
+#include <engine/graphics/sdl_resources.hpp>
 #include <engine/plugins/imgui_plugin.hpp>
 
 namespace de
@@ -11,8 +12,8 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
     gameLoop.addSetupCallback(
         [](entt::registry& registry)
         {
-            SDL_Renderer* renderer = registry.ctx().get<SDL_Renderer*>();
-            SDL_Window* window = registry.ctx().get<SDL_Window*>();
+            SDL_Renderer* renderer = registry.ctx().get<MainRenderer>().get();
+            SDL_Window* window = registry.ctx().get<Window>().get();
             // ImGui initialisation
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
