@@ -7,6 +7,7 @@ find_package(doctest CONFIG REQUIRED)
 add_executable(tests
     main.cpp
     test_action_map.cpp
+    test_animation.cpp
     test_config_loader.cpp
     test_gameplay.cpp
     test_spatial_index.cpp
@@ -25,6 +26,10 @@ target_compile_definitions(tests PRIVATE
 set_target_properties(tests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+
+# Before doctest's discovery, which runs the executable at build time: without
+# the DLLs beside it that launch fails with 0xc0000135 and the build stops.
+de_copy_runtime_dlls(tests)
 
 include(doctest)
 doctest_discover_tests(tests)

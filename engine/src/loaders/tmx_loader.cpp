@@ -240,8 +240,15 @@ void TMXLoader::loadObjectLayer(entt::registry& registry,
         registry.emplace<DimensionComponent>(entity, width, height);
         registry.emplace<SpriteComponent>(entity, spriteRow, spriteCol, 0);
         registry.emplace<VelocityComponent>(entity, Vector2D<float>(0, 0));
-        registry.emplace<AnimationComponent>(entity, spriteCol, numFrames,
-                                             animationTime, 0);
+        // currentFrame starts at 0, not at spriteCol. It is an offset from
+        // SpriteComponent::currentCol, so seeding it with the column made the
+        // first drawn frame 2 * spriteCol -- past the end of the run for any
+        // object that did not start at column 0.
+        AnimationComponent animation;
+        animation.currentFrame = 0;
+        animation.totalFrames = numFrames;
+        animation.animationTime = animationTime;
+        registry.emplace<AnimationComponent>(entity, animation);
         // Record the Tiled `type` verbatim and let the game decide what it
         // means; see InGameScene::tagObjectsByType.
         registry.emplace<ObjectTypeComponent>(entity, type);
