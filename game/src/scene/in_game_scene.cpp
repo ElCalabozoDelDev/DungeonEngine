@@ -10,13 +10,12 @@
 #include <engine/components/sprite_component.hpp>
 #include <engine/components/tile_layer_component.hpp>
 #include <engine/components/transform_component.hpp>
-#include <engine/core/constants.hpp>
 #include <engine/graphics/render_bottom.hpp>
 #include <engine/graphics/render_collision.hpp>
 #include <engine/graphics/render_object.hpp>
 #include <engine/graphics/render_overlay.hpp>
 #include <engine/loaders/tmx_loader.hpp>
-#include <engine/spatial/quadtree_manager.hpp>
+#include <engine/spatial/spatial_index.hpp>
 #include <engine/systems/debug_system.hpp>
 #include <game/components/player_component.hpp>
 #include <game/debug/player_editor.hpp>
@@ -59,6 +58,10 @@ void InGameScene::onUpdate(entt::registry& registry) {}
 
 void InGameScene::onExit(entt::registry& registry)
 {
+    // Drop the spatial trees first: they hold entity handles, and a query
+    // after the entities are gone would hand back dangling ones.
+    registry.ctx().get<SpatialIndex>().clear();
+
     // Destroy every entity this scene created
     for (auto entity : m_entities)
     {
@@ -95,28 +98,25 @@ void InGameScene::initializeQuadtrees(entt::registry& registry, float mapWidth,
                           static_cast<float>(dimension.height));
     };
 
-    QuadtreeManager::Instance()->createQuadtree(
-        getBox, LayerType::BOTTOM, Box<float>(0.0f, 0.0f, mapWidth, mapHeight));
-    QuadtreeManager::Instance()->createQuadtree(
-        getBox, LayerType::OVERLAY,
-        Box<float>(0.0f, 0.0f, mapWidth, mapHeight));
-    QuadtreeManager::Instance()->createQuadtree(
-        getBox, LayerType::COLLISION,
-        Box<float>(0.0f, 0.0f, mapWidth, mapHeight));
-    QuadtreeManager::Instance()->createQuadtree(
-        getBox, LayerType::OBJECT, Box<float>(0.0f, 0.0f, mapWidth, mapHeight));
+    const Box<float> bounds(0.0f, 0.0f, mapWidth, mapHeight);
+    auto& spatial = registry.ctx().get<SpatialIndex>();
+    spatial.create(Layer::Bottom, getBox, bounds);
+    spatial.create(Layer::Overlay, getBox, bounds);
+    spatial.create(Layer::Collision, getBox, bounds);
+    spatial.create(Layer::Object, getBox, bounds);
 }
 
 void InGameScene::populateTileQuadtree(entt::registry& registry)
 {
+    auto& spatial = registry.ctx().get<SpatialIndex>();
+
     auto bottomView = registry.view<TileLayerComponent, BottomLayerComponent>();
     for (auto entity : bottomView)
     {
         auto& tileLayer = registry.get<TileLayerComponent>(entity);
         for (auto tile : tileLayer.tileEntities)
         {
-            QuadtreeManager::Instance()->insertIntoQuadtree(LayerType::BOTTOM,
-                                                            tile);
+            spatial.insert(Layer::Bottom, tile);
         }
     }
 
@@ -127,8 +127,7 @@ void InGameScene::populateTileQuadtree(entt::registry& registry)
         auto& tileLayer = registry.get<TileLayerComponent>(entity);
         for (auto tile : tileLayer.tileEntities)
         {
-            QuadtreeManager::Instance()->insertIntoQuadtree(LayerType::OVERLAY,
-                                                            tile);
+            spatial.insert(Layer::Overlay, tile);
         }
     }
 
@@ -139,19 +138,18 @@ void InGameScene::populateTileQuadtree(entt::registry& registry)
         auto& tileLayer = registry.get<TileLayerComponent>(entity);
         for (auto tile : tileLayer.tileEntities)
         {
-            QuadtreeManager::Instance()->insertIntoQuadtree(
-                LayerType::COLLISION, tile);
+            spatial.insert(Layer::Collision, tile);
         }
     }
 }
 
 void InGameScene::populateSpriteQuadtree(entt::registry& registry)
 {
+    auto& spatial = registry.ctx().get<SpatialIndex>();
     auto view = registry.view<SpriteComponent>();
     for (auto entity : view)
     {
-        QuadtreeManager::Instance()->insertIntoQuadtree(LayerType::OBJECT,
-                                                        entity);
+        spatial.insert(Layer::Object, entity);
     }
 }
 

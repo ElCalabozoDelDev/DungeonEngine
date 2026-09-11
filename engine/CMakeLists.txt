@@ -10,7 +10,7 @@ add_library(engine STATIC
     src/graphics/render_collision.cpp
     src/graphics/render_object.cpp
     src/graphics/render_overlay.cpp
-    src/graphics/texture_manager.cpp
+    src/graphics/texture_cache.cpp
     src/loaders/config_loader.cpp
     src/loaders/tmx_loader.cpp
     src/plugins/base_plugin.cpp
@@ -18,7 +18,7 @@ add_library(engine STATIC
     src/plugins/sdl_plugin.cpp
     src/plugins/widget_plugin.cpp
     src/scene/scene_system.cpp
-    src/spatial/quadtree_manager.cpp
+    src/spatial/spatial_index.cpp
     src/systems/camera_system.cpp
     src/systems/debug_system.cpp
     src/systems/render_system.cpp

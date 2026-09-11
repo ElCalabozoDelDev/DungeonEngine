@@ -20,7 +20,8 @@
 #include <engine/components/velocity_component.hpp>
 #include <engine/core/trim.hpp>
 #include <engine/core/vector_2d.hpp>
-#include <engine/graphics/texture_manager.hpp>
+#include <engine/graphics/sdl_resources.hpp>
+#include <engine/graphics/texture_cache.hpp>
 #include <engine/loaders/tmx_loader.hpp>
 #include <engine/spatial/quadtree.hpp>
 #include <iostream>
@@ -93,18 +94,15 @@ void TMXLoader::loadTextures(entt::registry& registry, XMLElement* pTextureRoot)
     // load the textures
     std::string path = pTextureRoot->Attribute("value");
     std::string id = pTextureRoot->Attribute("name");
-    TextureManager::Instance()->load(path, id,
-                                     registry.ctx().get<SDL_Renderer*>());
+    registry.ctx().get<TextureCache>().load(id, path);
 }
 
 void TMXLoader::loadTilesets(entt::registry& registry, XMLElement* pTilesetRoot)
 {
 
-    auto* pRenderer = registry.ctx().get<SDL_Renderer*>();
     std::string assetsTag = "../assets/Levels/";
     // The tileset "name" attribute
     const char* nameAttribute = pTilesetRoot->Attribute("name");
-    // first add the tileset to texture manager
     // create a tileset object
     auto tileSetEntity = registry.create();
     auto& tileset = registry.emplace<TileSetComponent>(tileSetEntity);
@@ -118,10 +116,10 @@ void TMXLoader::loadTilesets(entt::registry& registry, XMLElement* pTilesetRoot)
     tileset.margin = pTilesetRoot->IntAttribute("margin");
     tileset.tileCount = pTilesetRoot->IntAttribute("tilecount");
     tileset.numColumns = width / (dimension.width + tileset.spacing);
-    TextureManager::Instance()->load(
+    registry.ctx().get<TextureCache>().load(
+        nameAttribute,
         assetsTag.append(
-            pTilesetRoot->FirstChildElement()->Attribute("source")),
-        nameAttribute, pRenderer);
+            pTilesetRoot->FirstChildElement()->Attribute("source")));
     m_tilesets.push_back(tileSetEntity);
     m_pEntities->push_back(tileSetEntity);
 }
