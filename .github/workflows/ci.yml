@@ -35,6 +35,16 @@ jobs:
           Invoke-WebRequest -Uri $url -OutFile llvm-mingw.zip
           Expand-Archive llvm-mingw.zip -DestinationPath "$env:GITHUB_WORKSPACE\toolchains"
           $root = (Get-ChildItem "$env:GITHUB_WORKSPACE\toolchains" -Directory)[0].FullName
+          # Check here, with a clear message, rather than letting it surface
+          # deep inside vcpkg's compiler detection, which reports only a log
+          # path on a runner that is about to disappear.
+          $cxx = Join-Path $root "bin\x86_64-w64-mingw32-clang++.exe"
+          if (-not (Test-Path $cxx)) {
+            Get-ChildItem "$env:GITHUB_WORKSPACE\toolchains" -Recurse -Depth 1 |
+              Select-Object -First 20 -ExpandProperty FullName
+            throw "Extracted toolchain has no compiler at $cxx"
+          }
+          & $cxx --version
           "LLVM_MINGW_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Bootstrap vcpkg
@@ -52,6 +62,19 @@ jobs:
 
       - name: Configure
         run: cmake --preset default -B build
+
+      # vcpkg reports only the paths of the logs that explain a failure, and
+      # the runner is gone by the time anyone reads the summary.
+      - name: Dump vcpkg logs on failure
+        if: failure()
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path build/vcpkg-manifest-install.log,
+            "$env:VCPKG_ROOT/buildtrees/*/*.log" -ErrorAction SilentlyContinue |
+            ForEach-Object {
+              Write-Output "==================== $($_.FullName)"
+              Get-Content $_.FullName -Tail 60
+            }
 
       - name: Build
         run: ninja -C build
