@@ -1,3 +1,4 @@
+#include <engine/plugins/audio_plugin.hpp>
 #include <engine/plugins/base_plugin.hpp>
 #include <engine/plugins/imgui_plugin.hpp>
 #include <engine/plugins/input_plugin.hpp>
@@ -28,6 +29,7 @@ void BasePlugin::mount(GameLoop& gameLoop)
     // delivered.
     gameLoop.addPlugin(std::make_unique<SDLPlugin>());
     gameLoop.addPlugin(std::make_unique<InputPlugin>());
+    gameLoop.addPlugin(std::make_unique<AudioPlugin>());
     gameLoop.addPlugin(std::make_unique<ImGuiPlugin>());
 
     // Integration advances by a fixed step so movement does not depend on

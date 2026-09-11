@@ -47,7 +47,14 @@ The executable is written to `build/bin/` and the assets are mirrored to
 Assets are located relative to the executable, so it runs from any working
 directory — double-clicking it in the file explorer works too.
 
-Arrow keys or WASD move the character. F5 reloads the level.
+The example game: reach the coins without letting the skeletons touch you.
+
+| Key | |
+|---|---|
+| Arrows / WASD | move |
+| Enter / Space | confirm (menu) |
+| Esc | pause, or quit from the menu |
+| F5 | reload the level |
 
 If `assets/game.xml` is missing or malformed, the game exits with a message
 naming the problem instead of crashing.
@@ -79,6 +86,9 @@ is how many logical pixels one world unit occupies.
 
 Resolved through vcpkg (see `vcpkg.json`): SDL2, SDL2_image, SDL2_mixer, EnTT,
 Dear ImGui, tinyxml2, zlib, libpng.
+
+The sound effects in `assets/Audio/` are synthesized placeholders, not
+recordings — see `assets/Audio/README.txt`.
 
 ## License
 

@@ -5,8 +5,13 @@ add_executable(game
     src/main.cpp
     src/plugins/game_plugin.cpp
     src/scene/in_game_scene.cpp
+    src/scene/menu_scene.cpp
+    src/systems/combat_system.cpp
+    src/systems/enemy_ai_system.cpp
     src/systems/movement_system.cpp
     src/widgets/counter_widget.cpp
+    src/widgets/hud_widget.cpp
+    src/widgets/menu_widget.cpp
 )
 
 # The target is `game`, but the binary keeps the project's name.

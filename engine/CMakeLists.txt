@@ -6,6 +6,7 @@
 # target's include path, which is what enforces that.
 
 add_library(engine STATIC
+    src/audio/audio_manager.cpp
     src/core/asset_paths.cpp
     src/input/action_map.cpp
     src/graphics/camera2d.cpp
@@ -16,6 +17,7 @@ add_library(engine STATIC
     src/graphics/texture_cache.cpp
     src/loaders/config_loader.cpp
     src/loaders/tmx_loader.cpp
+    src/plugins/audio_plugin.cpp
     src/plugins/base_plugin.cpp
     src/plugins/imgui_plugin.cpp
     src/plugins/input_plugin.cpp
@@ -23,6 +25,7 @@ add_library(engine STATIC
     src/scene/scene_system.cpp
     src/spatial/spatial_index.cpp
     src/systems/camera_system.cpp
+    src/systems/collision_system.cpp
     src/systems/debug_system.cpp
     src/systems/render_system.cpp
     src/systems/spatial_sync_system.cpp

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <engine/core/delta_time.hpp>
 #include <engine/core/hook.hpp>
+#include <engine/core/paused.hpp>
 #include <engine/core/startup_error.hpp>
 #include <engine/plugins/plugin.hpp>
 #include <engine/systems/system.hpp>
@@ -139,11 +140,22 @@ public:
 
             m_hookFrameBegin.publish(m_registry);
 
+            // Pausing means the simulation does not advance: no fixed steps
+            // and no accumulation, so unpausing does not replay the pause as
+            // a backlog. Frame systems keep running, which is what draws the
+            // pause overlay.
+            const auto* paused = m_registry.ctx().find<Paused>();
+            const bool isPaused = paused != nullptr && paused->value;
+
             // Fixed systems consume whole steps; whatever is left over is
             // carried into the next frame and reported as `alpha`.
-            accumulator += dt.value;
+            if (!isPaused)
+            {
+                accumulator += dt.value;
+            }
             int steps = 0;
-            while (accumulator >= dt.fixed && steps < MaxFixedStepsPerFrame)
+            while (!isPaused && accumulator >= dt.fixed &&
+                   steps < MaxFixedStepsPerFrame)
             {
                 for (auto& system : m_fixedSystems)
                 {
