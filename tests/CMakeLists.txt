@@ -7,6 +7,7 @@ find_package(doctest CONFIG REQUIRED)
 add_executable(tests
     main.cpp
     test_action_map.cpp
+    test_animation.cpp
     test_config_loader.cpp
     test_gameplay.cpp
     test_spatial_index.cpp
