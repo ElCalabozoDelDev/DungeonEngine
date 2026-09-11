@@ -36,13 +36,8 @@ set_target_properties(game PROPERTIES
 # turn requires SDL_main and breaks the link step.
 target_link_libraries(game PRIVATE game_lib)
 
-# Copy SDL2.dll and the other required runtime DLLs next to the executable.
-add_custom_command(TARGET game POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_RUNTIME_DLLS:game>
-    $<TARGET_FILE_DIR:game>
-    COMMAND_EXPAND_LISTS
-)
+# Every DLL the executable needs, next to it.
+de_copy_runtime_dlls(game)
 
 # Mirror assets next to the build. copy_directory_if_different only touches
 # files whose contents changed, so this is cheap on repeat builds and does
