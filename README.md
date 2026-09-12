@@ -1,5 +1,7 @@
 # DungeonEngine
 
+[![CI](https://github.com/ElCalabozoDelDev/DungeonEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/ElCalabozoDelDev/DungeonEngine/actions/workflows/ci.yml)
+
 A C++23 + SDL2 boilerplate for 2D games, with a small dungeon crawler as the
 worked example.
 
@@ -24,9 +26,12 @@ than someone else's project to unpick.
 - **Input** as named actions with rebindable keys, not scancodes in systems.
 - **Dear ImGui** integration, an entity inspector, and a hook-based widget
   layer (`use_state` / `use_callback` / `use_effect`).
+- **Sprite animation** with looping, ping-pong and single-shot runs, a speed
+  multiplier and a hold at each end.
 - **Audio** through SDL2_mixer.
 - **Scenes** with deferred switching, and pausing handled by the loop.
-- **Tests** on doctest, runnable headlessly, plus a GitHub Actions workflow.
+- **46 tests** on doctest, runnable headlessly, plus a GitHub Actions workflow
+  that builds and tests a plain checkout on Windows.
 
 ## Requirements
 
@@ -69,7 +74,11 @@ few minutes; later ones are cached.
 ```
 
 Assets are located relative to the executable, so it runs from any working
-directory — double-clicking it in the file explorer works too.
+directory — double-clicking it in the file explorer works too. `build/bin` is
+self-contained: the build copies both the vcpkg dependencies and the compiler's
+own runtime (`libc++`, `libunwind`) next to the binaries, so the toolchain does
+not need to be on `PATH`. Copy that directory somewhere and it still runs; move
+the `.exe` out on its own and it will not.
 
 Reach the three coins without letting the skeletons touch you.
 
@@ -90,9 +99,10 @@ ctest --test-dir build --output-on-failure
 ```
 
 The unit tests link the engine and the game library directly, so they need no
-window, no input and no desktop session. Two smoke tests run the real binary
-with SDL's dummy drivers to cover startup, level loading, rendering and
-teardown end to end.
+window, no input and no desktop session — which is what makes them usable in CI
+and is the reason to reach for them rather than trying to drive the built game.
+Two smoke tests run the real binary with SDL's dummy drivers to cover startup,
+level loading, rendering and teardown end to end.
 
 ---
 
@@ -268,6 +278,17 @@ the window, and `zoomLevel` is how many logical pixels one world unit takes.
 
 If the file is missing or malformed, the game exits with a message naming the
 problem rather than crashing.
+
+## Troubleshooting
+
+**`vcpkg was unable to detect the active compiler's information`** — vcpkg
+sanitises the environment of the subprocesses it runs, so `LLVM_MINGW_ROOT`
+only reaches it because the triplet lists it in `VCPKG_ENV_PASSTHROUGH`. If you
+write your own triplet, keep that.
+
+**Exit code `0xc0000135` when running a binary** — a DLL is missing. The build
+puts everything needed in `build/bin`; this means the executable was moved out
+of that directory on its own.
 
 ## Dependencies
 
