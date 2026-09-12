@@ -83,21 +83,15 @@ for (const [, name] of xml.matchAll(/<layer\b[^>]*\bname="([^"]*)"/g)) {
 }
 
 for (const [, encoding] of xml.matchAll(/<data\b[^>]*\bencoding="([^"]*)"/g)) {
-    if (encoding !== "base64") {
-        findings.push(`<data encoding="${encoding}">: el cargador exige base64`);
+    if (encoding !== "csv") {
+        findings.push(`<data encoding="${encoding}">: el cargador exige csv`);
     }
 }
-for (const [, compression] of xml.matchAll(
-    /<data\b[^>]*\bcompression="([^"]*)"/g,
-)) {
-    if (compression !== "zlib") {
-        findings.push(
-            `<data compression="${compression}">: el cargador exige zlib`,
-        );
-    }
-}
-if (/<data\b(?![^>]*\bcompression=)/.test(xml)) {
-    findings.push("<data> sin `compression`: el cargador exige zlib");
+if (/<data\b[^>]*\bcompression=/.test(xml)) {
+    findings.push(
+        "<data> con `compression`: el cargador solo acepta encoding=\"csv\" " +
+            "sin compresión",
+    );
 }
 
 // Objects. The opening tag's attributes are consumed with [^>]* so the match

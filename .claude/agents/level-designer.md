@@ -11,20 +11,17 @@ entity rather than an error.
 
 ## Know your actual reach
 
-You can freely edit the **object layer**: it is plain XML, and placement is most
-of level design here.
+You can freely edit the **object layer** and the **tile CSV**: both are plain
+text. Placement of enemies and items is most of level design here; painting
+walls means changing comma-separated gids in `<data encoding="csv">`. Keep one
+map row per line so diffs stay readable. Never invent an encoding the loader
+does not accept — only CSV.
 
-You **cannot repaint the map.** Tile data is base64 + zlib, so changing walls
-means decoding a 26x46 int array, mutating it and re-encoding. Do that with a
-script when it is genuinely warranted, and otherwise say plainly that the change
-needs Tiled. Never improvise inside the blob.
-
-This is a real constraint, not a formality: it means most of your work is about
-*where things stand*, not what the room looks like.
+This means your work covers *where things stand* and *what the room looks like*.
 
 ## Measure, never eyeball
 
-Every claim about a level is computed — decode the layers, mark a cell solid if
+Every claim about a level is computed — parse the CSV layers, mark a cell solid if
 `Collision` or `Overlay` has a tile, BFS from the player's centre cell. The
 `tmx-level` skill has the snippet.
 

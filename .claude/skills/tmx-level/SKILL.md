@@ -1,6 +1,6 @@
 ---
 name: tmx-level
-description: Read, edit or analyse the Tiled .tmx levels in assets/Levels/. Covers exactly which object types, object properties and layer names the loader understands (everything else is silently ignored), the base64+zlib tile encoding, the map-level texture registry, the sprite/tileset inventory available in assets/, and how to measure a level's real geometry with a BFS. Use when placing or moving enemies and items, designing a level, or answering questions about what a level actually contains.
+description: Read, edit or analyse the Tiled .tmx levels in assets/Levels/. Covers exactly which object types, object properties and layer names the loader understands (everything else is silently ignored), the CSV tile encoding, the map-level texture registry, the sprite/tileset inventory available in assets/, and how to measure a level's real geometry with a BFS. Use when placing or moving enemies and items, designing a level, or answering questions about what a level actually contains.
 ---
 
 The loader is `engine/src/loaders/tmx_loader.cpp`. It is strict in the worst way:
@@ -23,7 +23,7 @@ Case-sensitive. Anything else — including a missing `type` — is ignored.
 and the level fails to start with a named error.
 
 **Object `<properties>`** — only these five names are read
-(`tmx_loader.cpp:200-234`):
+(`tmx_loader.cpp` object-property loop in `loadObjectLayer`):
 
 `textureID`, `spriteRow`, `spriteCol`, `totalFrames`, `animationTime`
 
@@ -41,19 +41,23 @@ texture registry:
 Note: **the object's `name` attribute is read by nothing.** "Zombie1", "Mimic"
 are comments for whoever opens Tiled.
 
-**Layer names** — only `Bottom`, `Overlay` and `Collision` (`tmx_loader.cpp:312-323`).
+**Layer names** — only `Bottom`, `Overlay` and `Collision` (tagged in
+`loadTileLayer`).
 A layer with any other name loads but is never inserted into a quadtree and never
 drawn. `Overlay` and `Collision` are both solid for collision
 (`engine/src/systems/collision_system.cpp:22`) when they carry
 `<property name="Collidable" type="bool" value="true"/>` — matched as the literal
 string `"true"`.
 
-## You cannot repaint tiles by hand
+## Tile data is CSV — edit it freely
 
-Tile data must be **base64 + zlib**; anything else fails to load
-(`tmx_loader.cpp:297-303`). Editing the object layer is plain XML and is fine.
-Editing the *map* means decoding, mutating a 26×46 int array and re-encoding — do
-that with a script, or say plainly that it needs Tiled. Never guess at the blob.
+Tile layers must use `<data encoding="csv">`. Each value is a global tile id
+(gid); `0` is empty. One row of the map is typically one line of comma-separated
+ints (trailing commas are fine). Anything else — base64, zlib, missing encoding —
+fails to load with an explicit error.
+
+Editing walls and floors is therefore plain text: change a gid, save, reload.
+Prefer keeping the row layout (`width` ints per line) so diffs stay readable.
 
 ## Measuring a level, instead of guessing
 
@@ -62,13 +66,14 @@ if `Collision` **or** `Overlay` has a non-zero gid, and BFS from the player's
 centre cell:
 
 ```python
-import base64, zlib, xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET
 from collections import deque
 r = ET.parse("assets/Levels/dungeon1.tmx").getroot()
 W, H, TS = int(r.get("width")), int(r.get("height")), int(r.get("tilewidth"))
-L = {l.get("name"): [int.from_bytes(d[i*4:i*4+4], "little") for i in range(W*H)]
-     for l in r.findall("layer")
-     for d in [zlib.decompress(base64.b64decode(l.find("data").text.strip()))]}
+def csv_gids(text):
+    return [int(t) for t in text.replace("\n", ",").split(",") if t.strip()]
+L = {l.get("name"): csv_gids(l.find("data").text)
+     for l in r.findall("layer")}
 solid = [L["Collision"][i] != 0 or L["Overlay"][i] != 0 for i in range(W*H)]
 ```
 

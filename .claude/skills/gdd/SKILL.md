@@ -66,7 +66,7 @@ Start from `_plantillas/`. Never invent a new top-level folder.
 1. **Describe observable behaviour, not implementation.** If a paragraph only
    makes sense after reading the code, rewrite it.
 2. **Measure, don't estimate.** Level geometry, path lengths and step counts are
-   computed by decoding the `.tmx` (base64 + zlib) and running a BFS — never
+   computed by parsing the `.tmx` CSV layers and running a BFS — never
    eyeballed. See the `tmx-level` skill.
 3. **Write down what is deliberate.** The most valuable paragraphs are the ones
    that stop someone "fixing" an intentional limitation six months from now — the

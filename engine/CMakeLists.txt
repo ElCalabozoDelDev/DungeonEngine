@@ -48,6 +48,3 @@ target_link_libraries(engine PUBLIC
     imgui::imgui
     tinyxml2::tinyxml2
 )
-
-# PRIVATE: zlib is only used inside tmx_loader.cpp.
-target_link_libraries(engine PRIVATE ZLIB::ZLIB)

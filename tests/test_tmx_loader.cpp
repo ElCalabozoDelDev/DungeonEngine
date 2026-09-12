@@ -36,7 +36,7 @@ struct LoaderFixture
 
 } // namespace
 
-TEST_CASE("a zlib-compressed level loads")
+TEST_CASE("a csv-encoded level loads")
 {
     LoaderFixture f;
     TMXLoader loader(&f.entities);
@@ -121,16 +121,15 @@ TEST_CASE("objects carry their Tiled type, and nothing more")
     CHECK(std::find(types.begin(), types.end(), "Item") != types.end());
 }
 
-TEST_CASE("a level that is not zlib-compressed is reported")
+TEST_CASE("a level that is not csv-encoded is reported")
 {
-    // This used to produce a level full of garbage tiles in silence:
-    // uncompress()'s return value was never checked.
     LoaderFixture f;
     TMXLoader loader(&f.entities);
 
-    auto result = loader.loadLevel(f.registry, fixture("uncompressed.tmx"));
+    auto result =
+        loader.loadLevel(f.registry, fixture("unsupported_encoding.tmx"));
     REQUIRE_FALSE(result.has_value());
-    CHECK(result.error().find("zlib") != std::string::npos);
+    CHECK(result.error().find("csv") != std::string::npos);
 }
 
 TEST_CASE("a layer with no data element is reported")

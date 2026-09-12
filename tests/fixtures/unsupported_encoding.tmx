@@ -7,8 +7,8 @@
   <image source="nonexistent.png" width="32" height="32"/>
  </tileset>
  <layer id="1" name="Bottom" width="4" height="4">
-  <data encoding="base64">
-   AQAAAAEAAAABAAAAAQAAAAEAAAAAAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAA==
+  <data encoding="base64" compression="zlib">
+   eJxjZGBgYETDIIAuhgsDAAI0ABA=
   </data>
  </layer>
  <objectgroup id="2" name="Objects">

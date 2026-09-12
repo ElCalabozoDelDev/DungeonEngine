@@ -20,15 +20,13 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Find the dependencies provided by vcpkg. ZLIB is used directly
-# (uncompress() on TMX tile data); libpng is not — SDL2_image pulls it in and
-# owns PNG decoding, so there is no find_package(PNG) here.
+# Find the dependencies provided by vcpkg. libpng is not listed — SDL2_image
+# pulls it in and owns PNG decoding, so there is no find_package(PNG) here.
 find_package(SDL2 CONFIG REQUIRED)
 find_package(sdl2_image CONFIG REQUIRED)
 find_package(sdl2_mixer CONFIG REQUIRED)
 find_package(entt CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
-find_package(ZLIB REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 
 # LLVM-MinGW links libc++ and libunwind dynamically, so anything it builds

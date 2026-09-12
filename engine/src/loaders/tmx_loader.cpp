@@ -1,5 +1,5 @@
 #include <SDL.h>
-#include <base64.h>
+#include <cctype>
 #include <cstdint>
 #include <engine/components/animation_component.hpp>
 #include <engine/components/bottom_layer_component.hpp>
@@ -16,18 +16,85 @@
 #include <engine/components/tile_set_component.hpp>
 #include <engine/components/transform_component.hpp>
 #include <engine/components/velocity_component.hpp>
-#include <engine/core/trim.hpp>
 #include <engine/core/vector_2d.hpp>
 #include <engine/graphics/texture_cache.hpp>
 #include <engine/loaders/tmx_loader.hpp>
 #include <entt/entity/fwd.hpp>
+#include <expected>
 #include <iostream>
 #include <string>
-#include <zlib.h>
+#include <string_view>
+#include <vector>
 
 namespace de
 {
 using namespace tinyxml2;
+
+namespace
+{
+/// Parses Tiled's CSV tile payload into exactly `expectedCount` gids.
+/// Empty tokens (trailing commas, blank lines) are skipped.
+std::expected<std::vector<std::uint32_t>, std::string>
+parseCsvGids(const std::string& csv, std::size_t expectedCount)
+{
+    std::vector<std::uint32_t> gids;
+    gids.reserve(expectedCount);
+
+    std::size_t start = 0;
+    while (start <= csv.size())
+    {
+        const std::size_t comma = csv.find(',', start);
+        const std::string_view raw =
+            comma == std::string::npos
+                ? std::string_view(csv).substr(start)
+                : std::string_view(csv).substr(start, comma - start);
+
+        std::size_t begin = 0;
+        while (begin < raw.size() &&
+               std::isspace(static_cast<unsigned char>(raw[begin])) != 0)
+        {
+            ++begin;
+        }
+        std::size_t end = raw.size();
+        while (end > begin &&
+               std::isspace(static_cast<unsigned char>(raw[end - 1])) != 0)
+        {
+            --end;
+        }
+
+        if (begin < end)
+        {
+            const std::string token(raw.substr(begin, end - begin));
+            try
+            {
+                const unsigned long value = std::stoul(token);
+                gids.push_back(static_cast<std::uint32_t>(value));
+            }
+            catch (const std::exception&)
+            {
+                return std::unexpected(
+                    "a <layer> has a non-integer CSV tile id: '" + token + "'");
+            }
+        }
+
+        if (comma == std::string::npos)
+        {
+            break;
+        }
+        start = comma + 1;
+    }
+
+    if (gids.size() != expectedCount)
+    {
+        return std::unexpected(
+            "a <layer> CSV payload has " + std::to_string(gids.size()) +
+            " tile ids; expected " + std::to_string(expectedCount) +
+            " (width * height)");
+    }
+
+    return gids;
+}
+} // namespace
 
 std::expected<void, std::string>
 TMXLoader::loadLevel(entt::registry& registry,
@@ -267,40 +334,32 @@ TMXLoader::loadTileLayer(entt::registry& registry, XMLElement* pTileElement)
         return std::unexpected("a <layer> has no <data> element");
     }
 
-    std::string decodedIDs;
+    const char* encodingAttr = pDataNode->Attribute("encoding");
+    const std::string encoding = encodingAttr != nullptr ? encodingAttr : "";
+    if (encoding != "csv")
+    {
+        return std::unexpected("a <layer> uses encoding '" + encoding +
+                               "'; expected encoding=\"csv\"");
+    }
+
+    std::string csvText;
     for (XMLNode* e = pDataNode->FirstChild(); e != nullptr;
          e = e->NextSibling())
     {
         if (XMLText* text = e->ToText(); text != nullptr)
         {
-            std::string raw = text->Value();
-            decodedIDs = base64_decode(trim(raw));
+            csvText += text->Value();
         }
     }
-    if (decodedIDs.empty())
-    {
-        return std::unexpected("a <layer> has an empty or unreadable <data> "
-                               "payload (expected base64 + zlib)");
-    }
 
-    // One gid per tile. The old code sized the vector with the *byte* count,
-    // allocating four times what it needed.
-    std::vector<std::uint32_t> gids(static_cast<std::size_t>(m_width) *
-                                    static_cast<std::size_t>(m_height));
-    uLongf destinationBytes =
-        static_cast<uLongf>(gids.size() * sizeof(std::uint32_t));
-
-    const int zresult =
-        uncompress(reinterpret_cast<Bytef*>(gids.data()), &destinationBytes,
-                   reinterpret_cast<const Bytef*>(decodedIDs.data()),
-                   static_cast<uLong>(decodedIDs.size()));
-    if (zresult != Z_OK)
+    const std::size_t expectedCount =
+        static_cast<std::size_t>(m_width) * static_cast<std::size_t>(m_height);
+    auto gidsResult = parseCsvGids(csvText, expectedCount);
+    if (!gidsResult)
     {
-        return std::unexpected(
-            "could not zlib-decompress a <layer>: uncompress() returned " +
-            std::to_string(zresult) +
-            ". Tiled must export the layer with base64 + zlib compression.");
+        return std::unexpected(gidsResult.error());
     }
+    const std::vector<std::uint32_t>& gids = *gidsResult;
 
     const char* nameAttribute = pTileElement->Attribute("name");
     const std::string name = nameAttribute != nullptr ? nameAttribute : "";
