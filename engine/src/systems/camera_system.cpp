@@ -6,6 +6,7 @@
 #include <engine/components/velocity_component.hpp>
 #include <engine/core/delta_time.hpp>
 #include <engine/core/vector_2d.hpp>
+#include <engine/graphics/camera2d.hpp>
 #include <engine/systems/camera_system.hpp>
 
 namespace de
@@ -46,17 +47,22 @@ void CameraSystem::run(entt::registry& registry)
             (predictedPosition.getY() - transform.position.getY()) *
                 camera.followSpeed * dt);
 
-        // Clamp the camera to the level bounds
-        float halfScreenWidth = (dimension.width / 2.0f) / camera.zoomLevel;
-        float halfScreenHeight = (dimension.height / 2.0f) / camera.zoomLevel;
+        // Clamp the camera to the level bounds. The visible half-extents
+        // come from Camera2D so this cannot drift from what is drawn.
+        Camera2D view;
+        view.zoom = camera.zoomLevel;
+        view.viewWidth = dimension.width;
+        view.viewHeight = dimension.height;
+        const Vector2D<float> half = view.halfExtents();
+
         transform.position.setX(std::max(
-            halfScreenWidth,
+            half.getX(),
             std::min(transform.position.getX(),
-                     static_cast<float>(bounds.levelWidth - halfScreenWidth))));
+                     static_cast<float>(bounds.levelWidth) - half.getX())));
         transform.position.setY(std::max(
-            halfScreenHeight, std::min(transform.position.getY(),
-                                       static_cast<float>(bounds.levelHeight -
-                                                          halfScreenHeight))));
+            half.getY(),
+            std::min(transform.position.getY(),
+                     static_cast<float>(bounds.levelHeight) - half.getY())));
     }
 }
 

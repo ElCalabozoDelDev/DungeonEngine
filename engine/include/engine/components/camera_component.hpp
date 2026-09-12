@@ -3,6 +3,12 @@
 
 namespace de
 {
+/// How the camera follows its target.
+///
+/// It no longer carries a viewport offset. Those existed to nudge the drawn
+/// image because the drawing formula and the culling rectangle disagreed about
+/// where the camera was; both now come from Camera2D, so there is nothing left
+/// to compensate for.
 struct CameraComponent
 {
     float followSpeed = 5.0f;
@@ -10,8 +16,6 @@ struct CameraComponent
     float predictionFactor = 0.1f;
     float minZoom = 0.5f;
     float maxZoom = 2.0f;
-    float viewportOffsetX = -200;
-    float viewportOffsetY = -100;
 };
 
 } // namespace de

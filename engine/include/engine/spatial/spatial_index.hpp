@@ -8,6 +8,7 @@
 #include <entt/entt.hpp>
 #include <functional>
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 namespace de
@@ -27,6 +28,13 @@ enum class Layer : std::uint8_t
 };
 
 /// Per-layer quadtrees over the entities of the current level.
+///
+/// Alongside each tree it keeps the box every entity was filed under. A
+/// quadtree locates a value by its bounds, so once an entity moves, its new
+/// bounds lead down a different branch and the tree can neither find nor
+/// remove it -- and queries near its new position never descend into the node
+/// that still holds it. update() removes with the remembered box and re-adds
+/// with the current one.
 ///
 /// Lives in the registry context, so it dies with the registry instead of
 /// outliving the level like the QuadtreeManager singleton did. Changing scenes
@@ -58,6 +66,11 @@ public:
     /// False when the layer has no tree, or the entity was not in it.
     bool remove(Layer layer, entt::entity entity);
 
+    /// Re-files `entity` under its current bounds, in whichever layers hold
+    /// it. Entities whose bounds have not changed cost one comparison.
+    /// Returns the number of layers that were actually re-filed.
+    int update(entt::entity entity);
+
     std::vector<entt::entity> query(Layer layer, const Box<float>& box) const;
 
     /// Drops every tree. Call this whenever the entities they refer to are
@@ -73,7 +86,17 @@ private:
         return static_cast<std::size_t>(layer);
     }
 
-    std::array<std::optional<Tree>, LayerCount> m_trees;
+    struct LayerData
+    {
+        std::optional<Tree> tree;
+        /// Kept alongside the tree so update() can recompute current bounds.
+        BoxFn getBox;
+        /// The box each entity was filed under, needed to remove it again
+        /// after it has moved.
+        std::unordered_map<entt::entity, Box<float>> filedAs;
+    };
+
+    std::array<LayerData, LayerCount> m_layers;
 };
 
 } // namespace de

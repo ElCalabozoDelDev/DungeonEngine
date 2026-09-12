@@ -1,16 +1,15 @@
 #ifndef DE_GRAPHICS_RENDER_BOTTOM_HPP
 #define DE_GRAPHICS_RENDER_BOTTOM_HPP
-#include "entt/entity/fwd.hpp"
+
 #include <engine/graphics/render.hpp>
-#include <engine/spatial/quadtree.hpp>
+#include <entt/entity/fwd.hpp>
 
 namespace de
 {
 class RenderBottom : public Render
 {
 public:
-    void draw(entt::registry& registry, Box<float> cameraView, float offsetX,
-              float offsetY, float zoomLevel) override;
+    void draw(entt::registry& registry, const Camera2D& camera) override;
 };
 
 } // namespace de

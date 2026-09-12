@@ -83,16 +83,17 @@ TMXLoader::loadLevel(entt::registry& registry,
     for (XMLElement* e = pRoot->FirstChildElement(); e != nullptr;
          e = e->NextSiblingElement())
     {
+        // Dispatch on the element name, not on which children it happens to
+        // have. Guessing from the children meant a <layer> with no <data> --
+        // a malformed file -- matched neither branch and was skipped without
+        // a word.
         const std::string value = e->Value();
-        if (value != "objectgroup" && value != "layer")
+        if (value == "objectgroup")
         {
-            continue;
-        }
-        if (e->FirstChildElement("object") != nullptr)
-        {
+            // An object group with no objects is legitimate.
             loadObjectLayer(registry, e);
         }
-        else if (e->FirstChildElement("data") != nullptr)
+        else if (value == "layer")
         {
             if (auto result = loadTileLayer(registry, e); !result)
             {
@@ -239,8 +240,15 @@ void TMXLoader::loadObjectLayer(entt::registry& registry,
         registry.emplace<DimensionComponent>(entity, width, height);
         registry.emplace<SpriteComponent>(entity, spriteRow, spriteCol, 0);
         registry.emplace<VelocityComponent>(entity, Vector2D<float>(0, 0));
-        registry.emplace<AnimationComponent>(entity, spriteCol, numFrames,
-                                             animationTime, 0);
+        // currentFrame starts at 0, not at spriteCol. It is an offset from
+        // SpriteComponent::currentCol, so seeding it with the column made the
+        // first drawn frame 2 * spriteCol -- past the end of the run for any
+        // object that did not start at column 0.
+        AnimationComponent animation;
+        animation.currentFrame = 0;
+        animation.totalFrames = numFrames;
+        animation.animationTime = animationTime;
+        registry.emplace<AnimationComponent>(entity, animation);
         // Record the Tiled `type` verbatim and let the game decide what it
         // means; see InGameScene::tagObjectsByType.
         registry.emplace<ObjectTypeComponent>(entity, type);

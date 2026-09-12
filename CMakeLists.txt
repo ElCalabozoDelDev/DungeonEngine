@@ -31,6 +31,37 @@ find_package(imgui CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 
+# LLVM-MinGW links libc++ and libunwind dynamically, so anything it builds
+# needs those DLLs beside it. $<TARGET_RUNTIME_DLLS:...> only covers imported
+# targets -- the vcpkg ones -- not the compiler's own runtime, so a binary that
+# ran fine on a machine with the toolchain on PATH failed with 0xc0000135
+# (DLL not found) anywhere else. CI hit it first, because the test executable
+# is the only one run during the build.
+set(DE_TOOLCHAIN_RUNTIME_DLLS "")
+foreach(_dll libc++.dll libunwind.dll libwinpthread-1.dll)
+    if(EXISTS "${LLVM_MINGW_ROOT}/bin/${_dll}")
+        list(APPEND DE_TOOLCHAIN_RUNTIME_DLLS "${LLVM_MINGW_ROOT}/bin/${_dll}")
+    endif()
+endforeach()
+
+# Puts every DLL an executable needs next to it, so the build output is
+# self-contained: both the vcpkg dependencies and the compiler runtime.
+function(de_copy_runtime_dlls target)
+    add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_RUNTIME_DLLS:${target}>
+        $<TARGET_FILE_DIR:${target}>
+        COMMAND_EXPAND_LISTS
+    )
+    if(DE_TOOLCHAIN_RUNTIME_DLLS)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${DE_TOOLCHAIN_RUNTIME_DLLS}
+            $<TARGET_FILE_DIR:${target}>
+        )
+    endif()
+endfunction()
+
 # Three targets, in dependency order. The layering is the point:
 #
 #   third_party  vendored sources, compiled with warnings suppressed
@@ -42,3 +73,11 @@ find_package(tinyxml2 CONFIG REQUIRED)
 add_subdirectory(third_party)
 add_subdirectory(engine)
 add_subdirectory(game)
+
+# Tests are on by default; turn them off for a consumer build that only wants
+# the game binary.
+option(DE_BUILD_TESTS "Build the unit tests" ON)
+if(DE_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

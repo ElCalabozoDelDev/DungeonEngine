@@ -86,6 +86,8 @@ ConfigLoader::load(const std::filesystem::path& path)
     {
         return std::unexpected(screen.error());
     }
+    // Optional: absent means keep the default (on).
+    result.vsync = (*screen)->BoolAttribute("vsync", result.vsync);
     result.screenWidth = (*screen)->IntAttribute("width", result.screenWidth);
     result.screenHeight =
         (*screen)->IntAttribute("height", result.screenHeight);
@@ -98,10 +100,6 @@ ConfigLoader::load(const std::filesystem::path& path)
     result.cameraWidth = (*camera)->FloatAttribute("width", result.cameraWidth);
     result.cameraHeight =
         (*camera)->FloatAttribute("height", result.cameraHeight);
-    result.viewportOffsetX =
-        (*camera)->FloatAttribute("offsetX", result.viewportOffsetX);
-    result.viewportOffsetY =
-        (*camera)->FloatAttribute("offsetY", result.viewportOffsetY);
     result.zoomLevel = (*camera)->FloatAttribute("zoomLevel", result.zoomLevel);
 
     auto levels = child(root, "Levels");

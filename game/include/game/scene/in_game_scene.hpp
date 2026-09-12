@@ -29,6 +29,7 @@ private:
     void initializeCamera(entt::registry& registry, int mapWidth, int mapHeight,
                           const de::Config& config);
     void initializeRenderers(entt::registry& registry);
+    void initializeHud(entt::registry& registry);
     void initializeDebug(entt::registry& registry, bool open);
 };
 
