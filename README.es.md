@@ -1,5 +1,7 @@
 # DungeonEngine
 
+[![CI](https://github.com/ElCalabozoDelDev/DungeonEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/ElCalabozoDelDev/DungeonEngine/actions/workflows/ci.yml)
+
 Boilerplate de C++23 + SDL2 para juegos 2D, con un pequeño dungeon crawler como
 ejemplo trabajado.
 
@@ -26,9 +28,12 @@ lugar del proyecto de otro que hay que desenredar.
   metidos en los sistemas.
 - **Dear ImGui** integrado, inspector de entidades y una capa de widgets basada
   en hooks (`use_state` / `use_callback` / `use_effect`).
+- **Animación de sprites** con modos en bucle, ping-pong y de una sola pasada,
+  multiplicador de velocidad y pausa en cada extremo.
 - **Audio** con SDL2_mixer.
 - **Escenas** con cambio diferido, y pausa gestionada por el bucle.
-- **Tests** con doctest, ejecutables sin ventana, y workflow de GitHub Actions.
+- **46 tests** con doctest, ejecutables sin ventana, y un workflow de GitHub
+  Actions que compila y testea un checkout limpio en Windows.
 
 ## Requisitos
 
@@ -72,6 +77,10 @@ vcpkg y tarda unos minutos; los siguientes van en caché.
 
 Los assets se localizan relativos al ejecutable, así que funciona desde
 cualquier directorio de trabajo — también haciendo doble clic en el explorador.
+`build/bin` es autocontenido: el build copia junto a los binarios tanto las
+dependencias de vcpkg como el runtime del propio compilador (`libc++`,
+`libunwind`), así que el toolchain no necesita estar en el `PATH`. Copia ese
+directorio a otro sitio y sigue funcionando; saca el `.exe` solo y no.
 
 Llega a las tres monedas sin que te toquen los esqueletos.
 
@@ -92,9 +101,11 @@ ctest --test-dir build --output-on-failure
 ```
 
 Los tests unitarios enlazan el motor y la librería del juego directamente, así
-que no necesitan ventana, ni input, ni sesión de escritorio. Dos smoke tests
-ejecutan el binario real con los drivers dummy de SDL para cubrir arranque,
-carga de nivel, render y cierre de punta a punta.
+que no necesitan ventana, ni input, ni sesión de escritorio — que es lo que los
+hace utilizables en CI y la razón para recurrir a ellos antes que a intentar
+pilotar el juego compilado. Dos smoke tests ejecutan el binario real con los
+drivers dummy de SDL para cubrir arranque, carga de nivel, render y cierre de
+punta a punta.
 
 ---
 
@@ -271,6 +282,17 @@ de mundo. `vsync` es opcional y por defecto está activado.
 
 Si el fichero falta o está mal formado, el juego sale con un mensaje que nombra
 el problema en lugar de reventar.
+
+## Problemas frecuentes
+
+**`vcpkg was unable to detect the active compiler's information`** — vcpkg sanea
+el entorno de los subprocesos que lanza, así que `LLVM_MINGW_ROOT` solo le llega
+porque el triplet la lista en `VCPKG_ENV_PASSTHROUGH`. Si escribes tu propio
+triplet, consérvala.
+
+**Código de salida `0xc0000135` al ejecutar un binario** — falta una DLL. El
+build deja todo lo necesario en `build/bin`; esto significa que el ejecutable se
+sacó solo de ese directorio.
 
 ## Dependencias
 
