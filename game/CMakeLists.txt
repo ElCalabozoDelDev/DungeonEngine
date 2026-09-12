@@ -8,6 +8,11 @@ add_library(game_lib STATIC
     src/plugins/game_plugin.cpp
     src/scene/in_game_scene.cpp
     src/scene/menu_scene.cpp
+    src/sim/nav_grid.cpp
+    src/sim/seek_items_policy.cpp
+    src/sim/sim_plugin.cpp
+    src/sim/telemetry_sampler.cpp
+    src/sim/telemetry_writer.cpp
     src/systems/combat_system.cpp
     src/systems/enemy_ai_system.cpp
     src/systems/movement_system.cpp

@@ -92,6 +92,47 @@ Reach the three coins without letting the skeletons touch you.
 Two flags exist for CI and debugging: `--frames N` exits after N frames, and
 `--level` starts in the level instead of the menu.
 
+## Measure
+
+`--sim` runs the game headless with a scripted navigation policy and writes one
+CSV row per fixed step, plus a summary:
+
+```bash
+./build/bin/DungeonEngine.exe --sim --sim-out sim.csv
+```
+
+```
+sim: outcome=unreachable
+sim: steps=164 sim_seconds=2.7333 fixed_dt=0.0166667
+sim: items=2/3 unreachable=1 pickups_at=0.4000,2.7167
+sim: damage_taken=2 hits=2 final_health=3 first_hit_at=0.7833
+```
+
+It runs on a synthetic clock (`GameLoop::setFrameDelta`), so every frame is
+exactly one fixed step and two runs of the same build produce **byte-identical**
+files — which is what makes a before/after comparison mean anything.
+
+| Flag | |
+|---|---|
+| `--sim-out PATH` | CSV destination (default `sim.csv`) |
+| `--sim-summary PATH` | also write the summary to a file (stdout always) |
+| `--sim-steps N` | fixed-step budget (default 3600 = 60 simulated seconds) |
+| `--sim-seed N` | item visiting order; 0 is strict nearest-first |
+| `--sim-require-clear` | exit 2 unless every item was collected |
+| `--sim-window` | do not force SDL's dummy drivers, so the run can be watched |
+
+Exit code is 0 whenever the run completed and wrote its CSV — dying included, so
+a balance harness does not go red because a level is hard. 1 is an
+infrastructure failure; 2 only with `--sim-require-clear`.
+
+The policy paths perfectly and **does not dodge**: it walks through enemies and
+takes the hits. Its numbers are a floor on difficulty for a mechanically perfect,
+tactically blind player, not a verdict on how the game feels.
+
+The first thing it found was that one of the three coins in `dungeon1` sits
+entirely inside walls and cannot be collected from any position — see
+`docs/design/40-niveles/dungeon1.md`.
+
 ## Test
 
 ```bash
@@ -101,8 +142,9 @@ ctest --test-dir build --output-on-failure
 The unit tests link the engine and the game library directly, so they need no
 window, no input and no desktop session — which is what makes them usable in CI
 and is the reason to reach for them rather than trying to drive the built game.
-Two smoke tests run the real binary with SDL's dummy drivers to cover startup,
-level loading, rendering and teardown end to end.
+Three smoke tests run the real binary with SDL's dummy drivers to cover startup,
+level loading, rendering and teardown end to end; the third drives a short
+`--sim` pass and checks a summary came out of it.
 
 ## Design documents
 

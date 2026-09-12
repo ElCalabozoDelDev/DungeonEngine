@@ -73,6 +73,24 @@ public:
         return *this;
     }
 
+    /// Replaces the wall clock with a fixed delta per frame, so a run is
+    /// reproducible.
+    ///
+    /// Normally the frame delta comes from the performance counter, so the
+    /// number of fixed steps in a frame depends on how fast the machine is.
+    /// That is right for playing and useless for measuring: two runs of the
+    /// same binary diverge. With DeltaTime::fixed passed here, the accumulator
+    /// receives exactly the float it compares against and subtracts, so every
+    /// frame runs exactly one fixed step and lands back on zero.
+    ///
+    /// Zero, the default, keeps the real clock. Nothing else in the loop
+    /// changes, so the normal game path is unaffected.
+    GameLoop& setFrameDelta(float seconds)
+    {
+        m_frameDelta = seconds;
+        return *this;
+    }
+
     GameLoop& addSetupCallback(std::function<void(entt::registry&)> callback)
     {
         m_hookSetup.connect(std::move(callback));
@@ -129,11 +147,18 @@ public:
         {
             DeltaTime& dt = m_registry.ctx().get<DeltaTime>();
 
-            const Uint64 currentCounter = SDL_GetPerformanceCounter();
-            const float frameDelta = static_cast<float>(
-                static_cast<double>(currentCounter - previousCounter) /
-                static_cast<double>(frequency));
-            previousCounter = currentCounter;
+            // On the synthetic clock (setFrameDelta) the counter is not read
+            // at all, so the delta is the same float every frame and the run
+            // is reproducible.
+            float frameDelta = m_frameDelta;
+            if (m_frameDelta <= 0.0f)
+            {
+                const Uint64 currentCounter = SDL_GetPerformanceCounter();
+                frameDelta = static_cast<float>(
+                    static_cast<double>(currentCounter - previousCounter) /
+                    static_cast<double>(frequency));
+                previousCounter = currentCounter;
+            }
 
             dt.value = std::min(frameDelta, MaxFrameDelta);
             dt.elapsed += static_cast<double>(dt.value);
@@ -192,6 +217,9 @@ public:
 private:
     entt::registry m_registry;
     ControlFlow m_controlFlow = ControlFlow::Exit;
+
+    /// Zero means the real clock; see setFrameDelta().
+    float m_frameDelta = 0.0f;
 
     std::vector<std::unique_ptr<Plugin>> m_plugins;
     std::vector<std::shared_ptr<System>> m_fixedSystems;

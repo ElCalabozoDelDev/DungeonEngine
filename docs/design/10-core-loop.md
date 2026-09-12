@@ -42,8 +42,8 @@ al menú, que muestra "You died." y cuántos ítems llevabas.
 Es decir: **el bucle está abierto por el extremo bueno**. El juego solo sabe
 terminar mal.
 
-Y hay algo peor: en el único nivel que existe, **uno de los tres ítems no se
-puede recoger desde ninguna posición** ([[NIVEL-DUNGEON1]]). Así
+Y hay algo peor, medido con `--sim`: en el único nivel que existe, **uno de los
+tres ítems no se puede recoger desde ninguna posición** ([[NIVEL-DUNGEON1]]). Así
 que hoy el contador del HUD no puede llegar a `3 / 3` ni siquiera jugando
 perfecto. El bucle no solo no tiene final: tiene una meta visible e inalcanzable.
 

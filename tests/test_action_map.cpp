@@ -109,3 +109,36 @@ TEST_CASE("input is ignored while the GUI has the keyboard")
     input.setCaptured(true, false);
     CHECK_FALSE(actions.isDown(input, "move_up"));
 }
+
+TEST_CASE("keysFor returns the bindings an action actually has")
+{
+    ActionMap actions;
+    actions.bind("move_up", SDL_SCANCODE_UP);
+    actions.bind("move_up", SDL_SCANCODE_W);
+
+    const auto keys = actions.keysFor("move_up");
+    REQUIRE(keys.size() == 2);
+
+    SUBCASE("in bind order, so the first is the canonical one to synthesise")
+    {
+        CHECK(keys[0] == SDL_SCANCODE_UP);
+        CHECK(keys[1] == SDL_SCANCODE_W);
+    }
+
+    SUBCASE("an unbound action gives an empty list, not a missing one")
+    {
+        CHECK(actions.keysFor("no_such_action").empty());
+    }
+
+    SUBCASE("clearing an action empties it")
+    {
+        actions.clear("move_up");
+        CHECK(actions.keysFor("move_up").empty());
+    }
+
+    SUBCASE("the keys drive the action they came from")
+    {
+        const InputState input = stateWith({keys[0]});
+        CHECK(actions.isDown(input, "move_up"));
+    }
+}

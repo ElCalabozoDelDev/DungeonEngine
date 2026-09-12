@@ -25,6 +25,7 @@ de aparición (una celda es sólida si tiene tile en `Collision` **o** en
 | Enemigos | 3, en celdas `(3, 41)`, `(5, 38)`, `(1, 3)` |
 | Ítems | 3 |
 | Recorrido óptimo de los 3 ítems | **53 tiles = 848 px = 4,24 s = 254 pasos fijos** (teórico: el tercero no se puede recoger, ver abajo) |
+| Recorrido real medido con `--sim` | 2 de 3 ítems en **164 pasos**, 530 px, 2 de daño |
 
 ## Estructura: una subida
 
@@ -62,8 +63,8 @@ funcionando, y es el único momento del nivel donde el juego es realmente duro.
 
 ### Coin3 es imposible de recoger, y por tanto el nivel no se puede completar
 
-**Esto no es una curiosidad: es un defecto del nivel.** Está demostrado
-decodificando las capas, no supuesto.
+**Esto no es una curiosidad: es un defecto del nivel.** Lo descubrió `--sim`, y
+está demostrado, no supuesto.
 
 Coin3 está en `(300, 400)`, así que su caja ocupa x 300–316, y 400–416: las
 celdas `(18, 25)` y `(19, 25)`. **Las dos son sólidas.** Las únicas celdas libres
@@ -78,6 +79,14 @@ recoge nada.
 Es decir: **no existe ninguna posición desde la que un jugador, humano o
 scripteado, pueda recoger Coin3.** Y como el HUD presenta los ítems como un
 progreso (`Items 2 / 3`), el nivel enseña una meta que no se puede alcanzar.
+
+Corrida de `--sim` que lo demuestra:
+
+```
+sim: outcome=unreachable
+sim: items=2/3 unreachable=1 pickups_at=0.4000,2.7167
+sim: damage_taken=2 hits=2 final_health=3 first_hit_at=0.7833
+```
 
 **La corrección es trivial** —mover el objeto a una celda libre, por ejemplo
 `(19, 24)` → `(304, 384)`— pero es una decisión de diseño, no una errata que

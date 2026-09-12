@@ -30,6 +30,14 @@ public:
     /// Removes every binding for an action.
     void clear(std::string_view action);
 
+    /// Every key bound to an action, in bind order; empty when unbound.
+    ///
+    /// For anything that has to produce input rather than read it -- a
+    /// rebinding screen showing the current keys, a scripted run synthesising
+    /// them -- so it presses what the game bound rather than a hardcoded
+    /// guess that silently rots when a binding changes.
+    std::vector<SDL_Scancode> keysFor(std::string_view action) const;
+
     bool isDown(const InputState& input, std::string_view action) const;
     bool wasPressed(const InputState& input, std::string_view action) const;
     bool wasReleased(const InputState& input, std::string_view action) const;
