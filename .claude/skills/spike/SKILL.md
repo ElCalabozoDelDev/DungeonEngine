@@ -1,12 +1,15 @@
 ---
-description: Turn a game idea into a costed one-pager, ending in a draft ADR
-argument-hint: "<the idea, in a sentence>"
+name: spike
+description: >-
+  Turn a game idea into a costed one-pager ending in a draft ADR. Use when
+  evaluating a feature idea, costing a spike, or deciding whether to build
+  something.
+disable-model-invocation: true
 ---
 
-Evaluate this idea for DungeonEngine: **$ARGUMENTS**
-
-Produce a one-pager. Investigate the repository first — every section below must
-be grounded in what is actually there, not in what a game like this usually has.
+Evaluate the idea the user gave. Produce a one-pager. Investigate the repository
+first — every section below must be grounded in what is actually there, not in
+what a game like this usually has.
 
 **1. What it is.** Restate the idea in two sentences, concretely enough to
 disagree with. If it is ambiguous, pick the most plausible reading and say which

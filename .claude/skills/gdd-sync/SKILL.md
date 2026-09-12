@@ -1,6 +1,10 @@
 ---
-description: Reconcile the design documents against the code and report every drift
-allowed-tools: Read, Glob, Grep, Bash(git diff:*), Bash(git log:*), Bash(git status:*)
+name: gdd-sync
+description: >-
+  Reconcile docs/design/ against the codebase and report every drift. Use when
+  asked for design sync, GDD drift, or whether documents match the code.
+  Read-only unless asked to fix.
+disable-model-invocation: true
 ---
 
 Reconcile `docs/design/` against the codebase and report what has drifted. This

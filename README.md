@@ -154,8 +154,9 @@ about the *game*, not the engine; this README stays the technical reference.
 
 Every document declares an `estado` (`implementado`, `parcial`, `propuesto`,
 `descartado`) and lists the code that implements it, so drift between the two is
-detectable rather than discovered late. `.claude/` carries the skills, agents,
-slash commands and hooks that keep them in step.
+detectable rather than discovered late. `AGENTS.md` is the shared agent brief;
+`.claude/` holds portable skills (also used by Cursor/Copilot), Claude-only
+subagents and hooks that keep design and code in step. See `.claude/README.md`.
 
 ---
 

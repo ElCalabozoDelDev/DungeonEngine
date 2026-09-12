@@ -1,10 +1,13 @@
 ---
-description: Run a headless telemetry simulation and report what the numbers say
-argument-hint: "[extra --sim-* flags]"
-allowed-tools: Read, Glob, Grep, Bash
+name: sim
+description: >-
+  Run a headless --sim telemetry pass, verify determinism, and interpret the
+  numbers. Use when asked to simulate, measure balance, or compare a --sim run.
+disable-model-invocation: true
 ---
 
-Run a `--sim` telemetry pass and interpret it. Extra flags: $ARGUMENTS
+Run a `--sim` telemetry pass and interpret it. Extra flags from the user go on
+the command line after `--sim`.
 
 1. Build first if anything changed: `ninja -C build`.
 

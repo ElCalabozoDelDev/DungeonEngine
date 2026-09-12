@@ -4,12 +4,12 @@ description: Write or update the game design documents in docs/design/ — pilla
 ---
 
 `docs/design/` is the source of truth for *why* the game is the way it is.
-`README.md` and `CLAUDE.md` cover the technical side; design docs never document
+`README.md` and `AGENTS.md` cover the technical side; design docs never document
 the engine.
 
 **The documents are written in Spanish.** This is deliberate: they are the user's
 own creative material. Code, comments, skills and agents stay in English, per
-`CLAUDE.md`.
+`AGENTS.md`.
 
 ## Required front-matter
 

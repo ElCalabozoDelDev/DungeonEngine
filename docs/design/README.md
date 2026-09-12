@@ -4,8 +4,9 @@ Esta carpeta es la **fuente de verdad de diseño** de DungeonEngine. El código
 dice *cómo* funciona el juego; esto dice *por qué* es así y qué se pretende que
 sea.
 
-`README.md` y `CLAUDE.md` en la raíz siguen siendo la referencia técnica: build,
-arquitectura, convenciones. Aquí no se documenta el engine, se documenta el juego.
+`README.md` y `AGENTS.md` en la raíz siguen siendo la referencia técnica: build,
+arquitectura, convenciones (`CLAUDE.md` solo apunta a eso para Claude Code).
+Aquí no se documenta el engine, se documenta el juego.
 
 ## Cómo leerlo
 

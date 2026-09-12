@@ -13,7 +13,7 @@ nothing reads, and there is no fiction anywhere in the repository.
 - **Design documents** (`docs/design/`, biome lore, world material) — **Spanish**.
 - **Player-facing strings in the code** (HUD, menu, ImGui labels) — **English**,
   matching what is there now. Code, comments and identifiers stay English per
-  `CLAUDE.md`.
+  `AGENTS.md`.
 
 ## Write to the constraints the game actually has
 

@@ -159,8 +159,10 @@ del *juego*, no del motor; este README sigue siendo la referencia técnica.
 
 Cada documento declara un `estado` (`implementado`, `parcial`, `propuesto`,
 `descartado`) y lista el código que lo implementa, de modo que la
-desincronización entre ambos se detecta en vez de descubrirse tarde. En
-`.claude/` están las skills, agentes, comandos y hooks que los mantienen al día.
+desincronización entre ambos se detecta en vez de descubrirse tarde.
+`AGENTS.md` es la guía compartida para agentes; en `.claude/` están las skills
+portables (también las usan Cursor/Copilot), los subagentes y hooks propios de
+Claude Code. Ver `.claude/README.md`.
 
 ---
 
