@@ -32,7 +32,19 @@ jobs:
           # compiler under CI without a commit here.
           $release = "20260616"
           $url = "https://github.com/mstorsjo/llvm-mingw/releases/download/$release/llvm-mingw-$release-ucrt-x86_64.zip"
-          Invoke-WebRequest -Uri $url -OutFile llvm-mingw.zip
+          # Release downloads fail transiently often enough to be worth
+          # retrying: a single 5xx from the CDN should not fail a pull request.
+          for ($try = 1; $try -le 4; $try++) {
+            try {
+              Invoke-WebRequest -Uri $url -OutFile llvm-mingw.zip
+              break
+            } catch {
+              if ($try -eq 4) { throw }
+              $wait = [math]::Pow(2, $try)
+              Write-Host "Download failed (attempt $try): $($_.Exception.Message). Retrying in ${wait}s."
+              Start-Sleep -Seconds $wait
+            }
+          }
           Expand-Archive llvm-mingw.zip -DestinationPath "$env:GITHUB_WORKSPACE\toolchains"
           $root = (Get-ChildItem "$env:GITHUB_WORKSPACE\toolchains" -Directory)[0].FullName
           # Check here, with a clear message, rather than letting it surface
@@ -51,7 +63,17 @@ jobs:
         shell: pwsh
         run: |
           git clone --depth 1 https://github.com/microsoft/vcpkg.git "$env:VCPKG_ROOT"
-          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
+          # bootstrap downloads vcpkg.exe from a GitHub release, which has
+          # returned HTTP 500 here before and failed an unrelated docs-only
+          # pull request.
+          for ($try = 1; $try -le 4; $try++) {
+            & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
+            if ($LASTEXITCODE -eq 0) { break }
+            if ($try -eq 4) { throw "vcpkg bootstrap failed after $try attempts" }
+            $wait = [math]::Pow(2, $try)
+            Write-Host "Bootstrap failed (attempt $try). Retrying in ${wait}s."
+            Start-Sleep -Seconds $wait
+          }
 
       - name: Cache vcpkg binaries
         uses: actions/cache@v4
