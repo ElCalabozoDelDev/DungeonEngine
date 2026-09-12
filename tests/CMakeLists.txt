@@ -11,7 +11,11 @@ add_executable(tests
     test_balance.cpp
     test_config_loader.cpp
     test_gameplay.cpp
+    test_nav_grid.cpp
+    test_sim_level.cpp
+    test_sim_policy.cpp
     test_spatial_index.cpp
+    test_telemetry.cpp
     test_tmx_loader.cpp
     test_vector_2d.cpp
 )
@@ -22,6 +26,7 @@ target_link_libraries(tests PRIVATE game_lib doctest::doctest)
 # which directory they are run from.
 target_compile_definitions(tests PRIVATE
     DE_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
+    DE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
 )
 
 set_target_properties(tests PROPERTIES
@@ -43,7 +48,21 @@ add_test(NAME smoke_menu
 add_test(NAME smoke_level
     COMMAND game --level --frames 60
 )
-set_tests_properties(smoke_menu smoke_level PROPERTIES
+
+# The only test that exercises the sim clock, the plugin ordering, the
+# teardown write and the real level together.
+#
+# It asserts that a summary was produced, NOT that the run cleared the level:
+# tying CI to an outcome turns every balance change into a red build, which is
+# exactly the coupling --sim exists to avoid. --sim-require-clear is there for
+# when that gate is wanted deliberately.
+add_test(NAME smoke_sim
+    COMMAND game --sim --sim-steps 600 --sim-out sim_smoke.csv
+)
+set_tests_properties(smoke_sim PROPERTIES
+    PASS_REGULAR_EXPRESSION "sim: outcome="
+)
+set_tests_properties(smoke_menu smoke_level smoke_sim PROPERTIES
     ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy;SDL_RENDER_DRIVER=software"
     TIMEOUT 60
 )

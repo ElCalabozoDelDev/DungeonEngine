@@ -46,3 +46,7 @@ vcpkg_installed/
 
 # imgui files
 imgui.ini
+
+# Telemetry output from --sim runs
+sim*.csv
+sim-summary*.txt

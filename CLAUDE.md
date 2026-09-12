@@ -67,6 +67,20 @@ Tuning numbers live in three places at once — the component default,
 `tests/test_balance.cpp`, and `docs/design/50-balance/tablas.md`. The test exists
 to make skipping the other two impossible.
 
+## Simulation mode
+
+`--sim` runs the game headless on a synthetic clock with a scripted navigation
+policy, writing one CSV row per fixed step plus a summary on stdout. It is how
+balance is measured instead of guessed:
+
+```
+DungeonEngine --sim --sim-out sim.csv
+```
+
+Two runs with the same flags must produce **byte-identical CSVs**; that diff is
+the acceptance test for the whole feature. The policy paths perfectly and dodges
+nothing, so its numbers are a floor on difficulty, never a verdict on feel.
+
 ## Code style
 
 `.clang-format` is LLVM-based with overrides (4-space indent, 80-col limit, **Allman braces**, left-aligned pointers) — run it, don't hand-format. On top of that, conventions not enforced by clang-format:

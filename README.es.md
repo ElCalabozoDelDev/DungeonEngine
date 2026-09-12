@@ -94,6 +94,49 @@ Llega a las tres monedas sin que te toquen los esqueletos.
 Hay dos flags para CI y depuración: `--frames N` sale tras N frames, y
 `--level` arranca directamente en el nivel en lugar del menú.
 
+## Medir
+
+`--sim` ejecuta el juego sin ventana con una política de navegación scripteada y
+vuelca una fila de CSV por paso fijo, más un resumen:
+
+```bash
+./build/bin/DungeonEngine.exe --sim --sim-out sim.csv
+```
+
+```
+sim: outcome=unreachable
+sim: steps=164 sim_seconds=2.7333 fixed_dt=0.0166667
+sim: items=2/3 unreachable=1 pickups_at=0.4000,2.7167
+sim: damage_taken=2 hits=2 final_health=3 first_hit_at=0.7833
+```
+
+Corre sobre un reloj sintético (`GameLoop::setFrameDelta`), así que cada frame es
+exactamente un paso fijo y dos corridas del mismo binario producen archivos
+**idénticos byte a byte** — que es lo que hace que comparar antes y después
+signifique algo.
+
+| Flag | |
+|---|---|
+| `--sim-out RUTA` | destino del CSV (por defecto `sim.csv`) |
+| `--sim-summary RUTA` | escribe también el resumen a un archivo (stdout siempre) |
+| `--sim-steps N` | tope de pasos fijos (por defecto 3600 = 60 s simulados) |
+| `--sim-seed N` | orden de visita de ítems; 0 es el más cercano primero |
+| `--sim-require-clear` | sale con 2 si no se recogieron todos los ítems |
+| `--sim-window` | no fuerza los drivers dummy, para ver la corrida |
+
+El código de salida es 0 siempre que la corrida terminara y escribiera su CSV,
+incluida la muerte: un harness de balance no debe ponerse rojo porque un nivel
+sea difícil. 1 es fallo de infraestructura; 2 solo con `--sim-require-clear`.
+
+La política navega perfecto y **no esquiva**: atraviesa a los enemigos y se come
+los golpes. Sus cifras son una cota inferior de dificultad para un jugador
+mecánicamente perfecto y tácticamente ciego, no un veredicto sobre cómo se siente
+el juego.
+
+Lo primero que encontró fue que una de las tres monedas de `dungeon1` está
+enteramente dentro de los muros y no se puede recoger desde ninguna posición —
+ver `docs/design/40-niveles/dungeon1.md`.
+
 ## Tests
 
 ```bash
@@ -103,9 +146,10 @@ ctest --test-dir build --output-on-failure
 Los tests unitarios enlazan el motor y la librería del juego directamente, así
 que no necesitan ventana, ni input, ni sesión de escritorio — que es lo que los
 hace utilizables en CI y la razón para recurrir a ellos antes que a intentar
-pilotar el juego compilado. Dos smoke tests ejecutan el binario real con los
+pilotar el juego compilado. Tres smoke tests ejecutan el binario real con los
 drivers dummy de SDL para cubrir arranque, carga de nivel, render y cierre de
-punta a punta.
+punta a punta; el tercero lanza una corrida corta de `--sim` y comprueba que
+salió un resumen.
 
 ## Documentos de diseño
 

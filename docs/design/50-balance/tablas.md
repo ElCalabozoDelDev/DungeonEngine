@@ -67,14 +67,36 @@ Los valores sueltos dicen poco. Las relaciones son el diseño:
 
 ## Cómo medir en vez de opinar
 
-Hoy no hay forma de medir esto: el balance se ajusta a ojo, recompilando. Lo que
-sí se puede calcular sin jugar es la geometría del nivel, decodificando el `.tmx`
-y corriendo un BFS ([[NIVEL-DUNGEON1]]).
+`--sim` corre el juego sin ventana con una política de navegación determinista y
+vuelca un CSV de una fila por paso fijo. Un cambio de balance se evalúa
+comparando el resumen contra la referencia, no a ojo.
 
-Con los valores de esta tabla, el recorrido óptimo de los tres ítems de
-`dungeon1` sería de **53 tiles = 848 px = 254 pasos fijos** (4,24 s) — salvo que
-el tercero, como se explica en ese documento, no se puede recoger.
+Referencia medida sobre `dungeon1` con los valores de esta tabla:
 
-Falta una herramienta que ejecute el juego sin ventana y vuelque métricas por
-paso: sin ella, cualquier afirmación sobre si el juego es duro o fácil es una
-opinión. Es la carencia más seria de este documento.
+```
+sim: outcome=unreachable
+sim: steps=164 sim_seconds=2.7333
+sim: items=2/3 unreachable=1 pickups_at=0.4000,2.7167
+sim: damage_taken=2 hits=2 final_health=3 first_hit_at=0.7833
+sim: distance_px=529.554 mean_speed=193.739 blocked_ratio=0.0122
+sim: chase_ratio=0.9024 min_enemy_dist=3.722
+```
+
+Cómo leerla:
+
+| Métrica | Qué dice |
+|---|---|
+| `items=2/3` + `unreachable=1` | El tercer ítem **no se puede recoger desde ninguna posición**: ver [[NIVEL-DUNGEON1]]. El nivel no se puede completar. |
+| `damage_taken=2` de 5 corazones | Un recorrido perfecto pero sin esquivar cuesta 2 de 5. Queda margen: el nivel no es letal ni de lejos. |
+| `chase_ratio=0.90` | Se pasa el 90 % del recorrido con algún enemigo persiguiendo. Con `chaseRange` a 120 px, los enemigos están casi siempre activos en esta ruta. |
+| `mean_speed=193.7` de 200 | Apenas roza geometría (`blocked_ratio` 1,2 %): el nivel no estorba al movimiento. |
+
+**Estas cifras son de una sonda que no esquiva.** Un jugador humano competente
+recibiría menos daño; uno malo, más. Sirven como suelo comparable entre cambios,
+no como predicción de una partida real.
+
+**Advertencia sobre lo que mide `--sim`:** la política navega perfecto y no
+esquiva nada — atraviesa a los enemigos y se come los golpes. No es un jugador,
+es una **sonda repetible**. Sus números responden "cuánto castiga este nivel a
+alguien mecánicamente perfecto y tácticamente ciego", que es una cota, no una
+experiencia. El *feel* no se mide así; para eso hay que jugarlo.

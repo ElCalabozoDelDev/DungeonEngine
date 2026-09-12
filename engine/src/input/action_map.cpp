@@ -26,6 +26,12 @@ const std::vector<SDL_Scancode>* ActionMap::find(std::string_view action) const
     return it != m_bindings.end() ? &it->second : nullptr;
 }
 
+std::vector<SDL_Scancode> ActionMap::keysFor(std::string_view action) const
+{
+    const auto* keys = find(action);
+    return keys != nullptr ? *keys : std::vector<SDL_Scancode>{};
+}
+
 bool ActionMap::isDown(const InputState& input, std::string_view action) const
 {
     const auto* keys = find(action);
