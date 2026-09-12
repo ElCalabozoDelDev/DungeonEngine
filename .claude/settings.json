@@ -7,6 +7,36 @@
           {
             "type": "command",
             "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const j=JSON.parse(d);const f=j.tool_input&&j.tool_input.file_path;if(f&&/\\.(cpp|hpp|h)$/.test(f)){require('child_process').execFileSync('clang-format',['-i',f],{stdio:'ignore'});}}catch(e){}});\" 2>/dev/null || true"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-tmx.mjs\" 2>/dev/null || true",
+            "statusMessage": "Checking the level"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-gdd.mjs\" 2>/dev/null || true",
+            "statusMessage": "Checking the design document"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/design-drift.mjs\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/load-pillars.mjs\" 2>/dev/null || true"
           }
         ]
       }
