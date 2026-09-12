@@ -39,11 +39,18 @@ target_link_libraries(game PRIVATE game_lib)
 # Every DLL the executable needs, next to it.
 de_copy_runtime_dlls(game)
 
-# Mirror assets next to the build. copy_directory_if_different only touches
-# files whose contents changed, so this is cheap on repeat builds and does
-# not wipe the destination the way remove_directory + copy_directory did.
-add_custom_command(TARGET game POST_BUILD
+# Mirror assets next to the build.
+#
+# A target of its own, not a POST_BUILD on `game`: POST_BUILD runs only when
+# the target is relinked, so editing a .tmx or a texture without touching any
+# source left the old copy in build/assets and the change appeared to do
+# nothing. A custom target is always considered out of date, and
+# copy_directory_if_different only touches files whose contents changed, so
+# this stays cheap.
+add_custom_target(sync_assets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
     ${CMAKE_SOURCE_DIR}/assets
     ${CMAKE_BINARY_DIR}/assets
+    COMMENT "Syncing assets"
 )
+add_dependencies(game sync_assets)
