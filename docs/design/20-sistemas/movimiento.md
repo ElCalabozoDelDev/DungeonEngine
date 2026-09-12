@@ -41,6 +41,6 @@ sin tocar la del enemigo cambia el pilar, no el balance.
 ## Limitaciones conocidas
 
 - No hay aceleración ni inercia: la velocidad pasa de 0 a máxima en un paso.
-- No hay dash, ni esquiva, ni ninguna habilidad de movimiento. Dado
-  [[PILAR-01]], un dash sería la primera adición coherente con el diseño — y
-  también la que más desequilibraría la relación de velocidades.
+- No hay dash, ni esquiva dedicada, ni otra habilidad de movimiento. Un dash
+  sigue siendo coherente con posición bajo [[PILAR-01]], y sigue siendo la
+  adición que más desequilibraría la relación de velocidades.

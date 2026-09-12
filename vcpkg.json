@@ -4,6 +4,10 @@
     "entt",
     "imgui",
     "libpng",
+    {
+      "name": "libtcod",
+      "default-features": false
+    },
     "sdl2",
     "sdl2-image",
     "sdl2-mixer",

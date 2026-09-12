@@ -9,7 +9,15 @@ codigo:
 
 # Dungeon 1
 
-El único nivel que existe. Bioma [[BIOMA-DUNGEON]].
+## Estado respecto al core loop
+
+**Deprecado como camino del core loop.** El loop acordado ([[LOOP-01]]) se
+construye sobre generación procedimental ([[SYS-PROC]]), no extendiendo este
+`.tmx`. Este documento se conserva como **artefacto histórico**: geometría
+medida, lecciones de [[PILAR-03]], y referencia para `--sim` / tests mientras
+el cargador handcrafted siga existiendo.
+
+Sigue siendo el único nivel que el código carga hoy. Bioma [[BIOMA-DUNGEON]].
 
 ## Datos medidos
 

@@ -12,6 +12,7 @@ add_executable(tests
     test_config_loader.cpp
     test_gameplay.cpp
     test_nav_grid.cpp
+    test_proc_fov.cpp
     test_sim_level.cpp
     test_sim_policy.cpp
     test_spatial_index.cpp

@@ -2,8 +2,12 @@
 #include <engine/components/dimension_component.hpp>
 #include <engine/components/transform_component.hpp>
 #include <engine/core/delta_time.hpp>
+#include <engine/core/vector_2d.hpp>
+#include <engine/input/action_map.hpp>
+#include <engine/input/input_state.hpp>
 #include <engine/spatial/quadtree.hpp>
 #include <engine/spatial/spatial_index.hpp>
+#include <game/components/attack_component.hpp>
 #include <game/components/enemy_component.hpp>
 #include <game/components/health_component.hpp>
 #include <game/components/item_component.hpp>
@@ -26,6 +30,12 @@ Box<float> boxOf(entt::registry& registry, entt::entity entity)
                       dimension.width, dimension.height);
 }
 
+float distanceSq(const Vector2D<float>& a, const Vector2D<float>& b)
+{
+    const float dx = a.getX() - b.getX();
+    const float dy = a.getY() - b.getY();
+    return dx * dx + dy * dy;
+}
 } // namespace
 
 void CombatSystem::run(entt::registry& registry)
@@ -34,6 +44,8 @@ void CombatSystem::run(entt::registry& registry)
     auto* state = registry.ctx().find<GameState>();
     auto* audio = registry.ctx().find<AudioManager>();
     auto* spatial = registry.ctx().find<SpatialIndex>();
+    auto* input = registry.ctx().find<InputState>();
+    auto* actions = registry.ctx().find<ActionMap>();
 
     auto players = registry.view<PlayerComponent, TransformComponent,
                                  DimensionComponent, HealthComponent>();
@@ -45,6 +57,53 @@ void CombatSystem::run(entt::registry& registry)
             std::max(0.0f, health.invulnerabilityFor - dt);
 
         const Box<float> playerBox = boxOf(registry, player);
+        const auto& playerPos =
+            registry.get<TransformComponent>(player).position;
+
+        // --- Offensive attack (shape TBD: range check works for melee now,
+        // projectiles can reuse the same damage / death path later) ---
+        if (registry.all_of<AttackComponent>(player))
+        {
+            auto& attack = registry.get<AttackComponent>(player);
+            attack.cooldownRemaining =
+                std::max(0.0f, attack.cooldownRemaining - dt);
+
+            const bool pressed = input != nullptr && actions != nullptr &&
+                                 actions->wasPressed(*input, "attack");
+            if (pressed && attack.cooldownRemaining <= 0.0f)
+            {
+                attack.cooldownRemaining = attack.cooldownSeconds;
+                const float rangeSq = attack.range * attack.range;
+
+                std::vector<entt::entity> slain;
+                auto enemies =
+                    registry.view<EnemyComponent, TransformComponent,
+                                  DimensionComponent, HealthComponent>();
+                for (auto enemy : enemies)
+                {
+                    const auto& enemyPos =
+                        enemies.get<TransformComponent>(enemy).position;
+                    if (distanceSq(playerPos, enemyPos) > rangeSq)
+                    {
+                        continue;
+                    }
+                    auto& enemyHealth = enemies.get<HealthComponent>(enemy);
+                    enemyHealth.current -= attack.damage;
+                    if (enemyHealth.current <= 0)
+                    {
+                        slain.push_back(enemy);
+                    }
+                }
+                for (auto enemy : slain)
+                {
+                    if (spatial != nullptr)
+                    {
+                        spatial->remove(Layer::Object, enemy);
+                    }
+                    registry.destroy(enemy);
+                }
+            }
+        }
 
         // --- Enemies hurt on contact ---
         auto enemies =
@@ -75,9 +134,7 @@ void CombatSystem::run(entt::registry& registry)
             break; // one hit per cooldown, whoever got there first
         }
 
-        // --- Items are collected on contact ---
-        // Collected in two passes: destroying an entity while iterating the
-        // view it came from invalidates the iteration.
+        // --- Score items are collected on contact ---
         std::vector<entt::entity> collected;
         auto items =
             registry
@@ -101,8 +158,6 @@ void CombatSystem::run(entt::registry& registry)
             {
                 audio->playSound("pickup");
             }
-            // Out of the index before out of the registry, or the next query
-            // hands back a destroyed handle.
             if (spatial != nullptr)
             {
                 spatial->remove(Layer::Object, item);

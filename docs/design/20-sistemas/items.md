@@ -5,44 +5,39 @@ estado: parcial
 pilares: [PILAR-02, PILAR-03]
 codigo:
   - game/include/game/components/item_component.hpp
+  - game/include/game/components/objective_component.hpp
   - game/src/systems/combat_system.cpp
+  - game/src/systems/progression_system.cpp
   - game/src/scene/in_game_scene.cpp
+  - game/src/proc/dungeon_generator.cpp
 ---
 
 # Ítems
 
-## Qué hace
+`parcial`: coins y objetivo están separados en código; el HUD aún trata sobre
+todo el contador de coins, y “llevas el objetivo” es flag de run sin UI rica.
 
-Un ítem es una entidad con `ItemComponent{value = 1}` y un sprite. Al solaparlo,
-suma su `value` al contador, suena y desaparece. La recogida vive en
-[[SYS-CMB]], no en un sistema propio.
+## Dos roles (código)
 
-`itemsTotal` se cuenta al cargar el nivel, contando los objetos con
-`type="Item"`.
+| Rol | Componente | Efecto |
+|---|---|---|
+| **Puntuación** | `ItemComponent` | Suma `value` a `itemsCollected` ([[SYS-CMB]]) |
+| **Objetivo** | `ObjectiveComponent` | `hasObjective = true`; no suma al contador de coins |
 
-## Lo que son hoy: un contador
+El generador coloca score items en cada piso y el objetivo si
+`floorIndex >= objectiveFloor` ([[SYS-PROC]], [[SYS-STAIRS]]).
 
-No hay tipos de ítem, ni efectos, ni inventario, ni curación, ni rareza. Todos
-valen 1 y todos hacen lo mismo. `value` existe como campo pero **nunca es
-distinto de 1**, porque nada puede sobreescribir el valor por defecto.
+Victoria: volver a la **entrada del piso 1** con `hasObjective`
+([[LOOP-01]]).
 
-Y como no hay condición de victoria ([[LOOP-01]]), recogerlos todos tampoco hace
-nada. Son, literalmente, un número que sube.
+## Lo que sigue siendo cierto
 
-`estado: parcial` por eso: el mecanismo está implementado, el propósito no.
-
-## La tentación a evitar
-
-Lo obvio sería convertirlos en pociones, llaves y armas. Dos tercios de eso
-chocan con los pilares: un arma contradice [[PILAR-01]], y tres indicadores nuevos
-en el HUD erosionan [[PILAR-02]].
-
-Lo que **sí** encaja son ítems que cambian cómo te mueves o qué rutas existen —
-una llave que abre un paso, algo que te deja cruzar un bioma hostil. Es decir,
-ítems al servicio de [[PILAR-03]]. Cualquier propuesta concreta va a un ADR.
+- `ItemComponent::value` default 1; sin rarezas ni inventario.
+- Sin pociones / llaves todavía.
+- [[PILAR-02]]: preferir no añadir un tercer número al HUD; el objetivo puede
+  vivir como flag / feedback visual de mundo.
 
 ## Colocación
 
-Un ítem es un punto de interés: dice "ven aquí" y el diseño del nivel decide cuánto
-cuesta. En [[NIVEL-DUNGEON1]] los tres están colocados de formas distintas y solo
-una es accidental.
+[[NIVEL-DUNGEON1]] documenta el viejo patrón de tres coins. En el generador,
+las coins son cebo de exploración; el objetivo ancla el viaje de ida y vuelta.

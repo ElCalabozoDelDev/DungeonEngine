@@ -7,86 +7,90 @@ codigo:
   - game/src/scene/in_game_scene.cpp
   - game/src/scene/menu_scene.cpp
   - game/src/plugins/game_plugin.cpp
+  - game/src/systems/progression_system.cpp
   - game/include/game/state.hpp
+  - game/include/game/run/run_config.hpp
 ---
 
 # Core loop
 
-## El minuto a minuto
+## Lo que hay hoy (código)
 
-1. Apareces en un punto fijo del nivel, con 5 corazones.
-2. Ves parte del mapa: la cámara te sigue con zoom ×3, así que en pantalla cabe
-   una fracción del nivel (416×736 px de mundo contra 800×600 de cámara a ×3).
-   **No sabes dónde están los ítems hasta que los encuentras.**
-3. Te mueves buscándolos. Al acercarte a menos de 120 px de un enemigo, éste
-   empieza a perseguirte en línea recta.
-4. Los esquivas ([[PILAR-01]]: no puedes hacer otra cosa). Si uno te toca,
-   pierdes un corazón y quedas invulnerable un segundo.
-5. Recoges un ítem: suena, desaparece, el contador sube.
-6. Repites hasta recogerlos todos… **o hasta quedarte sin corazones**, que es la
-   única forma que el juego tiene hoy de terminar.
+La run ya **no** arranca en [[NIVEL-DUNGEON1]]. `InGameScene` genera el piso
+con [[SYS-PROC]], aplica FoW ([[SYS-FOV]]), y `ProgressionSystem` gestiona
+objetivo, escaleras y victoria.
 
-## El hueco: no hay victoria
+1. Apareces en la entrada del **piso 1** de N (`RunConfig::floorsPerRun`,
+   default 3), con 5 corazones. Esa celda se guarda en
+   `GameState::entranceColumn` / `entranceRow`.
+2. Exploras bajo **FoW** ([[SYS-FOV]]): FOV actual a plena vista; explorado
+   fuera de FOV atenuado; nunca visto oculto. El zoom de cámara sigue siendo
+   aparte (no es FoW).
+3. Enemigos a ≤120 px te persiguen en línea recta. Puedes **atacar**
+   ([[SYS-CMB]]: `AttackComponent` + acción `attack`); chocar sigue doliendo.
+4. Recoges coins (puntuación) y, en pisos ≥ `objectiveFloor`, el **objetivo**
+   ([[SYS-ITM]]).
+5. **Escaleras** suben/bajan de piso ([[SYS-STAIRS]]); vida y
+   `hasObjective` se conservan entre pisos.
+6. **Victoria:** piso 1 + celda de entrada original + `hasObjective` →
+   `victory` → vuelta al menú.
+7. **Derrota:** vida 0 → `gameOver` → menú "You died."
 
-`estado: parcial` es por esto.
+### Qué sigue parcial
 
-`GameState::itemsCollected` e `itemsTotal` existen y se muestran en el HUD, pero
-**nada en el código comprueba que sean iguales**. Recoger los tres ítems de
-`dungeon1` no produce ningún efecto: no hay pantalla de victoria, no hay
-siguiente nivel, no vuelve al menú. Te quedas caminando por un nivel vacío.
+- El menú **no muestra** un mensaje de victoria dedicado: al detectar
+  `victory` se limpia el flag y se pide `MenuScene`, así que ganas volviendo
+  al menú sin texto de “You won.”
+- Acantilados / caída ([[SYS-VERT]]) **no existen**.
+- Forma del ataque (melee vs proyectil) **abierta**; hoy es chequeo de rango
+  genérico ([[SYS-CMB]]).
+- N y `objectiveFloor` son **defaults configurables**, no balance cerrado
+  ([[BAL-01]]).
 
-La única transición de salida es morir: `CombatSystem` pone `gameOver` cuando la
-vida llega a 0, y `GamePlugin` lo detecta en el frame-begin siguiente y te manda
-al menú, que muestra "You died." y cuántos ítems llevabas.
+`dungeon1` y su Coin3 inalcanzable siguen documentados en
+[[NIVEL-DUNGEON1]] como artefacto histórico; ya no son el loop jugable.
 
-Es decir: **el bucle está abierto por el extremo bueno**. El juego solo sabe
-terminar mal.
+## Loop acordado (vigente en diseño y, en gran parte, en código)
 
-Y hay algo peor, medido con `--sim`: en el único nivel que existe, **uno de los
-tres ítems no se puede recoger desde ninguna posición** ([[NIVEL-DUNGEON1]]). Así
-que hoy el contador del HUD no puede llegar a `3 / 3` ni siquiera jugando
-perfecto. El bucle no solo no tiene final: tiene una meta visible e inalcanzable.
+1. Generación procedimental por piso ([[SYS-PROC]]).
+2. Entrada del piso 1 = punto de victoria de la run (spawn tile guardado).
+3. FoW con memoria atenuada ([[SYS-FOV]]).
+4. Esquivar + atacar + geometría ([[PILAR-01]], [[PILAR-03]]); acantilados
+   aún propuestos ([[SYS-VERT]]).
+5. N pisos fijos, objetivo desde `objectiveFloor` (defaults 3 / 3).
+6. Victoria = entrada de piso 1 + objetivo. Sin portal de escape.
+7. Derrota = vida 0.
 
-Esto no es un bug que arreglar a la ligera — es la decisión de diseño más grande
-que queda pendiente, porque define qué *es* una partida:
+### Cleared por piso
 
-- ¿Recoger todo es ganar, y el nivel se reinicia o se pasa al siguiente?
-- ¿O los ítems son una puntuación y el objetivo es la salida, una puerta que se
-  abre al completarlos?
-- ¿O no hay victoria y el objetivo es sobrevivir el mayor tiempo posible?
+- Intermedio: usar escalera válida (bajar / subir en el retorno).
+- Run: objetivo en posesión **y** vuelta a la entrada de piso 1.
 
-La tercera opción es la que menos código necesita y la que peor encaja con el
-HUD actual, que presenta los ítems como un progreso hacia algo. Las dos primeras
-implican un objeto o un estado que hoy no existe.
+### Ritmo
 
-**Esto se decide en un ADR, no aquí.** Mientras tanto el documento describe lo
-que hay, no lo que debería haber.
+El tiempo lo ponen FoW, deshacer caminos y el viaje de ida y vuelta. Las
+cifras históricas de `dungeon1` en [[BAL-01]] son referencia, no target.
 
-## Estados y transiciones que sí existen
+## Soft decisions (cerradas)
+
+| Pregunta | Respuesta |
+|---|---|
+| N y piso del objetivo | `RunConfig::floorsPerRun` / `objectiveFloor`, defaults **3 / 3**. Configurables para balance; **no** son números de diseño cerrados. |
+| Forma del ataque | **Abierta.** Existe arquitectura `AttackComponent` (damage / range / cooldown); el *feel* melee vs proyectil queda por decidir. |
+| Entrada de victoria | **Spawn tile original del piso 1** (`entranceColumn` / `entranceRow`). No un tile de salida aparte. |
+
+## Estados y transiciones (código)
 
 ```
-MenuScene  ──"Play" / Enter──>  InGameScene
-    ^                                │
-    │                                │ vida == 0  (gameOver)
-    └────────────────────────────────┘
-    ^                                │
-    └────"Back to menu" desde pausa──┘
+MenuScene  ──"Play"──>  InGameScene (piso 1..N generados)
+    ^                         │
+    │                         ├─ vida == 0      (gameOver)
+    │                         └─ entrada+obj.   (victory)
+    └─────────────────────────┘
+    ^
+    └──── pausa / "Back to menu"
 
-InGameScene  ──Esc──>  pausa (la simulación se congela, el render sigue)
-InGameScene  ──F5───>  recarga la escena desde cero
+InGameScene  ──Esc──>  pausa
+InGameScene  ──F5───>  recarga la escena (nueva run)
+Escaleras             cambian `pendingFloorChange` → regeneran piso
 ```
-
-La pausa es real: `GameLoop` deja de acumular tiempo y no corre ningún fixed
-step, así que despausar no reproduce el parón como un atracón de simulación.
-
-## Ritmo
-
-Con los números actuales ([[BAL-01]]), un recorrido limpio de los tres ítems de
-`dungeon1` son unos **850 px de camino, algo más de 4 segundos** de movimiento
-puro. La partida dura lo que tardes en *encontrarlos*, no lo que tardes en
-llegar: el tiempo real lo pone la exploración a ciegas, no la distancia.
-
-Esto es importante para el balance: alargar una partida subiendo la vida del
-jugador o bajando el daño no funciona, porque el cuello de botella no es la
-supervivencia, es el descubrimiento. Lo que alarga una partida es esconder mejor
-los ítems o hacer más caro volver sobre tus pasos.

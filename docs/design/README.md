@@ -14,12 +14,32 @@ Aquí no se documenta el engine, se documenta el juego.
 |---|---|
 | `00-pilares.md` | Los pilares. El filtro para decir que no. |
 | `10-core-loop.md` | El minuto a minuto de una partida. |
-| `20-sistemas/` | Un documento por sistema de gameplay, espejo de `game/src/systems/`. |
+| `20-sistemas/` | Un documento por sistema de gameplay (incluye stubs `propuesto`). |
 | `30-biomas/` | Los cuatro temas visuales y qué promete cada uno. |
-| `40-niveles/` | La intención de cada nivel, antes y después del `.tmx`. |
+| `40-niveles/` | Intención de niveles handcrafted; `dungeon1` es histórico respecto al loop. |
 | `50-balance/` | La tabla canónica de números. |
-| `90-decisiones/` | ADRs: qué se descartó y por qué. |
+| `90-decisiones/` | ADRs: qué se decidió y por qué. |
 | `_plantillas/` | Plantillas para documentos nuevos. |
+
+### Sistemas (`20-sistemas/`)
+
+| Id | Documento | `estado` |
+|---|---|---|
+| [[SYS-MOV]] | `movimiento.md` | implementado |
+| [[SYS-CMB]] | `combate.md` | parcial |
+| [[SYS-ENE]] | `enemigos.md` | implementado |
+| [[SYS-ITM]] | `items.md` | parcial |
+| [[SYS-FOV]] | `fov.md` | parcial |
+| [[SYS-STAIRS]] | `escaleras.md` | parcial |
+| [[SYS-VERT]] | `acantilados.md` | propuesto |
+| [[SYS-PROC]] | `procedural.md` | parcial |
+
+### Decisiones
+
+| Id | Documento | `estado` |
+|---|---|---|
+| [[ADR-0001]] | `0001-numeros-en-cpp.md` | implementado |
+| [[ADR-0002]] | `0002-ataque-jugador.md` | implementado (aceptado, opción B) |
 
 ## Qué es normativo y qué no
 

@@ -15,35 +15,38 @@
 #include <engine/core/asset_paths.hpp>
 #include <engine/core/paused.hpp>
 #include <engine/core/startup_error.hpp>
+#include <engine/graphics/render.hpp>
 #include <engine/graphics/render_bottom.hpp>
 #include <engine/graphics/render_collision.hpp>
 #include <engine/graphics/render_object.hpp>
 #include <engine/graphics/render_overlay.hpp>
-#include <engine/loaders/tmx_loader.hpp>
 #include <engine/spatial/spatial_index.hpp>
+#include <engine/spatial/visibility_map.hpp>
 #include <engine/systems/debug_system.hpp>
 #include <engine/widgets/widget.hpp>
+#include <functional>
+#include <game/components/attack_component.hpp>
 #include <game/components/enemy_component.hpp>
 #include <game/components/health_component.hpp>
 #include <game/components/item_component.hpp>
+#include <game/components/objective_component.hpp>
 #include <game/components/player_component.hpp>
 #include <game/components/speed_component.hpp>
+#include <game/components/stairs_component.hpp>
 #include <game/debug/player_editor.hpp>
+#include <game/proc/dungeon_generator.hpp>
+#include <game/proc/level_assembler.hpp>
+#include <game/run/run_config.hpp>
 #include <game/scene/in_game_scene.hpp>
 #include <game/state.hpp>
 #include <game/widgets/counter_widget.hpp>
 #include <game/widgets/hud_widget.hpp>
-#include <iostream>
+#include <memory>
 
 using namespace de;
 
-InGameScene::InGameScene()
-{
-    // Nothing to set up until onEnter: the registry does not exist yet.
-}
+InGameScene::InGameScene() = default;
 
-// onEnter runs inside the setup hook, so a failure here is a startup failure:
-// GameLoop reports it and exits rather than leaving an empty black window up.
 void InGameScene::fail(entt::registry& registry, const std::string& reason)
 {
     registry.ctx().emplace<StartupError>(StartupError{"level: " + reason});
@@ -52,63 +55,60 @@ void InGameScene::fail(entt::registry& registry, const std::string& reason)
 void InGameScene::onEnter(entt::registry& registry)
 {
     const auto& config = registry.ctx().get<Config>();
+    m_debugOpen = config.debug;
 
-    // Fresh run: this scene is entered again on replay and on F5.
+    if (!registry.ctx().contains<RunConfig>())
+    {
+        registry.ctx().emplace<RunConfig>();
+    }
+
     registry.ctx().insert_or_assign<GameState>(GameState{});
     registry.ctx().get<Paused>().value = false;
 
-    // Load the level
-    const auto& assets = registry.ctx().get<AssetPaths>();
-    auto level = config.levels.find("level1");
-    if (level == config.levels.end())
-    {
-        fail(registry, "game.xml declares no level named 'level1'");
-        return;
-    }
-
-    TMXLoader tmxLoader(&m_entities);
-    if (auto loaded =
-            tmxLoader.loadLevel(registry, assets.resolve(level->second));
-        !loaded)
-    {
-        fail(registry, loaded.error());
-        return;
-    }
-
-    // Turn the Tiled object types into this game's components
-    tagObjectsByType(registry);
-
     if (auto* audio = registry.ctx().find<AudioManager>(); audio != nullptr)
     {
+        const auto& assets = registry.ctx().get<AssetPaths>();
         audio->loadSound("pickup", assets.resolve("Audio/pickup.wav").string());
         audio->loadSound("hurt", assets.resolve("Audio/hurt.wav").string());
     }
 
-    // Set up the camera
-    int mapWidth = tmxLoader.getWidth() * tmxLoader.getTileWidth();
-    int mapHeight = tmxLoader.getHeight() * tmxLoader.getTileHeight();
-    initializeCamera(registry, mapWidth, mapHeight, config);
-
-    // Spatial indices and render passes
-    initializeQuadtrees(registry, static_cast<float>(mapWidth),
-                        static_cast<float>(mapHeight));
-    populateTileQuadtree(registry);
-    populateSpriteQuadtree(registry);
-    initializeRenderers(registry);
-    initializeHud(registry);
-    initializeDebug(registry, config.debug);
+    if (!loadFloor(registry, 1, config, false))
+    {
+        return;
+    }
 }
 
-void InGameScene::onUpdate(entt::registry& registry) {}
+void InGameScene::onUpdate(entt::registry& registry)
+{
+    auto* state = registry.ctx().find<GameState>();
+    if (state == nullptr || state->pendingFloorChange == 0)
+    {
+        return;
+    }
+
+    const int nextFloor = state->pendingFloorChange;
+    state->pendingFloorChange = 0;
+    const auto& config = registry.ctx().get<Config>();
+    loadFloor(registry, nextFloor, config, true);
+}
 
 void InGameScene::onExit(entt::registry& registry)
 {
-    // Drop the spatial trees first: they hold entity handles, and a query
-    // after the entities are gone would hand back dangling ones.
-    registry.ctx().get<SpatialIndex>().clear();
+    clearLevelEntities(registry);
+    if (auto* visibility = registry.ctx().find<VisibilityMap>();
+        visibility != nullptr)
+    {
+        visibility->enabled = false;
+    }
+}
 
-    // Destroy every entity this scene created. Checked, because gameplay
-    // destroys some of them itself -- a collected item is already gone.
+void InGameScene::clearLevelEntities(entt::registry& registry)
+{
+    if (registry.ctx().contains<SpatialIndex>())
+    {
+        registry.ctx().get<SpatialIndex>().clear();
+    }
+
     for (auto entity : m_entities)
     {
         if (registry.valid(entity))
@@ -119,8 +119,140 @@ void InGameScene::onExit(entt::registry& registry)
     m_entities.clear();
 }
 
-// The TMX loader records each object's Tiled `type` without interpreting it;
-// mapping those strings onto gameplay components is this game's decision.
+bool InGameScene::loadFloor(entt::registry& registry, int floorIndex,
+                            const Config& config, bool preserveRun)
+{
+    HealthComponent savedHealth;
+    bool hadHealth = false;
+    bool hadObjective = false;
+    int itemsCollected = 0;
+    int entranceColumn = 0;
+    int entranceRow = 0;
+    bool entranceRecorded = false;
+
+    if (preserveRun)
+    {
+        auto* state = registry.ctx().find<GameState>();
+        if (state != nullptr)
+        {
+            hadObjective = state->hasObjective;
+            itemsCollected = state->itemsCollected;
+            entranceColumn = state->entranceColumn;
+            entranceRow = state->entranceRow;
+            entranceRecorded = state->entranceRecorded;
+        }
+        auto players = registry.view<PlayerComponent, HealthComponent>();
+        for (auto player : players)
+        {
+            savedHealth = players.get<HealthComponent>(player);
+            hadHealth = true;
+            break;
+        }
+        clearLevelEntities(registry);
+    }
+
+    auto& run = registry.ctx().get<RunConfig>();
+    const auto& assets = registry.ctx().get<AssetPaths>();
+
+    DungeonGenerator generator;
+    const FloorBlueprint blueprint = generator.generate(run, floorIndex);
+
+    LevelAssembler assembler(&m_entities);
+    if (auto assembled = assembler.assemble(registry, blueprint, assets);
+        !assembled)
+    {
+        fail(registry, assembled.error());
+        return false;
+    }
+
+    auto& state = registry.ctx().get<GameState>();
+    if (!preserveRun)
+    {
+        state = GameState{};
+    }
+    else
+    {
+        state.hasObjective = hadObjective;
+        state.itemsCollected = itemsCollected;
+        state.entranceColumn = entranceColumn;
+        state.entranceRow = entranceRow;
+        state.entranceRecorded = entranceRecorded;
+        state.itemsTotal = 0;
+    }
+    state.currentFloor = floorIndex;
+    state.pendingFloorChange = 0;
+    state.gameOver = false;
+    state.victory = false;
+
+    tagObjectsByType(registry);
+
+    if (preserveRun && hadHealth)
+    {
+        auto players = registry.view<PlayerComponent, HealthComponent>();
+        for (auto player : players)
+        {
+            players.get<HealthComponent>(player) = savedHealth;
+        }
+    }
+
+    if (floorIndex == 1 && !state.entranceRecorded)
+    {
+        auto players = registry.view<PlayerComponent, TransformComponent>();
+        for (auto player : players)
+        {
+            const auto& pos = players.get<TransformComponent>(player).position;
+            state.entranceColumn = static_cast<int>(
+                (pos.getX() + run.tileSize * 0.5f) / run.tileSize);
+            state.entranceRow = static_cast<int>(
+                (pos.getY() + run.tileSize * 0.5f) / run.tileSize);
+            state.entranceRecorded = true;
+            break;
+        }
+    }
+
+    initializeVisibility(registry, blueprint.columns, blueprint.rows,
+                         blueprint.tileSize);
+    for (int row = 0; row < blueprint.rows; ++row)
+    {
+        for (int col = 0; col < blueprint.columns; ++col)
+        {
+            const bool opaque =
+                blueprint.at(col, row) != FloorBlueprint::Cell::Floor;
+            registry.ctx().get<VisibilityMap>().setOpaque(col, row, opaque);
+        }
+    }
+
+    const int mapWidth = assembler.mapPixelWidth();
+    const int mapHeight = assembler.mapPixelHeight();
+    initializeCamera(registry, mapWidth, mapHeight, config);
+    initializeQuadtrees(registry, static_cast<float>(mapWidth),
+                        static_cast<float>(mapHeight));
+    populateTileQuadtree(registry);
+    populateSpriteQuadtree(registry);
+    initializeRenderers(registry);
+    if (!preserveRun)
+    {
+        initializeHud(registry);
+        initializeDebug(registry, m_debugOpen);
+    }
+    else
+    {
+        initializeHud(registry);
+        initializeDebug(registry, m_debugOpen);
+    }
+    return true;
+}
+
+void InGameScene::initializeVisibility(entt::registry& registry, int columns,
+                                       int rows, float tileSize)
+{
+    if (!registry.ctx().contains<VisibilityMap>())
+    {
+        registry.ctx().emplace<VisibilityMap>();
+    }
+    registry.ctx().get<VisibilityMap>().reset(columns, rows, tileSize);
+}
+
 void InGameScene::tagObjectsByType(entt::registry& registry)
 {
     auto& state = registry.ctx().get<GameState>();
@@ -135,17 +267,36 @@ void InGameScene::tagObjectsByType(entt::registry& registry)
             registry.emplace<PlayerComponent>(entity);
             registry.emplace<SpeedComponent>(entity);
             registry.emplace<HealthComponent>(entity);
+            registry.emplace<AttackComponent>(entity);
             registry.emplace<SolidBodyComponent>(entity);
         }
         else if (objectType.type == "Enemy")
         {
             registry.emplace<EnemyComponent>(entity);
             registry.emplace<SolidBodyComponent>(entity);
+            HealthComponent enemyHealth;
+            enemyHealth.current = EnemyComponent{}.maxHealth;
+            enemyHealth.max = EnemyComponent{}.maxHealth;
+            registry.emplace<HealthComponent>(entity, enemyHealth);
         }
         else if (objectType.type == "Item")
         {
             registry.emplace<ItemComponent>(entity);
             ++state.itemsTotal;
+        }
+        else if (objectType.type == "Objective")
+        {
+            registry.emplace<ObjectiveComponent>(entity);
+        }
+        else if (objectType.type == "StairsDown")
+        {
+            registry.emplace<StairsComponent>(
+                entity, StairsComponent{StairsDirection::Down});
+        }
+        else if (objectType.type == "StairsUp")
+        {
+            registry.emplace<StairsComponent>(
+                entity, StairsComponent{StairsDirection::Up});
         }
     }
 }
@@ -247,8 +398,6 @@ void InGameScene::initializeCamera(entt::registry& registry, int mapWidth,
 
 void InGameScene::initializeRenderers(entt::registry& registry)
 {
-    // Order is declared, not implied by creation order. They are created here
-    // deliberately out of draw order to make that obvious.
     const auto addPass = [&](std::unique_ptr<Render> pass, int order)
     {
         auto entity = registry.create();
@@ -281,8 +430,6 @@ void InGameScene::initializeDebug(entt::registry& registry, bool open)
     debugSystem.register_component<HealthComponent>("Health");
     debugSystem.register_component<EnemyComponent>("Enemy");
 
-    // Shown alongside the inspector: the worked example of the hook-based GUI
-    // (use_state / use_callback / use_effect), which the HUD does not need.
     auto counterEntity = registry.create();
     registry.emplace<Widget>(counterEntity, std::make_unique<CounterWidget>());
     m_entities.push_back(counterEntity);

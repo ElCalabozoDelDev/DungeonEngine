@@ -6,6 +6,7 @@ pilares: [PILAR-01, PILAR-03]
 codigo:
   - game/src/systems/enemy_ai_system.cpp
   - game/include/game/components/enemy_component.hpp
+  - game/include/game/components/health_component.hpp
 ---
 
 # Enemigos
@@ -18,7 +19,12 @@ Una sola regla, evaluada cada paso fijo para cada enemigo:
 > Si no, quédate quieto.
 
 No hay más. Ni pathfinding, ni memoria, ni histéresis de desenganche, ni
-separación entre enemigos, ni ataque, ni estados.
+separación entre enemigos, ni ataque propio, ni estados de IA.
+
+**Sí tienen vida** (`EnemyComponent::maxHealth` → `HealthComponent`) y pueden
+morir por el ataque del jugador ([[SYS-CMB]], [[ADR-0002]]). Eso **no**
+autoriza pathfinding inteligente: la persecución en línea recta sigue siendo
+la regla deliberada ([[PILAR-03]]).
 
 El objetivo es **el primer jugador de la vista**, no el más cercano. Con un solo
 jugador da igual, pero está escrito así.
@@ -42,8 +48,9 @@ Se atraviesan. Solo las capas `Collision` y `Overlay` del mapa frenan a algo.
 | Número | Valor | Qué controla de verdad |
 |---|---|---|
 | `chaseRange` | 120 px = 7,5 tiles | El tamaño del "territorio" de un enemigo. Con zoom ×3 esto es, más o menos, lo que cabe en pantalla: un enemigo se activa justo cuando lo ves. |
-| `speed` | 60 px/s | La proporción 1:3,33 contra el jugador ([[SYS-MOV]]). **Este número es [[PILAR-01]]**, no un parámetro de dificultad. |
+| `speed` | 60 px/s | La proporción 1:3,33 contra el jugador ([[SYS-MOV]]). Esa proporción sigue siendo parte de [[PILAR-01]] (posición), no un dial suelto de dificultad. |
 | `contactDamage` | 1 | Con 5 corazones, cinco errores. |
+| `maxHealth` | 3 | Vida al tagear; muere con el ataque del jugador ([[SYS-CMB]]). |
 
 Los tres son iguales para todos los enemigos: hoy no hay tipos. Los tres objetos
 "Zombie1", "Zombie2" y "Mimic" de [[NIVEL-DUNGEON1]] se comportan de manera

@@ -1,8 +1,10 @@
 #include <doctest/doctest.h>
+#include <game/components/attack_component.hpp>
 #include <game/components/enemy_component.hpp>
 #include <game/components/health_component.hpp>
 #include <game/components/item_component.hpp>
 #include <game/components/speed_component.hpp>
+#include <game/run/run_config.hpp>
 
 /// The balance numbers live in two places: the component defaults below and
 /// docs/design/50-balance/tablas.md. Nothing in the .tmx can override them --
@@ -27,9 +29,24 @@ TEST_CASE("the balance values match the design document")
         CHECK(EnemyComponent{}.chaseRange == doctest::Approx(120.0f));
         CHECK(EnemyComponent{}.speed == doctest::Approx(60.0f));
         CHECK(EnemyComponent{}.contactDamage == 1);
+        CHECK(EnemyComponent{}.maxHealth == 3);
     }
 
     SUBCASE("item") { CHECK(ItemComponent{}.value == 1); }
+
+    SUBCASE("attack architecture defaults")
+    {
+        CHECK(AttackComponent{}.damage == 1);
+        CHECK(AttackComponent{}.range == doctest::Approx(24.0f));
+        CHECK(AttackComponent{}.cooldownSeconds == doctest::Approx(0.35f));
+    }
+
+    SUBCASE("run config defaults stay tunable")
+    {
+        CHECK(RunConfig{}.floorsPerRun == 3);
+        CHECK(RunConfig{}.objectiveFloor == 3);
+        CHECK(RunConfig{}.fovRadiusTiles == 8);
+    }
 }
 
 /// The ratios are the design; the individual values are not. A change that

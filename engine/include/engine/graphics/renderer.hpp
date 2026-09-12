@@ -10,8 +10,10 @@
 #include <engine/components/transform_component.hpp>
 #include <engine/graphics/camera2d.hpp>
 #include <engine/graphics/texture_cache.hpp>
+#include <engine/spatial/visibility_map.hpp>
 #include <entt/entt.hpp>
 #include <span>
+#include <vector>
 
 namespace de
 {
@@ -22,15 +24,30 @@ namespace de
 class Renderer
 {
 public:
+    static constexpr Uint8 RememberedTileAlpha = 90;
+
     static void renderSprites(entt::registry& registry,
                               std::span<const entt::entity> visibleSprites,
                               const Camera2D& camera)
     {
         const auto& textures = registry.ctx().get<TextureCache>();
+        const auto* visibility = registry.ctx().find<VisibilityMap>();
 
         for (auto entity : visibleSprites)
         {
             const auto& trf = registry.get<TransformComponent>(entity);
+            if (visibility != nullptr && visibility->enabled)
+            {
+                // Entities are only drawn in the live FOV — remembered fog
+                // keeps geometry, not moving threats or loot tells.
+                if (visibility->appearanceAt(trf.position.getX(),
+                                             trf.position.getY()) !=
+                    VisibilityMap::Appearance::Visible)
+                {
+                    continue;
+                }
+            }
+
             const auto& tex = registry.get<TextureComponent>(entity);
             const auto& spr = registry.get<SpriteComponent>(entity);
             const auto& dim = registry.get<DimensionComponent>(entity);
@@ -50,10 +67,27 @@ public:
                             const Camera2D& camera)
     {
         const auto& textures = registry.ctx().get<TextureCache>();
+        const auto* visibility = registry.ctx().find<VisibilityMap>();
 
         for (auto entity : visibleTiles)
         {
             const auto& trf = registry.get<TransformComponent>(entity);
+            Uint8 alpha = 255;
+            if (visibility != nullptr && visibility->enabled)
+            {
+                switch (visibility->appearanceAt(trf.position.getX(),
+                                                 trf.position.getY()))
+                {
+                    case VisibilityMap::Appearance::Hidden:
+                        continue;
+                    case VisibilityMap::Appearance::Remembered:
+                        alpha = RememberedTileAlpha;
+                        break;
+                    case VisibilityMap::Appearance::Visible:
+                        break;
+                }
+            }
+
             const auto& tile = registry.get<TileComponent>(entity);
 
             // The tileset was resolved at load time
@@ -83,6 +117,7 @@ public:
                 tileset.margin, tileset.spacing);
             params.position = camera.worldToScreen(trf.position);
             params.scale = camera.zoom;
+            params.alpha = alpha;
             textures.draw(texture.id, params);
         }
     }

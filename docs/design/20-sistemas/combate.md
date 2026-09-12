@@ -1,55 +1,59 @@
 ---
 id: SYS-CMB
 titulo: Combate
-estado: implementado
+estado: parcial
 pilares: [PILAR-01, PILAR-02]
 codigo:
   - game/src/systems/combat_system.cpp
   - game/include/game/components/health_component.hpp
+  - game/include/game/components/attack_component.hpp
+  - game/include/game/components/enemy_component.hpp
   - game/include/game/components/item_component.hpp
   - game/include/game/state.hpp
+  - tests/test_balance.cpp
 ---
 
 # Combate
 
-"Combate" es un nombre generoso: este sistema hace dos cosas, y ninguna de las
-dos es atacar.
+`parcial`: contacto, ataque ofensivo básico y muerte de enemigos **existen**;
+la **forma** del ataque (melee vs proyectil, feel) sigue abierta
+([[ADR-0002]]).
 
-## Daño por contacto
+## Daño por contacto (implementado)
 
-Cada paso fijo, para el jugador:
+1. Baja invulnerabilidad.
+2. Solape con enemigo y sin i-frames → `contactDamage` (1), 1,0 s de
+   invulnerabilidad, sonido `hurt`.
+3. Vida 0 → `gameOver`.
 
-1. Baja el temporizador de invulnerabilidad.
-2. Si la caja del jugador solapa la de un enemigo y no es invulnerable: resta
-   `contactDamage` (1), arranca **1,0 s de invulnerabilidad** y suena `hurt`.
-3. Si la vida llega a 0, la fija en 0 y marca `gameOver`.
+Un golpe por cooldown aunque solapen varios. Caja = sprite 16×16.
 
-**Solo un golpe por cooldown**, aunque te solapen tres enemigos: el bucle corta
-tras el primer impacto. Es lo que evita que quedar atrapado entre dos enemigos te
-mate instantáneamente, y es lo que hace que los cuellos de botella del nivel sean
-tensos en vez de injustos.
+## Ataque del jugador (implementado, forma abierta)
 
-**La caja de golpe es el sprite completo**, 16×16 sin reducción ni desplazamiento.
-No hay margen de gracia: si los píxeles se tocan, te golpea. Bajar esa caja un
-par de píxeles es la palanca más barata que existe para suavizar el juego sin
-tocar ningún número de [[BAL-01]].
+- El jugador tiene `AttackComponent` { `damage`, `range`, `cooldownSeconds` }
+  y la acción de input `attack`.
+- Al pulsar con cooldown listo: aplica `damage` a enemigos con
+  `HealthComponent` dentro de `range` (distancia entre posiciones). Si vida
+  ≤ 0, se destruyen.
+- Defaults actuales ([[BAL-01]]): daño 1, rango 24 px, cooldown 0,35 s.
+- Comentario en código: el shape es genérico a propósito — hoy funciona como
+  “melee por rango”; un proyectil futuro puede reutilizar el mismo pipeline
+  de daño/muerte **sin** decidir el feel todavía.
 
-## Recogida de ítems
+## Vida enemiga (implementado)
 
-Si el jugador solapa un ítem: suma `value` (1) a `itemsCollected`, suena
-`pickup`, lo saca del índice espacial y destruye la entidad.
+Al tagear `Enemy`, se copia `EnemyComponent::maxHealth` (default **3**) a
+`HealthComponent`. Sin pathfinding inteligente ([[SYS-ENE]], [[PILAR-03]]).
 
-Se hace en dos pasadas —recolectar y luego destruir— porque destruir invalida la
-iteración de la vista. Y se quita del quadtree *antes* de destruirlo, o el índice
-se queda con un handle muerto.
+## Recogida de coins
 
-## Lo que no hace
+Sigue en este sistema: solape con `ItemComponent` → suma al contador. El
+**objetivo** de run lo recoge [[SYS-STAIRS]] / `ProgressionSystem` vía
+`ObjectiveComponent` ([[SYS-ITM]]).
 
-No hay ataque del jugador, ni vida de enemigo, ni muertes, ni cooldowns más allá
-de la invulnerabilidad, ni loot, ni RNG de ningún tipo. **No hay número aleatorio
-en todo el código del juego.** Una partida es completamente determinista dados
-los mismos inputs — que es lo que hace posible [[BAL-01]] medir con
-`--sim`.
+## Limitaciones conocidas
 
-Nada comprueba si `itemsCollected == itemsTotal`: ver el hueco de victoria en
-[[LOOP-01]].
+- Forma de ataque **TBD** (no hay proyectiles, ni arco, ni animación de
+  golpe).
+- Sin RNG de daño.
+- `--sim` aún no modela la política de ataque de forma rica.

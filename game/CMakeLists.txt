@@ -6,6 +6,8 @@
 
 add_library(game_lib STATIC
     src/plugins/game_plugin.cpp
+    src/proc/dungeon_generator.cpp
+    src/proc/level_assembler.cpp
     src/scene/in_game_scene.cpp
     src/scene/menu_scene.cpp
     src/sim/nav_grid.cpp
@@ -15,7 +17,9 @@ add_library(game_lib STATIC
     src/sim/telemetry_writer.cpp
     src/systems/combat_system.cpp
     src/systems/enemy_ai_system.cpp
+    src/systems/fov_system.cpp
     src/systems/movement_system.cpp
+    src/systems/progression_system.cpp
     src/widgets/counter_widget.cpp
     src/widgets/hud_widget.cpp
     src/widgets/menu_widget.cpp
@@ -25,7 +29,7 @@ target_include_directories(game_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(game_lib PUBLIC engine)
+target_link_libraries(game_lib PUBLIC engine libtcod::libtcod)
 
 add_executable(game src/main.cpp)
 

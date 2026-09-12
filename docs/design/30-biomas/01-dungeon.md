@@ -9,7 +9,11 @@ codigo:
 
 # Bioma 1 — Mazmorra
 
-El único bioma en uso. Es la línea base contra la que se definen los otros tres.
+Línea base visual y de vocabulario contra la que se definen los otros tres.
+
+Hoy el código solo lo ejerce vía [[NIVEL-DUNGEON1]]. A futuro el bioma se
+elige/asigna desde [[SYS-PROC]] (misma promesa de arte y regla, sin seguir
+editando el `.tmx` handcrafted como destino del core loop).
 
 ## Arte disponible
 

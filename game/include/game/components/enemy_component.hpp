@@ -7,6 +7,8 @@ struct EnemyComponent
     float chaseRange = 120.0f;
     float speed = 60.0f;
     int contactDamage = 1;
+    /// Starting / max HP when tagged with HealthComponent.
+    int maxHealth = 3;
 };
 
 #endif // GAME_COMPONENTS_ENEMY_COMPONENT_HPP

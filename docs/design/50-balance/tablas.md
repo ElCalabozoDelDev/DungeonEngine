@@ -8,6 +8,8 @@ codigo:
   - game/include/game/components/health_component.hpp
   - game/include/game/components/item_component.hpp
   - game/include/game/components/speed_component.hpp
+  - game/include/game/components/attack_component.hpp
+  - game/include/game/run/run_config.hpp
   - game/src/systems/combat_system.cpp
   - tests/test_balance.cpp
 ---
@@ -16,27 +18,29 @@ codigo:
 
 ## Dónde viven estos números, de verdad
 
-En los inicializadores por defecto de los componentes, en C++. **No hay archivo
-de configuración de balance, y el `.tmx` no puede sobreescribirlos**:
-`InGameScene::tagObjectsByType` construye los componentes por defecto y no lee
-ninguna propiedad del objeto. Cambiar un número es editar un `.hpp` y recompilar.
+En los inicializadores por defecto de los componentes y de `RunConfig`, en
+C++. **No hay archivo de configuración de balance** que el `.tmx` pueda
+sobreescribir: `tagObjectsByType` construye por defecto. Cambiar un número es
+editar un `.hpp` y recompilar.
 
-Esta tabla, por tanto, es una **copia** — y una copia se desincroniza. Lo que la
-mantiene honesta es `tests/test_balance.cpp`, que fija cada valor y nombra este
-documento. Si cambias un número y no actualizas los dos sitios, el test se pone
-rojo.
+Esta tabla es una **copia**. `tests/test_balance.cpp` la mantiene honesta.
+Ver [[ADR-0001]].
 
-Si esto te parece torpe, lo es: ver [[ADR-0001]].
+Los defaults de **run** (`floorsPerRun`, `objectiveFloor`, `fovRadiusTiles`)
+están anclados en el test para evitar drift, pero son **punto de partida de
+playtest**, no balance cerrado de diseño ([[LOOP-01]]).
 
 ## Jugador
 
 | Qué | Valor | Dónde | Notas |
 |---|---|---|---|
-| Velocidad | **200 px/s** | `SpeedComponent::value` | 12,5 tiles/s. Igual en las 8 direcciones (la diagonal se normaliza). |
-| Vida inicial | **5** | `HealthComponent::current` | |
-| Vida máxima | **5** | `HealthComponent::max` | Un corazón `[#]` por punto en el HUD. |
-| Invulnerabilidad tras golpe | **1,0 s** | `InvulnerabilitySeconds`, `combat_system.cpp:19` | La única constante literal de todo el gameplay. |
-| Caja de colisión | **16 × 16 px** | el sprite completo | Sin margen de gracia. |
+| Velocidad | **200 px/s** | `SpeedComponent::value` | 12,5 tiles/s. Diagonal normalizada. |
+| Vida inicial / máx. | **5 / 5** | `HealthComponent` | Un corazón `[#]` por punto. |
+| Invulnerabilidad tras golpe | **1,0 s** | `InvulnerabilitySeconds` en `combat_system.cpp` | Literal de gameplay. |
+| Caja de colisión | **16 × 16 px** | sprite completo | Sin margen de gracia. |
+| Ataque — daño | **1** | `AttackComponent::damage` | Arquitectura genérica; forma abierta ([[SYS-CMB]]). |
+| Ataque — rango | **24 px** | `AttackComponent::range` | ~1,5 tiles; hoy chequeo por distancia. |
+| Ataque — cooldown | **0,35 s** | `AttackComponent::cooldownSeconds` | |
 
 ## Enemigo
 
@@ -45,33 +49,36 @@ Si esto te parece torpe, lo es: ver [[ADR-0001]].
 | Rango de persecución | **120 px** | `EnemyComponent::chaseRange` | 7,5 tiles. |
 | Velocidad | **60 px/s** | `EnemyComponent::speed` | |
 | Daño por contacto | **1** | `EnemyComponent::contactDamage` | |
+| Vida | **3** | `EnemyComponent::maxHealth` → `HealthComponent` | |
 
-Los tres enemigos del nivel usan estos mismos valores: no existen tipos.
+Sin tipos distintos todavía.
 
-## Ítem
+## Ítem / run
 
 | Qué | Valor | Dónde | Notas |
 |---|---|---|---|
-| Valor | **1** | `ItemComponent::value` | Nunca es distinto de 1 en la práctica. |
+| Valor coin | **1** | `ItemComponent::value` | |
+| Pisos por run (N) | **3** | `RunConfig::floorsPerRun` | Configurable; no cerrado. |
+| Piso mín. objetivo | **3** | `RunConfig::objectiveFloor` | Inclusivo; configurable. |
+| Radio FOV | **8** tiles | `RunConfig::fovRadiusTiles` | libtcod `FOV_SHADOW` ([[SYS-FOV]]). |
 
 ## Las proporciones, que es lo que importa
 
-Los valores sueltos dicen poco. Las relaciones son el diseño:
-
 | Relación | Valor | Qué significa |
 |---|---|---|
-| Velocidad jugador : enemigo | **3,33 : 1** | **Esto es [[PILAR-01]].** En línea recta no te alcanzan nunca; solo mueren contigo si te encierras. Tocar este ratio cambia el juego, no el balance. |
-| Rango de persecución : pantalla | **120 px ≈ ancho visible** | Con cámara ×3 sobre 800 px se ven ~267 px de mundo. Un enemigo se activa aproximadamente cuando entra en cuadro: te persigue lo que ves. |
-| Distancia de escape | **1,0 s × 140 px/s = 140 px** | Durante la invulnerabilidad ganas 140 px sobre el enemigo: **más que su rango de persecución**. Un golpe recibido es, de hecho, una salida gratis. Esto suaviza mucho el juego y probablemente no fue calculado. |
-| Vida : daño | **5 golpes** | Sin curación en todo el juego: cinco errores por partida, y no se recuperan. |
+| Velocidad jugador : enemigo | **3,33 : 1** | Parte de [[PILAR-01]] (posición). En línea recta no te alcanzan. |
+| Rango de persecución : pantalla | **120 px ≈ ancho visible** | Con cámara ×3 sobre 800 px se ven ~267 px de mundo. |
+| Distancia de escape post-golpe | **1,0 s × 140 px/s = 140 px** | Más que el chase range: un golpe es casi una salida gratis. |
+| Vida jugador : daño contacto | **5 golpes** | Sin curación. |
+| Vida enemigo : daño ataque | **3 golpes** | Con defaults actuales. |
 
 ## Cómo medir en vez de opinar
 
-`--sim` corre el juego sin ventana con una política de navegación determinista y
-vuelca un CSV de una fila por paso fijo. Un cambio de balance se evalúa
-comparando el resumen contra la referencia, no a ojo.
-
-Referencia medida sobre `dungeon1` con los valores de esta tabla:
+`--sim` sigue siendo la sonda determinista. La referencia histórica sobre
+`dungeon1` (abajo) **ya no describe el loop jugable** ([[SYS-PROC]]); sirve
+como archivo de lo que el test medía antes del generador. Hay que re-basar
+telemetría sobre runs procedimentales cuando la política de `--sim` cubra
+escaleras / objetivo / ataque.
 
 ```
 sim: outcome=unreachable
@@ -82,21 +89,5 @@ sim: distance_px=529.554 mean_speed=193.739 blocked_ratio=0.0122
 sim: chase_ratio=0.9024 min_enemy_dist=3.722
 ```
 
-Cómo leerla:
-
-| Métrica | Qué dice |
-|---|---|
-| `items=2/3` + `unreachable=1` | El tercer ítem **no se puede recoger desde ninguna posición**: ver [[NIVEL-DUNGEON1]]. El nivel no se puede completar. |
-| `damage_taken=2` de 5 corazones | Un recorrido perfecto pero sin esquivar cuesta 2 de 5. Queda margen: el nivel no es letal ni de lejos. |
-| `chase_ratio=0.90` | Se pasa el 90 % del recorrido con algún enemigo persiguiendo. Con `chaseRange` a 120 px, los enemigos están casi siempre activos en esta ruta. |
-| `mean_speed=193.7` de 200 | Apenas roza geometría (`blocked_ratio` 1,2 %): el nivel no estorba al movimiento. |
-
-**Estas cifras son de una sonda que no esquiva.** Un jugador humano competente
-recibiría menos daño; uno malo, más. Sirven como suelo comparable entre cambios,
-no como predicción de una partida real.
-
-**Advertencia sobre lo que mide `--sim`:** la política navega perfecto y no
-esquiva nada — atraviesa a los enemigos y se come los golpes. No es un jugador,
-es una **sonda repetible**. Sus números responden "cuánto castiga este nivel a
-alguien mecánicamente perfecto y tácticamente ciego", que es una cota, no una
-experiencia. El *feel* no se mide así; para eso hay que jugarlo.
+Ver [[NIVEL-DUNGEON1]] para el contexto de esas cifras. La política no
+esquiva: es cota, no predicción de feel.
