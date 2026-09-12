@@ -47,6 +47,26 @@ Splitting rule for new code: if it names a gameplay component, it belongs in `ga
 - Source lists in the `CMakeLists.txt` files are explicit — add new files there.
 - Systems that must not depend on frame rate go in `addFixedSystem`; the rest in `addSystem`, rendering in `addSystemLast`.
 
+## Design documents
+
+`docs/design/` is the source of truth for *game design* — pillars, core loop,
+systems, biomes, levels, balance, ADRs. It is written in **Spanish**; code,
+comments and the `.claude/` tooling stay in English. This file and the READMEs
+remain the technical reference; design docs never document the engine.
+
+Each document declares an `estado` (`implementado`, `parcial`, `propuesto`,
+`descartado`) and a `codigo:` list of the files that implement it. Read the
+`estado` before trusting a document: only the first two describe the game that
+exists.
+
+**If you change a gameplay system, update its document in the same change.** A
+`Stop` hook names the document that fell behind, and `/gdd-sync` reports drift
+across the whole tree.
+
+Tuning numbers live in three places at once — the component default,
+`tests/test_balance.cpp`, and `docs/design/50-balance/tablas.md`. The test exists
+to make skipping the other two impossible.
+
 ## Code style
 
 `.clang-format` is LLVM-based with overrides (4-space indent, 80-col limit, **Allman braces**, left-aligned pointers) — run it, don't hand-format. On top of that, conventions not enforced by clang-format:

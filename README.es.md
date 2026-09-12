@@ -107,6 +107,17 @@ pilotar el juego compilado. Dos smoke tests ejecutan el binario real con los
 drivers dummy de SDL para cubrir arranque, carga de nivel, render y cierre de
 punta a punta.
 
+## Documentos de diseño
+
+`docs/design/` contiene el diseño del juego — pilares, core loop, sistemas,
+biomas, niveles, tablas de balance y decisiones. Está escrito en español y habla
+del *juego*, no del motor; este README sigue siendo la referencia técnica.
+
+Cada documento declara un `estado` (`implementado`, `parcial`, `propuesto`,
+`descartado`) y lista el código que lo implementa, de modo que la
+desincronización entre ambos se detecta en vez de descubrirse tarde. En
+`.claude/` están las skills, agentes, comandos y hooks que los mantienen al día.
+
 ---
 
 ## Arquitectura

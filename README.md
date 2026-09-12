@@ -104,6 +104,17 @@ and is the reason to reach for them rather than trying to drive the built game.
 Two smoke tests run the real binary with SDL's dummy drivers to cover startup,
 level loading, rendering and teardown end to end.
 
+## Design documents
+
+`docs/design/` holds the game design — pillars, core loop, systems, biomes,
+levels, balance tables and decision records. It is written in Spanish, and it is
+about the *game*, not the engine; this README stays the technical reference.
+
+Every document declares an `estado` (`implementado`, `parcial`, `propuesto`,
+`descartado`) and lists the code that implements it, so drift between the two is
+detectable rather than discovered late. `.claude/` carries the skills, agents,
+slash commands and hooks that keep them in step.
+
 ---
 
 ## Architecture
