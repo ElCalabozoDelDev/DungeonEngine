@@ -1,6 +1,7 @@
 #include <engine/audio/audio_manager.hpp>
 #include <engine/input/action_map.hpp>
 #include <engine/input/input_state.hpp>
+#include <engine/loaders/config.hpp>
 #include <engine/scene/scene_system.hpp>
 #include <game/scene/title_scene.hpp>
 #include <game/state.hpp>
@@ -10,6 +11,18 @@
 
 using namespace de;
 
+namespace
+{
+ImVec2 logicalSize(entt::registry& registry)
+{
+    if (const auto* config = registry.ctx().find<Config>(); config != nullptr)
+    {
+        return ImVec2(config->cameraWidth, config->cameraHeight);
+    }
+    return ImVec2(320.0f, 180.0f);
+}
+} // namespace
+
 void OptionsWidget::render(entt::registry& registry, de::gui::Hooks& h)
 {
     if (!registry.ctx().contains<AudioSettings>())
@@ -17,16 +30,18 @@ void OptionsWidget::render(entt::registry& registry, de::gui::Hooks& h)
         registry.ctx().emplace<AudioSettings>();
     }
     auto& settings = registry.ctx().get<AudioSettings>();
+    const ImVec2 screen = logicalSize(registry);
 
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always,
-                            ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowPos(ImVec2(screen.x * 0.5f, screen.y * 0.5f),
+                            ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(240.0f, 120.0f), ImGuiCond_Always);
     ImGui::Begin("options", nullptr,
                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                     ImGuiWindowFlags_AlwaysAutoResize |
                      ImGuiWindowFlags_NoCollapse);
 
+    ImGui::SetWindowFontScale(0.7f);
     ImGui::TextUnformatted("OPTIONS");
+    ImGui::SetWindowFontScale(0.55f);
     ImGui::Separator();
 
     if (ImGui::SliderInt("MUSIC", &settings.musicPercent, 0, 100))
@@ -49,7 +64,7 @@ void OptionsWidget::render(entt::registry& registry, de::gui::Hooks& h)
     const bool backPressed = input != nullptr && actions != nullptr &&
                              actions->wasPressed(*input, "pause");
 
-    if (ImGui::Button("BACK", ImVec2(160, 0)) || backPressed)
+    if (ImGui::Button("BACK", ImVec2(80, 0)) || backPressed)
     {
         if (auto* audio = registry.ctx().find<AudioManager>())
         {
@@ -59,5 +74,6 @@ void OptionsWidget::render(entt::registry& registry, de::gui::Hooks& h)
             std::make_unique<TitleScene>());
     }
 
+    ImGui::SetWindowFontScale(1.0f);
     ImGui::End();
 }

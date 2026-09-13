@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <engine/audio/audio_manager.hpp>
 #include <engine/components/animation_component.hpp>
 #include <engine/components/dimension_component.hpp>
 #include <engine/components/sprite_component.hpp>
@@ -217,6 +218,10 @@ void SnakeSystem::run(entt::registry& registry)
                 {
                     paused->value = true;
                 }
+                if (auto* audio = registry.ctx().find<AudioManager>())
+                {
+                    audio->playSound("bounce");
+                }
                 snake.segments.front().at = head.to;
                 snake.segments.front().to = head.to;
                 snake.movementProgress = 1.0f;
@@ -251,6 +256,10 @@ void SnakeSystem::run(entt::registry& registry)
                         if (paused != nullptr)
                         {
                             paused->value = true;
+                        }
+                        if (auto* audio = registry.ctx().find<AudioManager>())
+                        {
+                            audio->playSound("bounce");
                         }
                         snake.movementProgress = 1.0f;
                         snake.movementTimer = 0.0f;

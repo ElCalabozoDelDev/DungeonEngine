@@ -1,5 +1,7 @@
+#include <engine/audio/audio_manager.hpp>
 #include <engine/core/game_loop.hpp>
 #include <engine/core/paused.hpp>
+#include <engine/loaders/config.hpp>
 #include <engine/scene/scene_system.hpp>
 #include <game/scene/in_game_scene.hpp>
 #include <game/scene/title_scene.hpp>
@@ -10,11 +12,27 @@
 
 using namespace de;
 
+namespace
+{
+/// ImGui draws through the SDL renderer, which is in logical space
+/// (cameraWidth x cameraHeight). GetMainViewport() reports the window size
+/// (e.g. 1280x720), so centering there puts the panel off-canvas.
+ImVec2 logicalSize(entt::registry& registry)
+{
+    if (const auto* config = registry.ctx().find<Config>(); config != nullptr)
+    {
+        return ImVec2(config->cameraWidth, config->cameraHeight);
+    }
+    return ImVec2(320.0f, 180.0f);
+}
+} // namespace
+
 void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
 {
     const auto* state = registry.ctx().find<GameState>();
+    const ImVec2 screen = logicalSize(registry);
 
-    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(4, 4), ImGuiCond_Always);
     ImGui::Begin("HUD", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoMove |
@@ -24,7 +42,9 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
 
     if (state != nullptr)
     {
+        ImGui::SetWindowFontScale(0.6f);
         ImGui::Text("SCORE: %06d", state->score);
+        ImGui::SetWindowFontScale(1.0f);
     }
     ImGui::End();
 
@@ -33,37 +53,37 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
         return;
     }
 
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
-
     if (state->playState == PlayState::Paused)
     {
-        ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always,
-                                ImVec2(0.5f, 0.5f));
-        ImGui::SetNextWindowSize(ImVec2(420, 160), ImGuiCond_Always);
+        const ImVec2 panel(180.0f, 70.0f);
+        ImGui::SetNextWindowPos(ImVec2(screen.x * 0.5f, screen.y * 0.5f),
+                                ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowSize(panel, ImGuiCond_Always);
         ImGui::Begin("Paused", nullptr,
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                          ImGuiWindowFlags_NoCollapse |
                          ImGuiWindowFlags_NoTitleBar);
-        ImGui::SetWindowFontScale(1.4f);
+        ImGui::SetWindowFontScale(0.7f);
         ImGui::TextUnformatted("PAUSED");
-        ImGui::SetWindowFontScale(1.0f);
-        ImGui::Separator();
+        ImGui::SetWindowFontScale(0.55f);
         ImGui::TextUnformatted("Esc resumes.");
-        if (ImGui::Button("QUIT", ImVec2(160, 0)))
+        if (ImGui::Button("QUIT", ImVec2(70, 0)))
         {
             registry.ctx().get<Paused>().value = false;
             registry.ctx().get<SceneSystem>().requestScene(
                 std::make_unique<TitleScene>());
         }
+        ImGui::SetWindowFontScale(1.0f);
         ImGui::End();
         return;
     }
 
     if (state->playState == PlayState::GameOver)
     {
-        ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always,
-                                ImVec2(0.5f, 0.5f));
-        ImGui::SetNextWindowSize(ImVec2(520, 200), ImGuiCond_Always);
+        const ImVec2 panel(220.0f, 90.0f);
+        ImGui::SetNextWindowPos(ImVec2(screen.x * 0.5f, screen.y * 0.5f),
+                                ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowSize(panel, ImGuiCond_Always);
         ImGui::PushStyleColor(ImGuiCol_WindowBg,
                               ImVec4(0.15f, 0.18f, 0.35f, 0.92f));
         ImGui::PushStyleColor(ImGuiCol_Border,
@@ -73,28 +93,31 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                          ImGuiWindowFlags_NoCollapse |
                          ImGuiWindowFlags_NoTitleBar);
-        ImGui::SetWindowFontScale(1.8f);
+        ImGui::SetWindowFontScale(0.85f);
         const float titleWidth = ImGui::CalcTextSize("GAME OVER").x;
-        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - titleWidth) * 0.5f);
+        ImGui::SetCursorPosX((panel.x - titleWidth) * 0.5f);
         ImGui::TextUnformatted("GAME OVER");
-        ImGui::SetWindowFontScale(1.0f);
-        ImGui::Dummy(ImVec2(0, 12));
+        ImGui::SetWindowFontScale(0.55f);
+        ImGui::Dummy(ImVec2(0, 6));
 
-        const float buttonWidth = 160.0f;
-        const float gap = 24.0f;
+        const float buttonWidth = 80.0f;
+        const float gap = 12.0f;
         const float rowWidth = buttonWidth * 2.0f + gap;
-        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - rowWidth) * 0.5f);
+        ImGui::SetCursorPosX((panel.x - rowWidth) * 0.5f);
         if (ImGui::Button("RETRY", ImVec2(buttonWidth, 0)))
         {
+            registry.ctx().get<Paused>().value = false;
             registry.ctx().get<SceneSystem>().requestScene(
                 std::make_unique<InGameScene>());
         }
         ImGui::SameLine(0.0f, gap);
         if (ImGui::Button("QUIT", ImVec2(buttonWidth, 0)))
         {
+            registry.ctx().get<Paused>().value = false;
             registry.ctx().get<SceneSystem>().requestScene(
                 std::make_unique<TitleScene>());
         }
+        ImGui::SetWindowFontScale(1.0f);
         ImGui::End();
         ImGui::PopStyleVar();
         ImGui::PopStyleColor(2);
