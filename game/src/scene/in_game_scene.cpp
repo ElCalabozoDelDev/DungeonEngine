@@ -83,7 +83,8 @@ void InGameScene::onEnter(entt::registry& registry)
                   static_cast<float>((state.mapRows - 2) * state.tileHeight)};
 
     auto& textures = registry.ctx().get<TextureCache>();
-    // Horizontal strips: slime 2×20, bat 3×20 — AnimationComponent walks columns.
+    // Horizontal strips: slime 2x20, bat 3x20. AnimationComponent walks
+    // columns.
     textures.load("slime", assets.resolve("images/slime.png").string());
     textures.load("bat", assets.resolve("images/bat.png").string());
     textures.load("bg-pattern",
