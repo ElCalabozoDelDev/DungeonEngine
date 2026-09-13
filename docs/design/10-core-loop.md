@@ -13,7 +13,8 @@ codigo:
 
 # Core loop
 
-1. **Title** — START abre la arena; OPTIONS ajusta música/SFX.
+1. **Title** — START abre la arena; OPTIONS ajusta música/SFX. El tema
+   arranca aquí y no se detiene ni reinicia al cambiar de escena.
 2. **Jugar** — el slime avanza por celdas; el murciélago vaga y rebota.
 3. **Comer** — contacto cabeza–bat → +1 segmento, +100 puntos, bat respawnea.
 4. **Morir** — muro o cuerpo propio → Game Over (RETRY / QUIT).

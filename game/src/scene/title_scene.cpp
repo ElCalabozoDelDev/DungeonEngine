@@ -33,10 +33,11 @@ void TitleScene::onEnter(entt::registry& registry)
     if (auto* audio = registry.ctx().find<AudioManager>(); audio != nullptr)
     {
         audio->loadSound("ui", assets.resolve("Audio/ui.wav").string());
+        audio->loadMusic("theme", assets.resolve("Audio/theme.ogg").string());
         const auto& settings = registry.ctx().get<AudioSettings>();
         audio->setMusicVolume(settings.musicPercent);
         audio->setSfxVolume(settings.sfxPercent);
-        audio->stopMusic();
+        audio->playMusic("theme", true);
     }
 
     auto entity = registry.create();

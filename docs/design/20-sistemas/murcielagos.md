@@ -10,10 +10,15 @@ codigo:
 
 # Murciélagos
 
-Un murciélago a la vez. Se mueve en continuo con velocidad aleatoria y
-**rebota** en los bordes del room (`bounce.wav`). Al ser comido:
+Un murciélago a la vez. Se mueve en continuo (integra su propia velocidad en
+el fixed step; no pasa por `TransformSystem`) y **rebota** en
+`roomBounds` con reflexión de velocidad + `bounce.wav` — el mismo contrato
+que el tutorial MonoGame (círculo vs bordes del room).
+
+Al ser comido (intersección de círculos cabeza–bat):
 
 - el slime crece,
 - score += 100,
 - suena `collect`,
-- el bat respawnea lejos de la cabeza.
+- el bat respawnea al lado opuesto del room respecto a la cabeza,
+- nueva velocidad con ángulo aleatorio.

@@ -12,6 +12,8 @@ add_library(game_lib STATIC
     src/sim/sim_plugin.cpp
     src/systems/bat_system.cpp
     src/systems/snake_system.cpp
+    src/ui/bitmap_font.cpp
+    src/ui/ui_skin.cpp
     src/widgets/hud_widget.cpp
     src/widgets/options_widget.cpp
     src/widgets/title_widget.cpp

@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include <engine/loaders/config.hpp>
+#include <game/components/bat_component.hpp>
 #include <game/components/snake_component.hpp>
 
 TEST_CASE("the balance values match the design document")
@@ -10,6 +11,12 @@ TEST_CASE("the balance values match the design document")
         CHECK(SnakeComponent::scorePerBat == 100);
         SnakeComponent snake;
         CHECK(snake.stride == doctest::Approx(20.0f));
+    }
+
+    SUBCASE("bat movement")
+    {
+        BatComponent bat;
+        CHECK(bat.speed == doctest::Approx(75.0f));
     }
 
     SUBCASE("logical render size")

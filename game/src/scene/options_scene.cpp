@@ -1,4 +1,6 @@
+#include <engine/core/asset_paths.hpp>
 #include <engine/core/paused.hpp>
+#include <engine/graphics/texture_cache.hpp>
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/widgets/widget.hpp>
 #include <game/scene/options_scene.hpp>
@@ -11,6 +13,15 @@ void OptionsScene::onEnter(entt::registry& registry)
 {
     registry.ctx().get<SpatialIndex>().clear();
     registry.ctx().get<Paused>().value = false;
+
+    const auto& assets = registry.ctx().get<AssetPaths>();
+    if (auto* textures = registry.ctx().find<TextureCache>();
+        textures != nullptr)
+    {
+        textures->load(
+            "bg-pattern",
+            assets.resolve("images/background-pattern.png").string());
+    }
 
     auto entity = registry.create();
     registry.emplace<Widget>(entity, std::make_unique<OptionsWidget>());

@@ -1,0 +1,70 @@
+#ifndef GAME_UI_UI_SKIN_HPP
+#define GAME_UI_UI_SKIN_HPP
+
+#include <entt/entt.hpp>
+#include <game/ui/bitmap_font.hpp>
+#include <imgui.h>
+#include <string_view>
+
+namespace game::ui
+{
+inline constexpr const char* kPanel = "ui-panel";
+inline constexpr const char* kButtonUp = "ui-button-up";
+inline constexpr const char* kButtonFocus0 = "ui-button-focus-0";
+inline constexpr const char* kButtonFocus1 = "ui-button-focus-1";
+inline constexpr const char* kSliderOff = "ui-slider-off";
+inline constexpr const char* kSliderMid = "ui-slider-mid";
+inline constexpr const char* kSliderMax = "ui-slider-max";
+
+constexpr float kCanvasW = 320.0f;
+constexpr float kCanvasH = 180.0f;
+constexpr float kButtonH = 14.0f;
+constexpr float kButtonMinW = 65.0f;
+constexpr float kPanelBorder = 4.0f;
+constexpr float kPausePanelW = 264.0f;
+constexpr float kPausePanelH = 70.0f;
+constexpr float kSliderPanelW = 264.0f;
+constexpr float kSliderPanelH = 55.0f;
+
+/// Gum FontScale values on the AngelCode .fnt (size 35).
+constexpr float kFontScore = 0.25f;
+constexpr float kFontButton = 0.25f;
+constexpr float kFontPanelTitle = 0.5f;
+/// Screen-space 04B_30_5x (87.5px) → logical after /4.
+constexpr float kFontTitle = 87.5f / 4.0f / 35.0f;
+
+constexpr ImU32 kButtonTextColor = IM_COL32(70, 86, 130, 255);
+constexpr ImU32 kTitleShadow = IM_COL32(0, 0, 0, 128);
+
+void ensureLoaded(entt::registry& registry);
+BitmapFont* font(entt::registry& registry);
+
+int focusFrame(double elapsedSeconds);
+
+void drawNineSlice(ImDrawList* draw, ImTextureID tex, ImVec2 p0, ImVec2 p1,
+                   float texW, float texH, float border = kPanelBorder,
+                   ImU32 tint = IM_COL32_WHITE);
+
+void drawPanel(entt::registry& registry, ImDrawList* draw, ImVec2 p0,
+               ImVec2 p1, ImU32 tint = IM_COL32_WHITE);
+
+ImVec2 buttonSizeForLabel(entt::registry& registry, std::string_view label);
+
+void drawButton(entt::registry& registry, ImDrawList* draw, ImVec2 p0,
+                ImVec2 size, bool focused, double elapsedSeconds);
+
+void drawOptionsSlider(entt::registry& registry, ImDrawList* draw, ImVec2 p0,
+                       std::string_view label, float value01, bool focused);
+
+void drawCenteredText(entt::registry& registry, ImDrawList* draw, ImVec2 p0,
+                      ImVec2 p1, std::string_view text, float fontScale,
+                      ImU32 color);
+
+void drawText(entt::registry& registry, ImDrawList* draw, ImVec2 pos,
+              std::string_view text, float fontScale, ImU32 color);
+
+bool hitButton(const char* id, ImVec2 p0, ImVec2 size);
+
+} // namespace game::ui
+
+#endif // GAME_UI_UI_SKIN_HPP

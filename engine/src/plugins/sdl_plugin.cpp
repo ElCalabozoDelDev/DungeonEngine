@@ -24,6 +24,8 @@ void SDLPlugin::mount(GameLoop& gameLoop)
 
             m_vsync = config.vsync;
             int flags = config.fullScreen ? SDL_WINDOW_FULLSCREEN : 0;
+            // Nearest upscale for the 320→1280 logical present (pixel art).
+            SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
             WindowPtr window(
                 SDL_CreateWindow(config.title.c_str(), SDL_WINDOWPOS_CENTERED,
                                  SDL_WINDOWPOS_CENTERED, config.screenWidth,

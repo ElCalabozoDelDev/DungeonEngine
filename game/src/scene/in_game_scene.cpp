@@ -31,6 +31,8 @@
 #include <game/scene/in_game_scene.hpp>
 #include <game/state.hpp>
 #include <game/widgets/hud_widget.hpp>
+#include <memory>
+#include <numbers>
 #include <random>
 
 using namespace de;
@@ -99,8 +101,13 @@ void InGameScene::onEnter(entt::registry& registry)
         audio->loadSound("collect",
                          assets.resolve("Audio/collect.wav").string());
         audio->loadSound("ui", assets.resolve("Audio/ui.wav").string());
+        // Theme is started on Title and must keep playing; only start it if
+        // something entered InGame without going through Title (e.g. --level).
         audio->loadMusic("theme", assets.resolve("Audio/theme.ogg").string());
-        audio->playMusic("theme", true);
+        if (!audio->isMusicPlaying())
+        {
+            audio->playMusic("theme", true);
+        }
     }
 
     tagObjectsByType(registry);
@@ -131,11 +138,6 @@ void InGameScene::onUpdate(entt::registry& registry) {}
 
 void InGameScene::onExit(entt::registry& registry)
 {
-    if (auto* audio = registry.ctx().find<AudioManager>(); audio != nullptr)
-    {
-        audio->stopMusic();
-    }
-
     registry.ctx().get<SpatialIndex>().clear();
 
     for (auto entity : registry.view<PlayerComponent, SnakeComponent>())
@@ -242,10 +244,15 @@ void InGameScene::spawnBat(entt::registry& registry)
                                              state.roomBounds.right() - 20.0f);
     std::uniform_real_distribution<float> dy(state.roomBounds.top(),
                                              state.roomBounds.bottom() - 20.0f);
-    std::uniform_real_distribution<float> dir(-1.0f, 1.0f);
+    std::uniform_real_distribution<float> angleDist(
+        0.0f, 2.0f * std::numbers::pi_v<float>);
 
     auto entity = registry.create();
-    registry.emplace<BatComponent>(entity);
+    BatComponent bat;
+    const float angle = angleDist(rng);
+    bat.velocity =
+        Vector2D<float>(std::cos(angle), std::sin(angle)) * bat.speed;
+    registry.emplace<BatComponent>(entity, bat);
     registry.emplace<TransformComponent>(entity,
                                          Vector2D<float>(dx(rng), dy(rng)));
     registry.emplace<DimensionComponent>(entity, 20.0f, 20.0f);
@@ -255,13 +262,7 @@ void InGameScene::spawnBat(entt::registry& registry)
     anim.totalFrames = 3;
     anim.animationTime = 0.1f;
     registry.emplace<AnimationComponent>(entity, anim);
-    Vector2D<float> velocity(dir(rng), dir(rng));
-    if (velocity.lengthSquared() < 0.01f)
-    {
-        velocity = Vector2D<float>(1.0f, 1.0f);
-    }
-    velocity = velocity / velocity.length() * 60.0f;
-    registry.emplace<VelocityComponent>(entity, velocity);
+    // No VelocityComponent: BatSystem integrates against roomBounds itself.
     m_entities.push_back(entity);
 }
 

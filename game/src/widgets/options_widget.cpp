@@ -1,10 +1,15 @@
+#include <SDL.h>
+#include <cmath>
 #include <engine/audio/audio_manager.hpp>
+#include <engine/core/delta_time.hpp>
+#include <engine/graphics/texture_cache.hpp>
 #include <engine/input/action_map.hpp>
 #include <engine/input/input_state.hpp>
 #include <engine/loaders/config.hpp>
 #include <engine/scene/scene_system.hpp>
 #include <game/scene/title_scene.hpp>
 #include <game/state.hpp>
+#include <game/ui/ui_skin.hpp>
 #include <game/widgets/options_widget.hpp>
 #include <imgui.h>
 #include <memory>
@@ -19,7 +24,17 @@ ImVec2 logicalSize(entt::registry& registry)
     {
         return ImVec2(config->cameraWidth, config->cameraHeight);
     }
-    return ImVec2(320.0f, 180.0f);
+    return ImVec2(game::ui::kCanvasW, game::ui::kCanvasH);
+}
+
+float windowToLogicalScale(entt::registry& registry)
+{
+    if (const auto* config = registry.ctx().find<Config>();
+        config != nullptr && config->cameraWidth > 0.0f)
+    {
+        return static_cast<float>(config->screenWidth) / config->cameraWidth;
+    }
+    return 4.0f;
 }
 
 void playUi(entt::registry& registry)
@@ -30,36 +45,97 @@ void playUi(entt::registry& registry)
     }
 }
 
-bool menuButton(const char* label, bool selected, const ImVec2& size)
+void applyVolume(entt::registry& registry, const AudioSettings& settings,
+                 int focus)
 {
-    if (selected)
+    if (auto* audio = registry.ctx().find<AudioManager>())
     {
-        ImGui::PushStyleColor(ImGuiCol_Button,
-                              ImVec4(0.55f, 0.65f, 0.95f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                              ImVec4(0.65f, 0.75f, 1.0f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,
-                              ImVec4(0.45f, 0.55f, 0.85f, 1.0f));
+        if (focus == 0)
+        {
+            audio->setMusicVolume(settings.musicPercent);
+        }
+        else if (focus == 1)
+        {
+            audio->setSfxVolume(settings.sfxPercent);
+        }
     }
-    const bool clicked = ImGui::Button(label, size);
-    if (selected)
+}
+
+float wrapPositive(float value, float period)
+{
+    if (period <= 0.0f)
     {
-        ImGui::PopStyleColor(3);
+        return 0.0f;
     }
-    return clicked;
+    value = std::fmod(value, period);
+    if (value < 0.0f)
+    {
+        value += period;
+    }
+    return value;
 }
 } // namespace
 
 void OptionsWidget::render(entt::registry& registry, de::gui::Hooks& h)
 {
+    game::ui::ensureLoaded(registry);
+
     if (!registry.ctx().contains<AudioSettings>())
     {
         registry.ctx().emplace<AudioSettings>();
     }
     auto& settings = registry.ctx().get<AudioSettings>();
     const ImVec2 screen = logicalSize(registry);
-    // 0 = music, 1 = sfx, 2 = back
+    const float scale = windowToLogicalScale(registry);
     auto [focus, setFocus] = h.use_state(0);
+    auto [scroll, setScroll] = h.use_state(ImVec2(0.0f, 0.0f));
+    const double elapsed = registry.ctx().contains<DeltaTime>()
+                               ? registry.ctx().get<DeltaTime>().elapsed
+                               : 0.0;
+
+    ImDrawList* draw = ImGui::GetBackgroundDrawList();
+    draw->AddRectFilled(ImVec2(0, 0), screen, IM_COL32(32, 40, 78, 255));
+
+    if (auto* textures = registry.ctx().find<TextureCache>();
+        textures != nullptr)
+    {
+        if (SDL_Texture* pattern = textures->get("bg-pattern");
+            pattern != nullptr)
+        {
+            int tw = 0;
+            int th = 0;
+            SDL_QueryTexture(pattern, nullptr, nullptr, &tw, &th);
+            if (tw > 0 && th > 0)
+            {
+                const float tileW = static_cast<float>(tw) / scale;
+                const float tileH = static_cast<float>(th) / scale;
+                float ox = scroll.x;
+                float oy = scroll.y;
+                if (const auto* dt = registry.ctx().find<DeltaTime>();
+                    dt != nullptr)
+                {
+                    const float step = (50.0f / scale) * dt->value;
+                    ox = wrapPositive(ox - step, tileW);
+                    oy = wrapPositive(oy - step, tileH);
+                    setScroll(ImVec2(ox, oy));
+                }
+                SDL_SetTextureScaleMode(pattern, SDL_ScaleModeNearest);
+                const ImTextureID id = reinterpret_cast<ImTextureID>(pattern);
+                const ImU32 tint = IM_COL32(255, 255, 255, 128);
+                for (float y = -oy; y < screen.y; y += tileH)
+                {
+                    for (float x = -ox; x < screen.x; x += tileW)
+                    {
+                        draw->AddImage(id, ImVec2(x, y),
+                                       ImVec2(x + tileW, y + tileH),
+                                       ImVec2(0, 0), ImVec2(1, 1), tint);
+                    }
+                }
+            }
+        }
+    }
+
+    ImDrawList* fg = ImGui::GetForegroundDrawList();
 
     const auto* input = registry.ctx().find<InputState>();
     const auto* actions = registry.ctx().find<ActionMap>();
@@ -82,90 +158,51 @@ void OptionsWidget::render(entt::registry& registry, de::gui::Hooks& h)
             bool changed = false;
             if (actions->wasPressedRaw(*input, "move_left"))
             {
-                *value = (*value >= 5) ? *value - 5 : 0;
+                *value = (*value >= 10) ? *value - 10 : 0;
                 changed = true;
             }
             if (actions->wasPressedRaw(*input, "move_right"))
             {
-                *value = (*value <= 95) ? *value + 5 : 100;
+                *value = (*value <= 90) ? *value + 10 : 100;
                 changed = true;
             }
             if (changed)
             {
                 playUi(registry);
-                if (auto* audio = registry.ctx().find<AudioManager>())
-                {
-                    if (focus == 0)
-                    {
-                        audio->setMusicVolume(settings.musicPercent);
-                    }
-                    else
-                    {
-                        audio->setSfxVolume(settings.sfxPercent);
-                    }
-                }
+                applyVolume(registry, settings, focus);
             }
         }
     }
 
-    ImGui::SetNextWindowPos(ImVec2(screen.x * 0.5f, screen.y * 0.5f),
-                            ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(240.0f, 130.0f), ImGuiCond_Always);
-    ImGui::Begin("options", nullptr,
-                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                     ImGuiWindowFlags_NoCollapse);
+    game::ui::drawText(registry, fg, ImVec2(10.0f, 10.0f), "OPTIONS",
+                       game::ui::kFontPanelTitle, IM_COL32_WHITE);
 
-    ImGui::SetWindowFontScale(0.7f);
-    ImGui::TextUnformatted("OPTIONS");
-    ImGui::SetWindowFontScale(0.55f);
-    ImGui::Separator();
+    const float sliderX = (screen.x - game::ui::kSliderPanelW) * 0.5f;
+    game::ui::drawOptionsSlider(registry, fg, ImVec2(sliderX, 30.0f), "MUSIC",
+                                settings.musicPercent / 100.0f, focus == 0);
+    game::ui::drawOptionsSlider(registry, fg, ImVec2(sliderX, 93.0f), "SFX",
+                                settings.sfxPercent / 100.0f, focus == 1);
 
-    if (focus == 0)
-    {
-        ImGui::PushStyleColor(ImGuiCol_FrameBg,
-                              ImVec4(0.35f, 0.45f, 0.75f, 1.0f));
-    }
-    if (ImGui::SliderInt("MUSIC", &settings.musicPercent, 0, 100))
-    {
-        if (auto* audio = registry.ctx().find<AudioManager>())
-        {
-            audio->setMusicVolume(settings.musicPercent);
-        }
-    }
-    if (focus == 0)
-    {
-        ImGui::PopStyleColor();
-    }
+    const ImVec2 backSize = game::ui::buttonSizeForLabel(registry, "BACK");
+    const ImVec2 back0(screen.x - 28.0f - backSize.x,
+                       screen.y - 10.0f - backSize.y);
+    game::ui::drawButton(registry, fg, back0, backSize, focus == 2, elapsed);
+    game::ui::drawCenteredText(
+        registry, fg, back0,
+        ImVec2(back0.x + backSize.x, back0.y + backSize.y), "BACK",
+        game::ui::kFontButton, game::ui::kButtonTextColor);
 
-    if (focus == 1)
-    {
-        ImGui::PushStyleColor(ImGuiCol_FrameBg,
-                              ImVec4(0.35f, 0.45f, 0.75f, 1.0f));
-    }
-    if (ImGui::SliderInt("SFX", &settings.sfxPercent, 0, 100))
-    {
-        if (auto* audio = registry.ctx().find<AudioManager>())
-        {
-            audio->setSfxVolume(settings.sfxPercent);
-        }
-    }
-    if (focus == 1)
-    {
-        ImGui::PopStyleColor();
-    }
-
+    const bool backHit = game::ui::hitButton("options-back", back0, backSize);
     const bool backPressed =
-        input != nullptr && actions != nullptr &&
-        (actions->wasPressedRaw(*input, "pause") ||
-         (actions->wasPressedRaw(*input, "confirm") && focus == 2));
+        backHit ||
+        (input != nullptr && actions != nullptr &&
+         (actions->wasPressedRaw(*input, "pause") ||
+          (actions->wasPressedRaw(*input, "confirm") && focus == 2)));
 
-    if (menuButton("BACK", focus == 2, ImVec2(80, 0)) || backPressed)
+    if (backPressed)
     {
         playUi(registry);
         registry.ctx().get<SceneSystem>().requestScene(
             std::make_unique<TitleScene>());
     }
-
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::End();
 }

@@ -39,9 +39,16 @@ public:
     void playSound(std::string_view id) const;
 
     /// Plays previously loaded music. `loop` true means infinite loop.
+    /// No-op if `id` is already the track that is playing.
     void playMusic(std::string_view id, bool loop = true);
 
     void stopMusic();
+
+    /// True while Mix_PlayingMusic reports active playback.
+    bool isMusicPlaying() const;
+
+    /// Id of the track last started with playMusic, or empty.
+    std::string_view currentMusicId() const { return m_currentMusicId; }
 
     /// 0–100. Applied to subsequent SFX plays and Mix_VolumeMusic.
     void setSfxVolume(int percent);
@@ -59,6 +66,7 @@ private:
     bool m_open = false;
     int m_sfxVolume = 100;
     int m_musicVolume = 100;
+    std::string m_currentMusicId;
     std::map<std::string, Mix_Chunk*, std::less<>> m_sounds;
     std::map<std::string, Mix_Music*, std::less<>> m_music;
 };

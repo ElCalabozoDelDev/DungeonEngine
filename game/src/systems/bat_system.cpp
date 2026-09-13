@@ -3,52 +3,146 @@
 #include <engine/audio/audio_manager.hpp>
 #include <engine/components/dimension_component.hpp>
 #include <engine/components/transform_component.hpp>
-#include <engine/components/velocity_component.hpp>
+#include <engine/core/delta_time.hpp>
 #include <engine/core/paused.hpp>
 #include <game/components/bat_component.hpp>
 #include <game/components/player_component.hpp>
 #include <game/components/snake_component.hpp>
 #include <game/state.hpp>
 #include <game/systems/bat_system.hpp>
+#include <numbers>
 #include <random>
 
 using namespace de;
 
 namespace
 {
-constexpr float HeadSize = 20.0f;
+constexpr float SegmentSize = 20.0f;
 
-bool aabbOverlap(const Vector2D<float>& aPos, float aW, float aH,
-                 const Vector2D<float>& bPos, float bW, float bH)
+struct Circle
 {
-    return !(
-        aPos.getX() + aW <= bPos.getX() || bPos.getX() + bW <= aPos.getX() ||
-        aPos.getY() + aH <= bPos.getY() || bPos.getY() + bH <= aPos.getY());
-}
+    float x = 0.0f;
+    float y = 0.0f;
+    float radius = 0.0f;
 
-Vector2D<float> randomPointInRoom(const Rectangle& room, float size,
-                                  std::mt19937& rng)
-{
-    std::uniform_real_distribution<float> dx(room.left(), room.right() - size);
-    std::uniform_real_distribution<float> dy(room.top(), room.bottom() - size);
-    return Vector2D<float>(dx(rng), dy(rng));
-}
+    float left() const { return x - radius; }
+    float right() const { return x + radius; }
+    float top() const { return y - radius; }
+    float bottom() const { return y + radius; }
 
-bool nearSnake(const Vector2D<float>& pos, float size,
-               const SnakeComponent& snake)
-{
-    for (const auto& segment : snake.segments)
+    bool intersects(const Circle& other) const
     {
-        const auto center = segment.to;
-        const float half = HeadSize * 0.5f;
-        const Vector2D<float> segTopLeft(center.getX() - half,
-                                         center.getY() - half);
-        if (aabbOverlap(pos, size, size, segTopLeft, HeadSize, HeadSize))
+        const float dx = x - other.x;
+        const float dy = y - other.y;
+        const float radii = radius + other.radius;
+        return (dx * dx + dy * dy) < (radii * radii);
+    }
+};
+
+float dot(const Vector2D<float>& a, const Vector2D<float>& b)
+{
+    return a.getX() * b.getX() + a.getY() * b.getY();
+}
+
+/// v' = v - 2 * dot(v, n) * n  (n must be unit length).
+Vector2D<float> reflect(const Vector2D<float>& velocity,
+                        Vector2D<float> normal)
+{
+    normal.normalize();
+    return velocity - normal * (2.0f * dot(velocity, normal));
+}
+
+Vector2D<float> lerp(const Vector2D<float>& a, const Vector2D<float>& b,
+                     float t)
+{
+    return a + (b - a) * t;
+}
+
+Circle batCircle(const Vector2D<float>& topLeft, float width, float height)
+{
+    // Tutorial Bat.GetBounds: radius = Width * 0.25.
+    return Circle{topLeft.getX() + width * 0.5f, topLeft.getY() + height * 0.5f,
+                  width * 0.25f};
+}
+
+Circle slimeHeadCircle(const SnakeComponent& snake)
+{
+    const auto& head = snake.segments.front();
+    const auto pos = lerp(head.at, head.to, snake.movementProgress);
+    // Tutorial Slime.GetBounds: radius = Width * 0.5 around the visual centre.
+    return Circle{pos.getX(), pos.getY(), SegmentSize * 0.5f};
+}
+
+void randomizeVelocity(BatComponent& bat, std::mt19937& rng)
+{
+    std::uniform_real_distribution<float> angleDist(
+        0.0f, 2.0f * std::numbers::pi_v<float>);
+    const float angle = angleDist(rng);
+    bat.velocity = Vector2D<float>(std::cos(angle), std::sin(angle)) * bat.speed;
+}
+
+void bounce(BatComponent& bat, Vector2D<float>& position, float width,
+            float height, Vector2D<float> normal, AudioManager* audio)
+{
+    if (normal.getX() != 0.0f)
+    {
+        position.setX(position.getX() + normal.getX() * (width * 0.1f));
+    }
+    if (normal.getY() != 0.0f)
+    {
+        position.setY(position.getY() + normal.getY() * (height * 0.1f));
+    }
+    bat.velocity = reflect(bat.velocity, normal);
+    if (audio != nullptr)
+    {
+        audio->playSound("bounce");
+    }
+}
+
+/// Place the bat on the opposite side of the room from the slime head
+/// (MonoGame GameScene.PositionBatAwayFromSlime).
+void positionBatAwayFromSlime(Vector2D<float>& batPos, float batW, float batH,
+                              const SnakeComponent& snake,
+                              const Rectangle& room, std::mt19937& rng)
+{
+    const float roomCenterX = room.x + room.w * 0.5f;
+    const float roomCenterY = room.y + room.h * 0.5f;
+    const Circle slime = slimeHeadCircle(snake);
+    const float centerToSlimeX = slime.x - roomCenterX;
+    const float centerToSlimeY = slime.y - roomCenterY;
+
+    const float padding = std::max(batW, batH);
+
+    if (std::abs(centerToSlimeX) > std::abs(centerToSlimeY))
+    {
+        std::uniform_int_distribution<int> yDist(
+            static_cast<int>(room.top() + padding),
+            static_cast<int>(room.bottom() - padding));
+        batPos.setY(static_cast<float>(yDist(rng)));
+        if (centerToSlimeX > 0.0f)
         {
-            return true;
+            batPos.setX(room.left() + padding);
+        }
+        else
+        {
+            batPos.setX(room.right() - padding * 2.0f);
         }
     }
-    return false;
+    else
+    {
+        std::uniform_int_distribution<int> xDist(
+            static_cast<int>(room.left() + padding),
+            static_cast<int>(room.right() - padding));
+        batPos.setX(static_cast<float>(xDist(rng)));
+        if (centerToSlimeY > 0.0f)
+        {
+            batPos.setY(room.top() + padding);
+        }
+        else
+        {
+            batPos.setY(room.bottom() - padding * 2.0f);
+        }
+    }
 }
 
 } // namespace
@@ -66,69 +160,71 @@ void BatSystem::run(entt::registry& registry)
         return;
     }
 
+    const auto& dt = registry.ctx().get<DeltaTime>();
     auto* audio = registry.ctx().find<AudioManager>();
+    static std::mt19937 rng{std::random_device{}()};
 
-    auto snakes = registry.view<PlayerComponent, SnakeComponent,
-                                TransformComponent, DimensionComponent>();
-    auto bats = registry.view<BatComponent, TransformComponent,
-                              DimensionComponent, VelocityComponent>();
+    auto snakes = registry.view<PlayerComponent, SnakeComponent>();
+    auto bats =
+        registry.view<BatComponent, TransformComponent, DimensionComponent>();
 
     for (auto bat : bats)
     {
+        auto& batComp = bats.get<BatComponent>(bat);
         auto& transform = bats.get<TransformComponent>(bat).position;
-        auto& velocity = bats.get<VelocityComponent>(bat).velocity;
         auto& dimension = bats.get<DimensionComponent>(bat);
-        const auto& batComp = bats.get<BatComponent>(bat);
 
-        // TransformSystem already integrated velocity this step; only bounce
-        // and clamp against the room here.
-        if (velocity.lengthSquared() < 0.001f)
+        if (batComp.velocity.lengthSquared() < 0.001f)
         {
-            velocity = Vector2D<float>(batComp.speed, batComp.speed);
+            randomizeVelocity(batComp, rng);
         }
 
-        bool bounced = false;
-        if (transform.getX() < state->roomBounds.left())
+        // Integrate here (fixed dt). Do not use VelocityComponent — that would
+        // let TransformSystem clamp against the full map instead of the room.
+        transform += batComp.velocity * dt.fixed;
+
+        Circle bounds = batCircle(transform, dimension.width, dimension.height);
+        Vector2D<float> normal(0.0f, 0.0f);
+
+        if (bounds.left() < state->roomBounds.left())
         {
+            normal.setX(1.0f);
             transform.setX(state->roomBounds.left());
-            velocity.setX(std::abs(velocity.getX()));
-            bounced = true;
         }
-        else if (transform.getX() + dimension.width > state->roomBounds.right())
+        else if (bounds.right() > state->roomBounds.right())
         {
+            normal.setX(-1.0f);
             transform.setX(state->roomBounds.right() - dimension.width);
-            velocity.setX(-std::abs(velocity.getX()));
-            bounced = true;
         }
 
-        if (transform.getY() < state->roomBounds.top())
+        if (bounds.top() < state->roomBounds.top())
         {
+            normal.setY(1.0f);
             transform.setY(state->roomBounds.top());
-            velocity.setY(std::abs(velocity.getY()));
-            bounced = true;
         }
-        else if (transform.getY() + dimension.height >
-                 state->roomBounds.bottom())
+        else if (bounds.bottom() > state->roomBounds.bottom())
         {
+            normal.setY(-1.0f);
             transform.setY(state->roomBounds.bottom() - dimension.height);
-            velocity.setY(-std::abs(velocity.getY()));
-            bounced = true;
         }
 
-        if (bounced && audio != nullptr)
+        if (normal.lengthSquared() > 0.0f)
         {
-            audio->playSound("bounce");
+            bounce(batComp, transform, dimension.width, dimension.height, normal,
+                   audio);
         }
+
+        bounds = batCircle(transform, dimension.width, dimension.height);
 
         for (auto snakeEntity : snakes)
         {
             auto& snake = snakes.get<SnakeComponent>(snakeEntity);
-            const auto& headTransform =
-                snakes.get<TransformComponent>(snakeEntity).position;
-            const auto& headDim = snakes.get<DimensionComponent>(snakeEntity);
+            if (snake.segments.empty())
+            {
+                continue;
+            }
 
-            if (!aabbOverlap(transform, dimension.width, dimension.height,
-                             headTransform, headDim.width, headDim.height))
+            if (!slimeHeadCircle(snake).intersects(bounds))
             {
                 continue;
             }
@@ -140,17 +236,10 @@ void BatSystem::run(entt::registry& registry)
                 audio->playSound("collect");
             }
 
-            static std::mt19937 rng{std::random_device{}()};
-            for (int attempt = 0; attempt < 32; ++attempt)
-            {
-                const auto candidate =
-                    randomPointInRoom(state->roomBounds, dimension.width, rng);
-                if (!nearSnake(candidate, dimension.width, snake))
-                {
-                    transform = candidate;
-                    break;
-                }
-            }
+            positionBatAwayFromSlime(transform, dimension.width, dimension.height,
+                                     snake, state->roomBounds, rng);
+            randomizeVelocity(batComp, rng);
+            bounds = batCircle(transform, dimension.width, dimension.height);
         }
     }
 }

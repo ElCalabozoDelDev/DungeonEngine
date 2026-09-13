@@ -15,11 +15,13 @@ AudioManager::~AudioManager() { destroyAll(); }
 
 AudioManager::AudioManager(AudioManager&& other) noexcept
     : m_open(other.m_open), m_sfxVolume(other.m_sfxVolume),
-      m_musicVolume(other.m_musicVolume), m_sounds(std::move(other.m_sounds)),
-      m_music(std::move(other.m_music))
+      m_musicVolume(other.m_musicVolume),
+      m_currentMusicId(std::move(other.m_currentMusicId)),
+      m_sounds(std::move(other.m_sounds)), m_music(std::move(other.m_music))
 {
     other.m_sounds.clear();
     other.m_music.clear();
+    other.m_currentMusicId.clear();
     other.m_open = false;
 }
 
@@ -31,10 +33,12 @@ AudioManager& AudioManager::operator=(AudioManager&& other) noexcept
         m_open = other.m_open;
         m_sfxVolume = other.m_sfxVolume;
         m_musicVolume = other.m_musicVolume;
+        m_currentMusicId = std::move(other.m_currentMusicId);
         m_sounds = std::move(other.m_sounds);
         m_music = std::move(other.m_music);
         other.m_sounds.clear();
         other.m_music.clear();
+        other.m_currentMusicId.clear();
         other.m_open = false;
     }
     return *this;
@@ -132,6 +136,14 @@ bool AudioManager::loadMusic(std::string_view id, const std::string& fileName)
         return false;
     }
 
+    // Already loaded: keep the existing Mix_Music. Freeing it while it is
+    // the current stream stops playback and makes scene transitions restart
+    // the theme.
+    if (auto it = m_music.find(id); it != m_music.end())
+    {
+        return it->second != nullptr;
+    }
+
     Mix_Music* music = Mix_LoadMUS(fileName.c_str());
     if (music == nullptr)
     {
@@ -140,14 +152,7 @@ bool AudioManager::loadMusic(std::string_view id, const std::string& fileName)
         return false;
     }
 
-    auto key = std::string(id);
-    if (auto it = m_music.find(key); it != m_music.end())
-    {
-        Mix_FreeMusic(it->second);
-        it->second = music;
-        return true;
-    }
-    m_music.emplace(std::move(key), music);
+    m_music.emplace(std::string(id), music);
     return true;
 }
 
@@ -172,6 +177,11 @@ void AudioManager::playMusic(std::string_view id, bool loop)
     {
         return;
     }
+    // Keep a single continuous theme across scenes: do not restart.
+    if (isMusicPlaying() && m_currentMusicId == id)
+    {
+        return;
+    }
     auto it = m_music.find(id);
     if (it == m_music.end() || it->second == nullptr)
     {
@@ -179,6 +189,7 @@ void AudioManager::playMusic(std::string_view id, bool loop)
     }
     Mix_VolumeMusic(MIX_MAX_VOLUME * m_musicVolume / 100);
     Mix_PlayMusic(it->second, loop ? -1 : 0);
+    m_currentMusicId = std::string(id);
 }
 
 void AudioManager::stopMusic()
@@ -187,6 +198,12 @@ void AudioManager::stopMusic()
     {
         Mix_HaltMusic();
     }
+    m_currentMusicId.clear();
+}
+
+bool AudioManager::isMusicPlaying() const
+{
+    return m_open && Mix_PlayingMusic() != 0;
 }
 
 void AudioManager::setSfxVolume(int percent)

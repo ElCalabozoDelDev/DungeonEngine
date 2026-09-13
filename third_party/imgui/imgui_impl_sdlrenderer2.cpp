@@ -225,7 +225,9 @@ bool ImGui_ImplSDLRenderer2_CreateFontsTexture()
     }
     SDL_UpdateTexture(bd->FontTexture, nullptr, pixels, 4 * width);
     SDL_SetTextureBlendMode(bd->FontTexture, SDL_BLENDMODE_BLEND);
-    SDL_SetTextureScaleMode(bd->FontTexture, SDL_ScaleModeLinear);
+    // Nearest: DungeonEngine UI is a pixel font under SDL logical upscale; linear
+    // made every glyph look soft.
+    SDL_SetTextureScaleMode(bd->FontTexture, SDL_ScaleModeNearest);
 
     // Store our identifier
     io.Fonts->SetTexID((ImTextureID)(intptr_t)bd->FontTexture);

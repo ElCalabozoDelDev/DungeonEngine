@@ -31,6 +31,13 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
             // player would freeze for as long as the inspector is open.
             ImGui::StyleColorsDark();
 
+            // Pixel-font path: nearest atlas sampling needs no baked AA lines.
+            io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines;
+            ImGuiStyle& style = ImGui::GetStyle();
+            style.AntiAliasedLinesUseTex = false;
+            style.AntiAliasedLines = false;
+            style.AntiAliasedFill = false;
+
             // Prefer the game's pixel font when present; keep ImGui's default
             // as fallback if the file is missing or fails to load.
             if (const auto* assets = registry.ctx().find<AssetPaths>();
@@ -39,8 +46,14 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
                 const auto fontPath = assets->resolve("fonts/04B_30.ttf");
                 if (std::filesystem::exists(fontPath))
                 {
+                    ImFontConfig cfg;
+                    cfg.PixelSnapH = true;
+                    cfg.OversampleH = 1;
+                    cfg.OversampleV = 1;
+                    // Size in logical pixels; SDL scales the present 4× with
+                    // nearest filtering so glyphs stay crisp.
                     io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(),
-                                                 16.0f);
+                                                 16.0f, &cfg);
                 }
             }
 

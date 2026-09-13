@@ -1,7 +1,6 @@
 #include <doctest/doctest.h>
 #include <engine/components/dimension_component.hpp>
 #include <engine/components/transform_component.hpp>
-#include <engine/components/velocity_component.hpp>
 #include <engine/core/delta_time.hpp>
 #include <engine/core/paused.hpp>
 #include <engine/input/action_map.hpp>
@@ -128,15 +127,38 @@ TEST_CASE("eating a bat grows the snake and awards score")
     auto& snake = world.registry.get<SnakeComponent>(snakeEntity);
 
     auto bat = world.registry.create();
-    world.registry.emplace<BatComponent>(bat);
+    BatComponent batComp;
+    batComp.velocity = Vector2D<float>(0.0f, 0.0f);
+    world.registry.emplace<BatComponent>(bat, batComp);
     world.registry.emplace<TransformComponent>(bat,
                                                Vector2D<float>(90.0f, 70.0f));
     world.registry.emplace<DimensionComponent>(bat, 20.0f, 20.0f);
-    world.registry.emplace<VelocityComponent>(bat, Vector2D<float>(0, 0));
 
     BatSystem batSystem;
     batSystem.run(world.registry);
 
     CHECK(snake.pendingGrowth == 1);
     CHECK(world.state().score == SnakeComponent::scorePerBat);
+}
+
+TEST_CASE("bat reflects when leaving room bounds")
+{
+    World world;
+    auto bat = world.registry.create();
+    BatComponent batComp;
+    batComp.speed = 75.0f;
+    batComp.velocity = Vector2D<float>(-75.0f, 0.0f);
+    world.registry.emplace<BatComponent>(bat, batComp);
+    // Circle left = x + w/4; place so one fixed step crosses room.left (20).
+    world.registry.emplace<TransformComponent>(bat,
+                                               Vector2D<float>(14.0f, 80.0f));
+    world.registry.emplace<DimensionComponent>(bat, 20.0f, 20.0f);
+
+    BatSystem batSystem;
+    batSystem.run(world.registry);
+
+    const auto& after = world.registry.get<BatComponent>(bat);
+    CHECK(after.velocity.getX() > 0.0f);
+    CHECK(world.registry.get<TransformComponent>(bat).position.getX() >=
+          doctest::Approx(20.0f));
 }

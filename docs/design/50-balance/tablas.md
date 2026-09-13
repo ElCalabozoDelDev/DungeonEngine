@@ -5,6 +5,7 @@ estado: implementado
 pilares: [PILAR-01, PILAR-02, PILAR-03]
 codigo:
   - game/include/game/components/snake_component.hpp
+  - game/include/game/components/bat_component.hpp
   - tests/test_balance.cpp
   - docs/design/50-balance/tablas.md
 ---
@@ -19,6 +20,7 @@ Los números viven en tres sitios a la vez: default del componente,
 | Intervalo de tick | **0.2 s** | `SnakeComponent::movementInterval` |
 | Puntos por bat | **100** | `SnakeComponent::scorePerBat` |
 | Stride (celda) | **20 px** | `SnakeComponent::stride` |
+| Velocidad bat | **75 px/s** | `BatComponent::speed` |
 | Sprite slime/bat | **20×20** | `DimensionComponent` + sheets `slime.png` / `bat.png` |
 | Ventana | **1280×720** | `Config::screenWidth/Height` |
 | Lógico | **320×180** | `Config::cameraWidth/Height` |

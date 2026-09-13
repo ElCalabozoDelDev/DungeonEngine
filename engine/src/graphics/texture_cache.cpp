@@ -66,6 +66,9 @@ bool TextureCache::load(std::string_view id, const std::string& fileName)
         return false;
     }
 
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureScaleMode(texture, SDL_ScaleModeNearest);
+
     // Replacing an id must not leak the texture it used to hold.
     auto key = std::string(id);
     if (auto it = m_textures.find(key); it != m_textures.end())
