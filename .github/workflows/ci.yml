@@ -83,7 +83,9 @@ jobs:
           restore-keys: vcpkg-${{ runner.os }}-
 
       - name: Configure
-        run: cmake --preset default -B build
+        # Warnings are errors here, so none can land; local builds leave them
+        # as warnings.
+        run: cmake --preset default -B build -DDE_WARNINGS_AS_ERRORS=ON
 
       # vcpkg reports only the paths of the logs that explain a failure, and
       # the runner is gone by the time anyone reads the summary.
@@ -109,6 +111,22 @@ jobs:
           SDL_AUDIODRIVER: dummy
           SDL_RENDER_DRIVER: software
         run: ctest --test-dir build --output-on-failure
+
+      # Advisory only: the tree still has a backlog of findings, so this
+      # reports a count and annotates the run instead of failing it. Tighten
+      # to a gate once the backlog is gone.
+      - name: clang-tidy (advisory)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $tidy = Join-Path $env:LLVM_MINGW_ROOT "bin\clang-tidy.exe"
+          $files = git ls-files 'engine/src/*.cpp' 'game/src/*.cpp'
+          $files | ForEach-Object -Parallel {
+            & $using:tidy -p build --quiet $_ 2>$null
+          } -ThrottleLimit 4 | Tee-Object -FilePath tidy.log
+          $count = (Select-String -Path tidy.log -Pattern 'warning:' |
+            ForEach-Object Line | Sort-Object -Unique).Count
+          Write-Output "::warning title=clang-tidy::$count distinct findings"
 
   format:
     name: clang-format

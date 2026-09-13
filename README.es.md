@@ -99,19 +99,21 @@ Hay dos flags para CI y depuración: `--frames N` sale tras N frames, y
 
 ## Medir
 
-`--sim` ejecuta el juego sin ventana con una política de navegación scripteada y
-vuelca una fila de CSV por paso fijo, más un resumen:
+`--sim` ejecuta el juego sin ventana sobre un reloj sintético con una política
+scripteada — la serpiente siempre gira a la derecha y no esquiva nada — y vuelca
+una fila de CSV por paso fijo, más un resumen de una línea:
 
 ```bash
 ./build/bin/DungeonEngine.exe --sim --sim-out sim.csv
 ```
 
 ```
-sim: outcome=unreachable
-sim: steps=164 sim_seconds=2.7333 fixed_dt=0.0166667
-sim: items=2/3 unreachable=1 pickups_at=0.4000,2.7167
-sim: damage_taken=2 hits=2 final_health=3 first_hit_at=0.7833
+sim: outcome=game_over score=0 length=1 steps=97
 ```
+
+Las columnas del CSV son `step,score,length,game_over,head_x,head_y,bat_x,bat_y`.
+Las posiciones se escriben con dígitos suficientes para reconstruir el float
+exacto.
 
 Corre sobre un reloj sintético (`GameLoop::setFrameDelta`), así que cada frame es
 exactamente un paso fijo y dos corridas del mismo binario producen archivos
@@ -121,24 +123,16 @@ signifique algo.
 | Flag | |
 |---|---|
 | `--sim-out RUTA` | destino del CSV (por defecto `sim.csv`) |
-| `--sim-summary RUTA` | escribe también el resumen a un archivo (stdout siempre) |
 | `--sim-steps N` | tope de pasos fijos (por defecto 3600 = 60 s simulados) |
-| `--sim-seed N` | orden de visita de ítems; 0 es el más cercano primero |
-| `--sim-require-clear` | sale con 2 si no se recogieron todos los ítems |
+| `--sim-seed N` | semilla del RNG de gameplay (aparición y rebotes del murciélago) |
 | `--sim-window` | no fuerza los drivers dummy, para ver la corrida |
 
 El código de salida es 0 siempre que la corrida terminara y escribiera su CSV,
-incluida la muerte: un harness de balance no debe ponerse rojo porque un nivel
-sea difícil. 1 es fallo de infraestructura; 2 solo con `--sim-require-clear`.
+incluida la muerte: un harness de balance no debe ponerse rojo porque el juego
+sea difícil. 1 es fallo de infraestructura.
 
-La política navega perfecto y **no esquiva**: atraviesa a los enemigos y se come
-los golpes. Sus cifras son una cota inferior de dificultad para un jugador
-mecánicamente perfecto y tácticamente ciego, no un veredicto sobre cómo se siente
-el juego.
-
-Lo primero que encontró fue que una de las tres monedas de `dungeon1` está
-enteramente dentro de los muros y no se puede recoger desde ninguna posición —
-ver `docs/design/40-niveles/dungeon1.md`.
+Las cifras de la política son una cota inferior de dificultad, no un veredicto
+sobre cómo se siente el juego.
 
 ## Tests
 
@@ -153,6 +147,14 @@ pilotar el juego compilado. Tres smoke tests ejecutan el binario real con los
 drivers dummy de SDL para cubrir arranque, carga de nivel, render y cierre de
 punta a punta; el tercero lanza una corrida corta de `--sim` y comprueba que
 salió un resumen.
+
+Los tests `sim_golden_seed*` fijan el comportamiento: corren `--sim` dos veces
+por semilla, exigen que ambos CSV sean idénticos byte a byte y los comparan con
+las referencias de `tests/golden/`. Un refactor no debe tocarlas. Un cambio que
+quiere alterar el gameplay regenera la referencia en el mismo commit — el
+comando está en la cabecera de `tests/sim_golden.cmake`.
+
+Configura con `-DDE_WARNINGS_AS_ERRORS=ON` para compilar como lo hace CI.
 
 ## Documentos de diseño
 

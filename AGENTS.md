@@ -42,9 +42,12 @@ ctest --test-dir build --output-on-failure
 They link `engine` and `game_lib` directly, so they need no window, input
 or desktop session — run them rather than trying to drive the built game,
 which needs a foreground window and has repeatedly proved unreliable to
-automate. Two smoke tests run the real binary under SDL's dummy drivers
-(`--frames N`, `--level`). `.github/workflows/ci.yml` runs configure,
-build, ctest and a clang-format check on a fresh checkout.
+automate. Three smoke tests run the real binary under SDL's dummy drivers
+(`--frames N`, `--level`, a short `--sim`). `.github/workflows/ci.yml`
+runs configure with `-DDE_WARNINGS_AS_ERRORS=ON`, build, ctest, an
+advisory clang-tidy pass and a clang-format check on a fresh checkout.
+First-party targets build with `-Wall -Wextra -Wpedantic`; add
+`de_enable_warnings(<target>)` to any new one.
 
 ## Architecture
 
@@ -116,6 +119,13 @@ Two runs with the same flags must produce **byte-identical CSVs**; that
 diff is the acceptance test for the whole feature. The policy always
 turns right and dodges nothing, so its numbers (`score`, `length`,
 `steps_alive`) are a floor on difficulty, never a verdict on feel.
+
+`sim_golden_seed*` in ctest runs that diff for you and also compares the
+CSV with `tests/golden/seed<N>.csv`. A pure refactor must keep it green
+without touching the reference. A change that alters gameplay on purpose
+regenerates the reference in the same commit (command in the header of
+`tests/sim_golden.cmake`) — never regenerate it just to make a refactor
+pass.
 
 ## Code style
 

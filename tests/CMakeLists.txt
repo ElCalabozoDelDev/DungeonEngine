@@ -18,6 +18,10 @@ add_executable(tests
 )
 
 target_link_libraries(tests PRIVATE game_lib doctest::doctest)
+de_enable_warnings(tests)
+# doctest's TEST_CASE/SUBCASE expand __COUNTER__ into our own sources, where
+# -Wpedantic flags it; the header being a system include does not help.
+target_compile_options(tests PRIVATE -Wno-c2y-extensions)
 
 target_compile_definitions(tests PRIVATE
     DE_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
@@ -46,7 +50,23 @@ add_test(NAME smoke_sim
 set_tests_properties(smoke_sim PROPERTIES
     PASS_REGULAR_EXPRESSION "sim: outcome="
 )
-set_tests_properties(smoke_menu smoke_level smoke_sim PROPERTIES
+# Behaviour lock for refactors: two sim runs per seed must be byte-identical
+# and match tests/golden/. Seed 0 dies without eating; seed 4 eats a bat, so
+# growth and the bat respawn are covered too.
+set(DE_GOLDEN_SEEDS 0 4)
+foreach(_seed IN LISTS DE_GOLDEN_SEEDS)
+    add_test(NAME sim_golden_seed${_seed}
+        COMMAND ${CMAKE_COMMAND}
+            -DGAME=$<TARGET_FILE:game>
+            -DSEED=${_seed}
+            -DGOLDEN=${CMAKE_CURRENT_SOURCE_DIR}/golden/seed${_seed}.csv
+            -DOUT_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/sim_golden.cmake
+    )
+    list(APPEND DE_SIM_TESTS sim_golden_seed${_seed})
+endforeach()
+
+set_tests_properties(smoke_menu smoke_level smoke_sim ${DE_SIM_TESTS} PROPERTIES
     ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy;SDL_RENDER_DRIVER=software"
     TIMEOUT 60
 )

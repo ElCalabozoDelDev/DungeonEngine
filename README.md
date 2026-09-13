@@ -95,19 +95,20 @@ Two flags exist for CI and debugging: `--frames N` exits after N frames, and
 
 ## Measure
 
-`--sim` runs the game headless with a scripted navigation policy and writes one
-CSV row per fixed step, plus a summary:
+`--sim` runs the game headless on a synthetic clock with a scripted policy —
+the snake always turns right and dodges nothing — and writes one CSV row per
+fixed step, plus a one-line summary:
 
 ```bash
 ./build/bin/DungeonEngine.exe --sim --sim-out sim.csv
 ```
 
 ```
-sim: outcome=unreachable
-sim: steps=164 sim_seconds=2.7333 fixed_dt=0.0166667
-sim: items=2/3 unreachable=1 pickups_at=0.4000,2.7167
-sim: damage_taken=2 hits=2 final_health=3 first_hit_at=0.7833
+sim: outcome=game_over score=0 length=1 steps=97
 ```
+
+The CSV columns are `step,score,length,game_over,head_x,head_y,bat_x,bat_y`.
+Positions are printed with enough digits to round-trip a float.
 
 It runs on a synthetic clock (`GameLoop::setFrameDelta`), so every frame is
 exactly one fixed step and two runs of the same build produce **byte-identical**
@@ -116,23 +117,16 @@ files — which is what makes a before/after comparison mean anything.
 | Flag | |
 |---|---|
 | `--sim-out PATH` | CSV destination (default `sim.csv`) |
-| `--sim-summary PATH` | also write the summary to a file (stdout always) |
 | `--sim-steps N` | fixed-step budget (default 3600 = 60 simulated seconds) |
-| `--sim-seed N` | item visiting order; 0 is strict nearest-first |
-| `--sim-require-clear` | exit 2 unless every item was collected |
+| `--sim-seed N` | seed for the gameplay RNG (bat spawn and bounces) |
 | `--sim-window` | do not force SDL's dummy drivers, so the run can be watched |
 
 Exit code is 0 whenever the run completed and wrote its CSV — dying included, so
-a balance harness does not go red because a level is hard. 1 is an
-infrastructure failure; 2 only with `--sim-require-clear`.
+a balance harness does not go red because the game is hard. 1 is an
+infrastructure failure.
 
-The policy paths perfectly and **does not dodge**: it walks through enemies and
-takes the hits. Its numbers are a floor on difficulty for a mechanically perfect,
-tactically blind player, not a verdict on how the game feels.
-
-The first thing it found was that one of the three coins in `dungeon1` sits
-entirely inside walls and cannot be collected from any position — see
-`docs/design/40-niveles/dungeon1.md`.
+The policy's numbers are a floor on difficulty, not a verdict on how the game
+feels.
 
 ## Test
 
@@ -146,6 +140,14 @@ and is the reason to reach for them rather than trying to drive the built game.
 Three smoke tests run the real binary with SDL's dummy drivers to cover startup,
 level loading, rendering and teardown end to end; the third drives a short
 `--sim` pass and checks a summary came out of it.
+
+The `sim_golden_seed*` tests lock behaviour: they run `--sim` twice per seed,
+require both CSVs to be byte-identical, and compare them with the references in
+`tests/golden/`. A refactor must leave them untouched. A change that is meant to
+alter gameplay regenerates the reference in the same commit — the command is in
+the header of `tests/sim_golden.cmake`.
+
+Configure with `-DDE_WARNINGS_AS_ERRORS=ON` to build the way CI does.
 
 ## Design documents
 
