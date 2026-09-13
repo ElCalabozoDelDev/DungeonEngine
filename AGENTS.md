@@ -55,7 +55,7 @@ CMake targets, in dependency order:
 
 | Target | Contents |
 |---|---|
-| `third_party` | Vendored sources (imgui SDL2 backends, base64). Headers exposed as `SYSTEM` so its warnings don't leak. |
+| `third_party` | Vendored sources (imgui SDL2 backends, imgui EnTT entity editor). Headers exposed as `SYSTEM` so its warnings don't leak. |
 | `engine` | The reusable 2D engine: game loop, plugin/hook system, SDL + ImGui integration, texture manager, Tiled JSON (`.tmj`) loading, rendering, camera, quadtree, scenes, widget layer. |
 | `game_lib` | The example game (Dungeon Slime) as a library: snake/bat systems, scenes, HUD. |
 | `game` | Just `main()`. Links `game_lib`; binary is named `DungeonEngine`. |

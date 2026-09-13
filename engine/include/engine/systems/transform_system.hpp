@@ -6,6 +6,11 @@
 
 namespace de
 {
+/// Integrates VelocityComponent into TransformComponent, clamped to the level
+/// bounds of the first CameraBoundsComponent.
+///
+/// Opt-in: BasePlugin does not register it. A game whose entities move by
+/// velocity adds it with addFixedSystem().
 class TransformSystem final : public System
 {
 public:

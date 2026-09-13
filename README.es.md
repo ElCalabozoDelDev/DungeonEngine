@@ -30,12 +30,12 @@ lugar del proyecto de otro que hay que desenredar.
 - **Input** como acciones con nombre y teclas rebindeables, no scancodes
   metidos en los sistemas.
 - **Dear ImGui** integrado, inspector de entidades y una capa de widgets basada
-  en hooks (`use_state` / `use_callback` / `use_effect`).
+  en hooks (`use_state`).
 - **Animación de sprites** con modos en bucle, ping-pong y de una sola pasada,
   multiplicador de velocidad y pausa en cada extremo.
 - **Audio** con SDL2_mixer.
 - **Escenas** con cambio diferido, y pausa gestionada por el bucle.
-- **46 tests** con doctest, ejecutables sin ventana, y un workflow de GitHub
+- **Tests** con doctest, ejecutables sin ventana, y un workflow de GitHub
   Actions que compila y testea un checkout limpio en Windows.
 
 ## Requisitos
@@ -174,12 +174,12 @@ Claude Code. Ver `.claude/README.md`.
 ## Arquitectura
 
 ```
-        third_party            vendorizado: backends SDL2 de imgui, base64
+        third_party            vendorizado: backends SDL2 de imgui, editor de entidades
              |                 cabeceras expuestas como includes SYSTEM
              v
           engine               librería estática, namespace de
              |                 bucle, plugins, SDL, input, audio, texturas,
-             |                 carga TMX, render, cámara, quadtree,
+             |                 carga Tiled, render, cámara, quadtree,
              v                 escenas, widgets
          game_lib              este juego: componentes, sistemas, escenas, HUD
              |
@@ -190,7 +190,7 @@ Claude Code. Ver `.claude/README.md`.
 **`engine` no tiene `game/include` en su include path.** Un
 `#include <game/...>` desde código del motor es un error de compilación, no una
 convención que alguien deba recordar. Cuando el motor necesita saber algo del
-juego, se invierte: el cargador TMX guarda el `type` de Tiled en
+juego, se invierte: el cargador de Tiled guarda el `type` de Tiled en
 `de::ObjectTypeComponent`, y es `InGameScene::tagObjectsByType` quien convierte
 `"Player"` en un `PlayerComponent`.
 
@@ -201,9 +201,9 @@ Regla práctica para código nuevo: **si nombra un componente de gameplay, va en
 
 ```
 frame begin   input (eventos SDL -> InputState)  ->  ImGui::NewFrame
-pasos fijos   movimiento -> integración -> sync espacial -> colisión -> combate
+pasos fijos   sync espacial, luego los sistemas del juego (serpiente, murciélago)
               (cero o más veces, cada uno avanza DeltaTime::fixed)
-frame         animación, cámara, escenas, debug
+frame         animación, fundido a gris, escenas, debug
 last          passes de render por `order`, luego la GUI
 frame end     present
 ```
@@ -235,7 +235,7 @@ struct ManaComponent
 #endif // GAME_COMPONENTS_MANA_COMPONENT_HPP
 ```
 
-Añádelo donde se construye la entidad — para objetos que vienen de un `.tmx`,
+Añádelo donde se construye la entidad — para objetos que vienen de un `.tmj`,
 eso es `InGameScene::tagObjectsByType`.
 
 ### Añadir un sistema
@@ -329,18 +329,26 @@ engine/          motor 2D reutilizable, librería estática (namespace de)
 game/            el juego de ejemplo
   include/game/    cabeceras
   src/             implementación, más main.cpp
-tests/           tests unitarios con doctest y fixtures .tmx
-third_party/     código vendorizado: backends SDL2 de imgui, base64
-assets/          texturas, audio, niveles Tiled (.tmx) y game.xml
+tests/           tests unitarios con doctest, fixtures .tmj y referencias del sim
+third_party/     código vendorizado: backends SDL2 de imgui, editor de entidades
+assets/          texturas, audio, niveles Tiled (.tmj) y game.json
 toolchain/       fichero de toolchain de LLVM-MinGW y el triplet de vcpkg
 ```
 
 ## Configuración
 
-`assets/game.xml` se lee al arrancar. `<Screen>` es la ventana; `<Camera
-width/height>` es la resolución lógica en la que dibuja el juego, que SDL
-escala a la ventana, y `zoomLevel` es cuántos píxeles lógicos ocupa una unidad
-de mundo. `vsync` es opcional y por defecto está activado.
+`assets/game.json` se lee al arrancar:
+
+| Clave | |
+|---|---|
+| `title`, `fullScreen`, `screenWidth`, `screenHeight` | la ventana |
+| `logicalWidth`, `logicalHeight` | la resolución en la que dibuja el juego, que SDL escala a la ventana |
+| `zoomLevel` | cuántos píxeles lógicos ocupa una unidad de mundo |
+| `frameRate`, `vsync` | ritmo: vsync, o un limitador manual a `frameRate` |
+| `debug` | abre el inspector de entidades |
+| `levels` | nombre de nivel → ruta `.tmj`; el juego carga `arena` |
+
+Todas las claves salvo `levels` son opcionales.
 
 Si el fichero falta o está mal formado, el juego sale con un mensaje que nombra
 el problema en lugar de reventar.

@@ -11,7 +11,6 @@ add_library(engine STATIC
     src/input/action_map.cpp
     src/graphics/camera2d.cpp
     src/graphics/render_bottom.cpp
-    src/graphics/render_collision.cpp
     src/graphics/render_object.cpp
     src/graphics/render_overlay.cpp
     src/graphics/texture_cache.cpp

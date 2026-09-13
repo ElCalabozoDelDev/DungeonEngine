@@ -55,7 +55,7 @@ to a section rather than to a file of its own. The validating hook rejects any
 | How a run plays out | `10-core-loop.md` |
 | One gameplay system | `20-sistemas/<name>.md`, mirroring `game/src/systems/` |
 | A visual theme and its rule | `30-biomas/0N-<name>.md` |
-| A level's intent | `40-niveles/<tmx-name>.md` |
+| A level's intent | `40-niveles/<level-name>.md` |
 | A tuning number | `50-balance/tablas.md` — and `tests/test_balance.cpp` |
 | A decision with alternatives | `90-decisiones/NNNN-<slug>.md` |
 
@@ -66,8 +66,8 @@ Start from `_plantillas/`. Never invent a new top-level folder.
 1. **Describe observable behaviour, not implementation.** If a paragraph only
    makes sense after reading the code, rewrite it.
 2. **Measure, don't estimate.** Level geometry, path lengths and step counts are
-   computed by parsing the `.tmx` CSV layers and running a BFS — never
-   eyeballed. See the `tmx-level` skill.
+   computed by parsing the `.tmj` tile layer `data` arrays and running a BFS
+   — never eyeballed. See the `tiled-level` skill.
 3. **Write down what is deliberate.** The most valuable paragraphs are the ones
    that stop someone "fixing" an intentional limitation six months from now — the
    dumb straight-line enemy AI is the standing example.

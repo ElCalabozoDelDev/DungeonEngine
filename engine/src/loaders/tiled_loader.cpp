@@ -2,8 +2,6 @@
 #include <cstdint>
 #include <engine/components/animation_component.hpp>
 #include <engine/components/bottom_layer_component.hpp>
-#include <engine/components/collision_component.hpp>
-#include <engine/components/collision_layer_component.hpp>
 #include <engine/components/dimension_component.hpp>
 #include <engine/components/level_component.hpp>
 #include <engine/components/object_type_component.hpp>
@@ -376,12 +374,6 @@ TiledLoader::loadTileLayer(entt::registry& registry,
     if (name == "Overlay")
     {
         registry.emplace<OverlayLayerComponent>(layerEntity);
-    }
-    // Collision layers are optional; Dungeon Slime uses room bounds instead.
-    if (name == "Collision")
-    {
-        registry.emplace<CollisionLayerComponent>(layerEntity);
-        registry.emplace<CollisionComponent>(layerEntity);
     }
 
     bool reportedMissingTileset = false;
