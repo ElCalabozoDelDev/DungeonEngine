@@ -15,6 +15,7 @@ add_library(engine STATIC
     src/graphics/render_object.cpp
     src/graphics/render_overlay.cpp
     src/graphics/texture_cache.cpp
+    src/graphics/world_color_grade_pass.cpp
     src/loaders/config_loader.cpp
     src/loaders/tiled_loader.cpp
     src/plugins/audio_plugin.cpp

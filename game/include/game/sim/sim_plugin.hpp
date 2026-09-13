@@ -14,13 +14,11 @@ public:
     void mount(de::GameLoop& gameLoop) override;
 
     bool failed() const { return m_failed; }
-    bool cleared() const { return m_cleared; }
 
 private:
     SimOptions m_options;
     std::ofstream m_csv;
     bool m_failed = false;
-    bool m_cleared = false;
     int m_steps = 0;
 };
 

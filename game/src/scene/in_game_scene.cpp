@@ -11,7 +11,6 @@
 #include <engine/components/texture_component.hpp>
 #include <engine/components/tile_layer_component.hpp>
 #include <engine/components/transform_component.hpp>
-#include <engine/components/velocity_component.hpp>
 #include <engine/core/asset_paths.hpp>
 #include <engine/core/paused.hpp>
 #include <engine/core/startup_error.hpp>
@@ -28,6 +27,9 @@
 #include <game/components/bat_component.hpp>
 #include <game/components/player_component.hpp>
 #include <game/components/snake_component.hpp>
+#include <game/geometry.hpp>
+#include <game/play_state.hpp>
+#include <game/rng.hpp>
 #include <game/scene/in_game_scene.hpp>
 #include <game/state.hpp>
 #include <game/widgets/hud_widget.hpp>
@@ -50,7 +52,7 @@ void InGameScene::onEnter(entt::registry& registry)
     const auto& assets = registry.ctx().get<AssetPaths>();
 
     registry.ctx().insert_or_assign<GameState>(GameState{});
-    registry.ctx().get<Paused>().value = false;
+    setPlayState(registry, PlayState::Playing);
 
     if (!registry.ctx().contains<AudioSettings>())
     {
@@ -139,6 +141,7 @@ void InGameScene::onUpdate(entt::registry& registry) {}
 void InGameScene::onExit(entt::registry& registry)
 {
     registry.ctx().get<SpatialIndex>().clear();
+    resetRunPresentation(registry);
 
     for (auto entity : registry.view<PlayerComponent, SnakeComponent>())
     {
@@ -223,27 +226,34 @@ void InGameScene::spawnSnake(entt::registry& registry, float x, float y)
     snake.segments.push_back(head);
     snake.nextDirection = head.direction;
     registry.emplace<SnakeComponent>(entity, snake);
-    registry.emplace<TransformComponent>(entity,
-                                         Vector2D<float>(x - 10.0f, y - 10.0f));
-    registry.emplace<DimensionComponent>(entity, 20.0f, 20.0f);
+    registry.emplace<TransformComponent>(
+        entity, Vector2D<float>(x - game::kSegmentSize * 0.5f,
+                                y - game::kSegmentSize * 0.5f));
+    registry.emplace<DimensionComponent>(entity, game::kSegmentSize,
+                                         game::kSegmentSize);
     registry.emplace<TextureComponent>(entity, "slime");
     registry.emplace<SpriteComponent>(entity, 0, 0, 0);
     AnimationComponent anim;
     anim.totalFrames = 2;
     anim.animationTime = 0.2f;
     registry.emplace<AnimationComponent>(entity, anim);
-    registry.emplace<VelocityComponent>(entity, Vector2D<float>(0, 0));
     m_entities.push_back(entity);
 }
 
 void InGameScene::spawnBat(entt::registry& registry)
 {
     const auto& state = registry.ctx().get<GameState>();
-    static std::mt19937 rng{std::random_device{}()};
-    std::uniform_real_distribution<float> dx(state.roomBounds.left(),
-                                             state.roomBounds.right() - 20.0f);
-    std::uniform_real_distribution<float> dy(state.roomBounds.top(),
-                                             state.roomBounds.bottom() - 20.0f);
+    if (!registry.ctx().contains<GameRng>())
+    {
+        registry.ctx().emplace<GameRng>();
+    }
+    auto& rng = registry.ctx().get<GameRng>().engine;
+    std::uniform_real_distribution<float> dx(
+        state.roomBounds.left(),
+        state.roomBounds.right() - game::kSegmentSize);
+    std::uniform_real_distribution<float> dy(
+        state.roomBounds.top(),
+        state.roomBounds.bottom() - game::kSegmentSize);
     std::uniform_real_distribution<float> angleDist(
         0.0f, 2.0f * std::numbers::pi_v<float>);
 
@@ -255,7 +265,8 @@ void InGameScene::spawnBat(entt::registry& registry)
     registry.emplace<BatComponent>(entity, bat);
     registry.emplace<TransformComponent>(entity,
                                          Vector2D<float>(dx(rng), dy(rng)));
-    registry.emplace<DimensionComponent>(entity, 20.0f, 20.0f);
+    registry.emplace<DimensionComponent>(entity, game::kSegmentSize,
+                                         game::kSegmentSize);
     registry.emplace<TextureComponent>(entity, "bat");
     registry.emplace<SpriteComponent>(entity, 0, 0, 0);
     AnimationComponent anim;

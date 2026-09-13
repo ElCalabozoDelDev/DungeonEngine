@@ -6,6 +6,7 @@
 
 add_library(game_lib STATIC
     src/plugins/game_plugin.cpp
+    src/play_state.cpp
     src/scene/in_game_scene.cpp
     src/scene/options_scene.cpp
     src/scene/title_scene.cpp
@@ -14,6 +15,7 @@ add_library(game_lib STATIC
     src/systems/grayscale_fade_system.cpp
     src/systems/snake_system.cpp
     src/ui/bitmap_font.cpp
+    src/ui/ui_layout.cpp
     src/ui/ui_skin.cpp
     src/widgets/hud_widget.cpp
     src/widgets/options_widget.cpp

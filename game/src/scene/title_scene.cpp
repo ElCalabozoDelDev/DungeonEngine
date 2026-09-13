@@ -1,9 +1,9 @@
 #include <engine/audio/audio_manager.hpp>
 #include <engine/core/asset_paths.hpp>
-#include <engine/core/paused.hpp>
 #include <engine/graphics/texture_cache.hpp>
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/widgets/widget.hpp>
+#include <game/play_state.hpp>
 #include <game/scene/title_scene.hpp>
 #include <game/state.hpp>
 #include <game/widgets/title_widget.hpp>
@@ -14,7 +14,7 @@ using namespace de;
 void TitleScene::onEnter(entt::registry& registry)
 {
     registry.ctx().get<SpatialIndex>().clear();
-    registry.ctx().get<Paused>().value = false;
+    resetRunPresentation(registry);
 
     if (!registry.ctx().contains<AudioSettings>())
     {

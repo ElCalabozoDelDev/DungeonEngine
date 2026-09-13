@@ -3,11 +3,10 @@
 
 namespace de
 {
-/// Optional world post-process (MonoGame `grayscaleEffect` Saturation).
+/// Optional world post-process amount.
 ///
-/// `colorAmount` 1 = full colour, 0 = luminance grayscale. The game fades this
-/// toward 0 while paused / game-over; UI draws after the grade and stays
-/// coloured. Engine-only — no gameplay types.
+/// `colorAmount` 1 = full colour, 0 = luminance grayscale (same lerp as
+/// MonoGame's grayscaleEffect Saturation parameter).
 struct WorldColorGrade
 {
     float colorAmount = 1.0f;

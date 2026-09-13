@@ -1,6 +1,7 @@
 #include <engine/core/startup_error.hpp>
 #include <engine/graphics/sdl_resources.hpp>
 #include <engine/graphics/texture_cache.hpp>
+#include <engine/graphics/world_color_grade_pass.hpp>
 #include <engine/loaders/config.hpp>
 #include <engine/plugins/sdl_plugin.hpp>
 #include <iostream>
@@ -112,6 +113,12 @@ void SDLPlugin::mount(GameLoop& gameLoop)
             // renderer that owns them, the renderer before the window, and
             // all of it before SDL_Quit. Any of them may be absent if startup
             // failed part-way through.
+            if (auto* pass = registry.ctx().find<WorldColorGradePass>();
+                pass != nullptr)
+            {
+                pass->destroy();
+            }
+            registry.ctx().erase<WorldColorGradePass>();
             registry.ctx().erase<TextureCache>();
             registry.ctx().erase<MainRenderer>();
             registry.ctx().erase<Window>();

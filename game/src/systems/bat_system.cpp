@@ -8,6 +8,8 @@
 #include <game/components/bat_component.hpp>
 #include <game/components/player_component.hpp>
 #include <game/components/snake_component.hpp>
+#include <game/geometry.hpp>
+#include <game/rng.hpp>
 #include <game/state.hpp>
 #include <game/systems/bat_system.hpp>
 #include <numbers>
@@ -17,8 +19,6 @@ using namespace de;
 
 namespace
 {
-constexpr float SegmentSize = 20.0f;
-
 struct Circle
 {
     float x = 0.0f;
@@ -52,12 +52,6 @@ Vector2D<float> reflect(const Vector2D<float>& velocity,
     return velocity - normal * (2.0f * dot(velocity, normal));
 }
 
-Vector2D<float> lerp(const Vector2D<float>& a, const Vector2D<float>& b,
-                     float t)
-{
-    return a + (b - a) * t;
-}
-
 Circle batCircle(const Vector2D<float>& topLeft, float width, float height)
 {
     // Tutorial Bat.GetBounds: radius = Width * 0.25.
@@ -68,9 +62,10 @@ Circle batCircle(const Vector2D<float>& topLeft, float width, float height)
 Circle slimeHeadCircle(const SnakeComponent& snake)
 {
     const auto& head = snake.segments.front();
-    const auto pos = lerp(head.at, head.to, snake.movementProgress);
+    const auto pos =
+        game::lerp(head.at, head.to, snake.movementProgress);
     // Tutorial Slime.GetBounds: radius = Width * 0.5 around the visual centre.
-    return Circle{pos.getX(), pos.getY(), SegmentSize * 0.5f};
+    return Circle{pos.getX(), pos.getY(), game::kSegmentSize * 0.5f};
 }
 
 void randomizeVelocity(BatComponent& bat, std::mt19937& rng)
@@ -162,7 +157,11 @@ void BatSystem::run(entt::registry& registry)
 
     const auto& dt = registry.ctx().get<DeltaTime>();
     auto* audio = registry.ctx().find<AudioManager>();
-    static std::mt19937 rng{std::random_device{}()};
+    if (!registry.ctx().contains<GameRng>())
+    {
+        registry.ctx().emplace<GameRng>();
+    }
+    auto& rng = registry.ctx().get<GameRng>().engine;
 
     auto snakes = registry.view<PlayerComponent, SnakeComponent>();
     auto bats =

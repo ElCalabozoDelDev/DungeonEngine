@@ -40,6 +40,7 @@ void GrayscaleFadeSystem::run(entt::registry& registry)
     if (state->playState == PlayState::Playing)
     {
         grade.colorAmount = 1.0f;
+        m_lastState = state->playState;
         return;
     }
 

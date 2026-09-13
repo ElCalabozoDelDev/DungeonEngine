@@ -31,8 +31,6 @@ struct GameState
 {
     int score = 0;
     PlayState playState = PlayState::Playing;
-    /// Legacy alias: true when playState == GameOver.
-    bool gameOver = false;
     Rectangle roomBounds{};
     int tileWidth = 20;
     int tileHeight = 20;

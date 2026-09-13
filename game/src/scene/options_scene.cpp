@@ -1,8 +1,8 @@
 #include <engine/core/asset_paths.hpp>
-#include <engine/core/paused.hpp>
 #include <engine/graphics/texture_cache.hpp>
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/widgets/widget.hpp>
+#include <game/play_state.hpp>
 #include <game/scene/options_scene.hpp>
 #include <game/widgets/options_widget.hpp>
 #include <memory>
@@ -12,7 +12,7 @@ using namespace de;
 void OptionsScene::onEnter(entt::registry& registry)
 {
     registry.ctx().get<SpatialIndex>().clear();
-    registry.ctx().get<Paused>().value = false;
+    resetRunPresentation(registry);
 
     const auto& assets = registry.ctx().get<AssetPaths>();
     if (auto* textures = registry.ctx().find<TextureCache>();

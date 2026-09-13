@@ -11,6 +11,7 @@ add_executable(tests
     test_balance.cpp
     test_config_loader.cpp
     test_gameplay.cpp
+    test_play_state.cpp
     test_spatial_index.cpp
     test_tiled_loader.cpp
     test_vector_2d.cpp

@@ -13,6 +13,8 @@
 #include <engine/spatial/spatial_index.hpp>
 #include <game/components/player_component.hpp>
 #include <game/components/snake_component.hpp>
+#include <game/geometry.hpp>
+#include <game/play_state.hpp>
 #include <game/state.hpp>
 #include <game/systems/snake_system.hpp>
 #include <vector>
@@ -21,17 +23,9 @@ using namespace de;
 
 namespace
 {
-constexpr float SegmentSize = 20.0f;
-
 float dot(const Vector2D<float>& a, const Vector2D<float>& b)
 {
     return a.getX() * b.getX() + a.getY() * b.getY();
-}
-
-Vector2D<float> lerp(const Vector2D<float>& a, const Vector2D<float>& b,
-                     float t)
-{
-    return a + (b - a) * t;
 }
 
 /// MonoGame-style AABB: sprite top-left at center - half size must stay inside
@@ -64,7 +58,8 @@ void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
     {
         auto entity = registry.create();
         registry.emplace<TransformComponent>(entity, Vector2D<float>{});
-        registry.emplace<DimensionComponent>(entity, SegmentSize, SegmentSize);
+        registry.emplace<DimensionComponent>(entity, game::kSegmentSize,
+                                             game::kSegmentSize);
         registry.emplace<SpriteComponent>(entity, 0, 0, 0);
         registry.emplace<TextureComponent>(entity, "slime");
         AnimationComponent anim;
@@ -97,11 +92,11 @@ void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
     for (std::size_t i = 0; i < snake.segments.size(); ++i)
     {
         const auto& segment = snake.segments[i];
-        const auto pos = lerp(segment.at, segment.to, snake.movementProgress);
+        const auto pos = game::lerp(segment.at, segment.to, snake.movementProgress);
         auto& transform =
             registry.get<TransformComponent>(segmentEntities[i]).position;
-        transform = Vector2D<float>(pos.getX() - SegmentSize * 0.5f,
-                                    pos.getY() - SegmentSize * 0.5f);
+        transform = Vector2D<float>(pos.getX() - game::kSegmentSize * 0.5f,
+                                    pos.getY() - game::kSegmentSize * 0.5f);
     }
 }
 
@@ -113,9 +108,9 @@ void syncPlayerTransform(entt::registry& registry, entt::entity entity,
         return;
     }
     const auto& head = snake.segments.front();
-    const auto pos = lerp(head.at, head.to, snake.movementProgress);
+    const auto pos = game::lerp(head.at, head.to, snake.movementProgress);
     registry.get<TransformComponent>(entity).position = Vector2D<float>(
-        pos.getX() - SegmentSize * 0.5f, pos.getY() - SegmentSize * 0.5f);
+        pos.getX() - game::kSegmentSize * 0.5f, pos.getY() - game::kSegmentSize * 0.5f);
 }
 
 } // namespace
@@ -210,14 +205,9 @@ void SnakeSystem::run(entt::registry& registry)
                 head.to + snake.nextDirection * snake.stride;
 
             // Die on the last valid floor cell — do not step onto the wall.
-            if (spriteOutsideRoom(nextPos, SegmentSize, state->roomBounds))
+            if (spriteOutsideRoom(nextPos, game::kSegmentSize, state->roomBounds))
             {
-                state->playState = PlayState::GameOver;
-                state->gameOver = true;
-                if (paused != nullptr)
-                {
-                    paused->value = true;
-                }
+                setPlayState(registry, PlayState::GameOver);
                 if (auto* audio = registry.ctx().find<AudioManager>())
                 {
                     audio->playSound("bounce");
@@ -249,14 +239,9 @@ void SnakeSystem::run(entt::registry& registry)
                 for (std::size_t i = 2; i < snake.segments.size(); ++i)
                 {
                     if (segmentsOverlap(headPos, snake.segments[i].to,
-                                        SegmentSize))
+                                        game::kSegmentSize))
                     {
-                        state->playState = PlayState::GameOver;
-                        state->gameOver = true;
-                        if (paused != nullptr)
-                        {
-                            paused->value = true;
-                        }
+                        setPlayState(registry, PlayState::GameOver);
                         if (auto* audio = registry.ctx().find<AudioManager>())
                         {
                             audio->playSound("bounce");
@@ -269,7 +254,7 @@ void SnakeSystem::run(entt::registry& registry)
             }
         }
 
-        if (!state->gameOver)
+        if (state->playState == PlayState::Playing)
         {
             snake.movementProgress =
                 snake.movementTimer / SnakeComponent::movementInterval;

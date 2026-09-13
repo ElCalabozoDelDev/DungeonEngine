@@ -5,6 +5,7 @@
 #include <engine/input/input_state.hpp>
 #include <game/components/player_component.hpp>
 #include <game/components/snake_component.hpp>
+#include <game/rng.hpp>
 #include <game/sim/sim_plugin.hpp>
 #include <game/state.hpp>
 #include <iostream>
@@ -25,6 +26,12 @@ void SimPlugin::mount(de::GameLoop& gameLoop)
     gameLoop.addSetupCallback(
         [this](entt::registry& registry)
         {
+            if (!registry.ctx().contains<GameRng>())
+            {
+                registry.ctx().emplace<GameRng>();
+            }
+            registry.ctx().get<GameRng>().engine.seed(m_options.seed);
+
             m_csv.open(m_options.csvPath);
             if (!m_csv)
             {
@@ -72,8 +79,7 @@ void SimPlugin::mount(de::GameLoop& gameLoop)
             if (const auto* state = registry.ctx().find<GameState>())
             {
                 score = state->score;
-                over =
-                    state->gameOver || state->playState == PlayState::GameOver;
+                over = state->playState == PlayState::GameOver;
             }
             for (auto entity : registry.view<PlayerComponent, SnakeComponent>())
             {

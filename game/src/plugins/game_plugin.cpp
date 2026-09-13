@@ -7,13 +7,16 @@
 #include <engine/scene/scene_system.hpp>
 #include <engine/systems/camera_system.hpp>
 #include <engine/systems/debug_system.hpp>
+#include <game/play_state.hpp>
 #include <game/plugins/game_plugin.hpp>
+#include <game/rng.hpp>
 #include <game/scene/in_game_scene.hpp>
 #include <game/scene/title_scene.hpp>
 #include <game/state.hpp>
 #include <game/systems/bat_system.hpp>
 #include <game/systems/grayscale_fade_system.hpp>
 #include <game/systems/snake_system.hpp>
+#include <game/ui/bitmap_font.hpp>
 #include <memory>
 
 using namespace de;
@@ -48,11 +51,19 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
             registry.ctx().emplace<GameState>();
             registry.ctx().emplace<AudioSettings>();
             registry.ctx().emplace<Paused>();
+            registry.ctx().emplace<GameRng>();
 
             registry.ctx().emplace<SceneSystem&>(*sceneSystem);
             registry.ctx().emplace<DebugSystem&>(*debugSystem);
 
             sceneSystem->setScene(registry, std::make_unique<TitleScene>());
+        });
+
+    // Destroy BMFont textures before SDL tears down the renderer.
+    gameLoop.addTeardownCallback(
+        [](entt::registry& registry)
+        {
+            registry.ctx().erase<game::ui::BitmapFont>();
         });
 
     gameLoop.addFrameBeginCallback(
@@ -61,15 +72,15 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
             auto* scenes = registry.ctx().find<SceneSystem>();
             auto* input = registry.ctx().find<InputState>();
             auto* actions = registry.ctx().find<ActionMap>();
-            auto* paused = registry.ctx().find<Paused>();
             auto* state = registry.ctx().find<GameState>();
             if (scenes == nullptr || input == nullptr || actions == nullptr ||
-                paused == nullptr || state == nullptr)
+                state == nullptr)
             {
                 return;
             }
 
             // Esc toggles pause while playing; UI owns GameOver transitions.
+            // Fixed systems: SnakeSystem then BatSystem (eat after move).
             if (state->playState == PlayState::Playing ||
                 state->playState == PlayState::Paused)
             {
@@ -77,13 +88,11 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
                 {
                     if (state->playState == PlayState::Playing)
                     {
-                        state->playState = PlayState::Paused;
-                        paused->value = true;
+                        setPlayState(registry, PlayState::Paused);
                     }
                     else
                     {
-                        state->playState = PlayState::Playing;
-                        paused->value = false;
+                        setPlayState(registry, PlayState::Playing);
                     }
                 }
             }

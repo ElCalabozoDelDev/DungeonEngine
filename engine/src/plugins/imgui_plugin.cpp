@@ -2,12 +2,11 @@
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_sdlrenderer2.h"
 #include <SDL_render.h>
-#include <engine/core/asset_paths.hpp>
 #include <engine/core/startup_error.hpp>
+#include <engine/graphics/logical_size.hpp>
 #include <engine/graphics/sdl_resources.hpp>
-#include <engine/graphics/ui_fonts.hpp>
+#include <engine/loaders/config.hpp>
 #include <engine/plugins/imgui_plugin.hpp>
-#include <filesystem>
 
 namespace de
 {
@@ -39,24 +38,6 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
             style.AntiAliasedLines = false;
             style.AntiAliasedFill = false;
 
-            UiFonts fonts{};
-            if (const auto* assets = registry.ctx().find<AssetPaths>();
-                assets != nullptr)
-            {
-                const auto fontPath = assets->resolve("fonts/04B_30.ttf");
-                if (std::filesystem::exists(fontPath))
-                {
-                    ImFontConfig cfg;
-                    cfg.PixelSnapH = true;
-                    cfg.OversampleH = 1;
-                    cfg.OversampleV = 1;
-                    // Debug / fallback only — title and game UI use BMFont.
-                    fonts.body = io.Fonts->AddFontFromFileTTF(
-                        fontPath.string().c_str(), 16.0f, &cfg);
-                }
-            }
-            registry.ctx().emplace<UiFonts>(fonts);
-
             ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
             ImGui_ImplSDLRenderer2_Init(renderer);
         });
@@ -66,12 +47,41 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
         {
             ImGui_ImplSDL2_NewFrame();
             ImGui_ImplSDLRenderer2_NewFrame();
+
+            // Widgets author in SDL logical space (320×180). Force ImGui to
+            // match so hit-tests and DisplaySize agree with draw coords.
+            ImGuiIO& io = ImGui::GetIO();
+            const auto [lw, lh] = logicalSize(registry);
+            float mx = 0.0f;
+            float my = 0.0f;
+            if (auto* renderer = registry.ctx().find<MainRenderer>();
+                renderer != nullptr && renderer->get() != nullptr)
+            {
+                SDL_RenderWindowToLogical(renderer->get(),
+                                          static_cast<int>(io.MousePos.x),
+                                          static_cast<int>(io.MousePos.y), &mx,
+                                          &my);
+            }
+            else
+            {
+                const float scale = windowToLogicalScale(registry);
+                mx = io.MousePos.x / scale;
+                my = io.MousePos.y / scale;
+            }
+            io.DisplaySize = ImVec2(lw, lh);
+            io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+            if (io.MousePos.x >= 0.0f && io.MousePos.y >= 0.0f)
+            {
+                io.MousePos = ImVec2(mx, my);
+            }
+
             ImGui::NewFrame();
         });
 
     gameLoop.addTeardownCallback(
         [](entt::registry& registry)
         {
+            (void)registry;
             if (ImGui::GetCurrentContext() == nullptr)
             {
                 return;

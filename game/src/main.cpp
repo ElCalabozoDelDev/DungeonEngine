@@ -27,9 +27,8 @@ struct Options
 
 constexpr std::string_view Usage =
     "Usage: DungeonEngine [--frames N] [--level]\n"
-    "                     [--sim [--sim-out PATH] [--sim-summary PATH]\n"
-    "                            [--sim-steps N] [--sim-seed N]\n"
-    "                            [--sim-require-clear] [--sim-window]]\n";
+    "                     [--sim [--sim-out PATH] [--sim-steps N]\n"
+    "                            [--sim-seed N] [--sim-window]]\n";
 
 Options parseArguments(int argc, char* argv[])
 {
@@ -53,10 +52,6 @@ Options parseArguments(int argc, char* argv[])
         {
             options.simOptions.csvPath = argv[++i];
         }
-        else if (argument == "--sim-summary" && i + 1 < argc)
-        {
-            options.simOptions.summaryPath = argv[++i];
-        }
         else if (argument == "--sim-steps" && i + 1 < argc)
         {
             options.simOptions.maxSteps = std::atoi(argv[++i]);
@@ -65,10 +60,6 @@ Options parseArguments(int argc, char* argv[])
         {
             options.simOptions.seed =
                 static_cast<unsigned int>(std::atoi(argv[++i]));
-        }
-        else if (argument == "--sim-require-clear")
-        {
-            options.simOptions.requireClear = true;
         }
         else if (argument == "--sim-window")
         {
@@ -149,11 +140,6 @@ int main(int argc, char* argv[])
     if (!gameLoop.run() || (sim != nullptr && sim->failed()))
     {
         return 1;
-    }
-
-    if (sim != nullptr && options.simOptions.requireClear && !sim->cleared())
-    {
-        return 2;
     }
     return 0;
 }

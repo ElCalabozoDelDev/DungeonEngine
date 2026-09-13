@@ -8,6 +8,7 @@
 #include <game/components/bat_component.hpp>
 #include <game/components/player_component.hpp>
 #include <game/components/snake_component.hpp>
+#include <game/play_state.hpp>
 #include <game/state.hpp>
 #include <game/systems/bat_system.hpp>
 #include <game/systems/snake_system.hpp>
@@ -102,7 +103,7 @@ TEST_CASE("snake dies on self collision")
     world.step(13);
 
     CHECK(world.state().playState == PlayState::GameOver);
-    CHECK(world.state().gameOver);
+    CHECK(world.registry.ctx().get<Paused>().value);
 }
 
 TEST_CASE("snake dies outside room bounds")
