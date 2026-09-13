@@ -23,30 +23,16 @@ that writes.
 
 ## The conflicts that actually happen
 
-These are the ones worth watching for, because each arrives disguised as an
-improvement:
-
-- **A player attack, enemy health, or a kill counter** — contradicts PILAR-01
-  head-on. The game is about evasion precisely because you cannot fight back.
-- **Smarter enemy pathfinding.** The single most dangerous change in the
-  codebase. The straight-line chase looks like an unfinished AI; it is what makes
-  walls into the player's tool. An enemy that routes around geometry deletes
-  PILAR-03 while looking like a bug fix.
-- **A third HUD indicator.** Erodes PILAR-02 one line at a time. The HUD has
-  hearts and an item count and that is the budget.
-- **A biome that is only a reskin.** PILAR-04 asks each biome to change a rule,
-  not a palette.
+- **Hearts, inventory, or a second HUD meter** — contradicts PILAR-03. The HUD
+  budget is `SCORE` only.
+- **Continuous player movement or free 180° turns** — erodes PILAR-02. The
+  slime ticks on a fixed interval and cannot reverse into itself.
+- **Chase AI or combat against the bat** — contradicts PILAR-01. Bats are food
+  that bounce; difficulty comes from length, not enemies that hunt.
+- **Scrolling camera / follow cam** — the arena is fixed screen-space. A
+  follow camera invents a different game.
 
 ## How to report
 
-Lead with the verdict — *no conflicts*, or the conflicts, most serious first.
-Be specific and short. For each: what the change does, which pillar it hits, and
-what the cheapest alternative would be that does not.
-
-Do not pad a clean review to look thorough, and do not hedge a real conflict into
-vagueness. "This contradicts PILAR-01" is more useful than "this may arguably be
-in some tension with the pillars".
-
-A pillar conflict is **not automatically a rejection**. The user may want to
-change the pillar — that is legitimate and it happens in an ADR. Your job is to
-make sure the trade is visible, not to block it.
+Lead with the verdict (clean / conflicts). List each conflict as
+`path:line — PILAR-0N — one sentence`. No suggested patches unless asked.

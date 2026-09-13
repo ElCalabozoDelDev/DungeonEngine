@@ -27,7 +27,7 @@ find_package(sdl2_image CONFIG REQUIRED)
 find_package(sdl2_mixer CONFIG REQUIRED)
 find_package(entt CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
-find_package(tinyxml2 CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 # LLVM-MinGW links libc++ and libunwind dynamically, so anything it builds
 # needs those DLLs beside it. $<TARGET_RUNTIME_DLLS:...> only covers imported

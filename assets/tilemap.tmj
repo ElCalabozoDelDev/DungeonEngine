@@ -1,0 +1,63 @@
+{
+ "compressionlevel":-1,
+ "height":9,
+ "infinite":false,
+ "layers":[
+        {
+         "data":[1, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 4,
+            5, 6, 6, 7, 6, 6, 7, 6, 6, 7, 6, 6, 7, 6, 6, 8,
+            9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 12,
+            5, 10, 10, 10, 10, 10, 10, 10, 11, 10, 10, 10, 10, 11, 10, 8,
+            9, 10, 11, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 12,
+            5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 8,
+            9, 11, 10, 10, 10, 10, 10, 10, 10, 10, 11, 10, 10, 10, 10, 12,
+            5, 10, 10, 10, 10, 10, 11, 10, 10, 10, 10, 10, 10, 10, 10, 8,
+            13, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 16],
+         "height":9,
+         "id":1,
+         "name":"Bottom",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":16,
+         "x":0,
+         "y":0
+        },
+        {
+         "draworder":"topdown",
+         "id":2,
+         "name":"Objects",
+         "objects":[
+                {
+                 "height":20,
+                 "id":1,
+                 "name":"Player",
+                 "rotation":0,
+                 "type":"Player",
+                 "visible":true,
+                 "width":20,
+                 "x":150,
+                 "y":80
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }],
+ "nextlayerid":3,
+ "nextobjectid":2,
+ "orientation":"orthogonal",
+ "renderorder":"right-down",
+ "tiledversion":"1.12.2",
+ "tileheight":20,
+ "tilesets":[
+        {
+         "firstgid":1,
+         "source":"map.tsj"
+        }],
+ "tilewidth":20,
+ "type":"map",
+ "version":"1.10",
+ "width":16
+}

@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/ElCalabozoDelDev/DungeonEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/ElCalabozoDelDev/DungeonEngine/actions/workflows/ci.yml)
 
-A C++23 + SDL2 boilerplate for 2D games, with a small dungeon crawler as the
-worked example.
+A C++23 + SDL2 boilerplate for 2D games, with **Dungeon Slime** (a grid
+snake that eats bats) as the worked example.
 
 *[Versión en español](README.es.md)*
 
@@ -19,9 +19,10 @@ than someone else's project to unpick.
   system for composing startup, frame and teardown work.
 - **Fixed-timestep loop** — movement and collision advance in fixed steps and
   do not depend on frame rate; rendering follows the frame.
-- **Tiled (`.tmx`) loading**: tile layers, tilesets, object layers.
-- **Camera** with follow, prediction and level-bounds clamping, over a single
-  world-to-screen transform.
+- **Tiled JSON (`.tmj`) loading**: tile layers, external `.tsj` tilesets,
+  object layers. Startup config is `assets/game.json` (no XML).
+- **Camera** helpers for games that need them; Dungeon Slime draws a fixed
+  arena in logical 320×180 scaled to 1280×720 (no follow cam).
 - **Quadtree spatial index** per layer, kept correct for moving entities.
 - **Input** as named actions with rebindable keys, not scancodes in systems.
 - **Dear ImGui** integration, an entity inspector, and a hook-based widget

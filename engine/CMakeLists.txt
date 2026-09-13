@@ -16,7 +16,7 @@ add_library(engine STATIC
     src/graphics/render_overlay.cpp
     src/graphics/texture_cache.cpp
     src/loaders/config_loader.cpp
-    src/loaders/tmx_loader.cpp
+    src/loaders/tiled_loader.cpp
     src/plugins/audio_plugin.cpp
     src/plugins/base_plugin.cpp
     src/plugins/imgui_plugin.cpp
@@ -38,7 +38,7 @@ target_include_directories(engine PUBLIC
 )
 
 # PUBLIC: these appear in engine's public headers (SDL types, entt::registry,
-# tinyxml2::XMLElement in tmx_loader.hpp, the imgui backends via debug.hpp).
+# nlohmann::json in tiled_loader, the imgui backends via debug.hpp).
 target_link_libraries(engine PUBLIC
     third_party
     SDL2::SDL2
@@ -46,5 +46,5 @@ target_link_libraries(engine PUBLIC
     SDL2_mixer::SDL2_mixer
     EnTT::EnTT
     imgui::imgui
-    tinyxml2::tinyxml2
+    nlohmann_json::nlohmann_json
 )

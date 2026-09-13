@@ -1,0 +1,14 @@
+{
+  "title": "Dungeon Slime",
+  "fullScreen": false,
+  "screenWidth": 1280,
+  "screenHeight": 720,
+  "frameRate": 60,
+  "vsync": true,
+  "debug": false,
+  "logicalWidth": 320,
+  "logicalHeight": 180,
+  "levels": {
+    "arena": "tilemap.tmj"
+  }
+}

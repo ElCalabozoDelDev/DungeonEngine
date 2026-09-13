@@ -53,8 +53,8 @@ CMake targets, in dependency order:
 | Target | Contents |
 |---|---|
 | `third_party` | Vendored sources (imgui SDL2 backends, base64). Headers exposed as `SYSTEM` so its warnings don't leak. |
-| `engine` | The reusable 2D engine: game loop, plugin/hook system, SDL + ImGui integration, texture manager, TMX loading, rendering, camera, quadtree, scenes, widget layer. |
-| `game_lib` | The example game as a library: components, systems, scenes, HUD. |
+| `engine` | The reusable 2D engine: game loop, plugin/hook system, SDL + ImGui integration, texture manager, Tiled JSON (`.tmj`) loading, rendering, camera, quadtree, scenes, widget layer. |
+| `game_lib` | The example game (Dungeon Slime) as a library: snake/bat systems, scenes, HUD. |
 | `game` | Just `main()`. Links `game_lib`; binary is named `DungeonEngine`. |
 | `tests` | doctest unit tests, linking `game_lib`. |
 
@@ -62,9 +62,8 @@ CMake targets, in dependency order:
 `game/include` on its include path, so `#include <game/...>` from engine
 code is a compile error — that's the enforcement mechanism, not
 convention. When something in the engine needs game knowledge, invert it:
-the TMX loader records Tiled's `type` string in `de::ObjectTypeComponent`
-and `InGameScene::tagObjectsByType` turns `"Player"` into a
-`PlayerComponent`.
+the Tiled loader records Tiled's `type` string in `de::ObjectTypeComponent`
+and `InGameScene` turns `"Player"` into the slime snake head.
 
 Splitting rule for new code: if it names a gameplay component, it belongs
 in `game/`.
@@ -84,10 +83,11 @@ in `game/`.
 ## Design documents
 
 `docs/design/` is the source of truth for *game design* — pillars, core
-loop, systems, biomes, levels, balance, ADRs. It is written in
-**Spanish**; code, comments and agent tooling stay in English. This file
-and the READMEs remain the technical reference; design docs never
-document the engine.
+loop, systems, levels, balance, ADRs. It is written in **Spanish**; code,
+comments and agent tooling stay in English. This file and the READMEs
+remain the technical reference; design docs never document the engine.
+The worked example is **Dungeon Slime** (grid snake); config is
+`assets/game.json`, maps are `.tmj`.
 
 Each document declares an `estado` (`implementado`, `parcial`,
 `propuesto`, `descartado`) and a `codigo:` list of the files that
@@ -113,9 +113,9 @@ DungeonEngine --sim --sim-out sim.csv
 ```
 
 Two runs with the same flags must produce **byte-identical CSVs**; that
-diff is the acceptance test for the whole feature. The policy paths
-perfectly and dodges nothing, so its numbers are a floor on difficulty,
-never a verdict on feel.
+diff is the acceptance test for the whole feature. The policy always
+turns right and dodges nothing, so its numbers (`score`, `length`,
+`steps_alive`) are a floor on difficulty, never a verdict on feel.
 
 ## Code style
 

@@ -22,12 +22,13 @@ private:
 
     static void fail(entt::registry& registry, const std::string& reason);
     void tagObjectsByType(entt::registry& registry);
+    void spawnSnake(entt::registry& registry, float x, float y);
+    void spawnBat(entt::registry& registry);
     void initializeQuadtrees(entt::registry& registry, float mapWidth,
                              float mapHeight);
     void populateTileQuadtree(entt::registry& registry);
     void populateSpriteQuadtree(entt::registry& registry);
-    void initializeCamera(entt::registry& registry, int mapWidth, int mapHeight,
-                          const de::Config& config);
+    void initializeCamera(entt::registry& registry, const de::Config& config);
     void initializeRenderers(entt::registry& registry);
     void initializeHud(entt::registry& registry);
     void initializeDebug(entt::registry& registry, bool open);

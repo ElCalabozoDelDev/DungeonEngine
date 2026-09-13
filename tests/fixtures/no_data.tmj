@@ -1,0 +1,17 @@
+{
+ "height":2,
+ "layers":[
+        {
+         "data":[1,1],
+         "height":2,
+         "name":"Bottom",
+         "type":"tilelayer",
+         "width":2
+        }],
+ "orientation":"orthogonal",
+ "tileheight":16,
+ "tilesets":[],
+ "tilewidth":16,
+ "type":"map",
+ "width":2
+}

@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/ElCalabozoDelDev/DungeonEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/ElCalabozoDelDev/DungeonEngine/actions/workflows/ci.yml)
 
-Boilerplate de C++23 + SDL2 para juegos 2D, con un pequeño dungeon crawler como
-ejemplo trabajado.
+Boilerplate de C++23 + SDL2 para juegos 2D, con **Dungeon Slime** (snake de
+grilla que come murciélagos) como ejemplo trabajado.
 
 *[English version](README.md)*
 
@@ -19,7 +19,10 @@ lugar del proyecto de otro que hay que desenredar.
   plugins y hooks para componer el arranque, el frame y el cierre.
 - **Bucle de paso fijo** — el movimiento y las colisiones avanzan en pasos
   fijos y no dependen de los FPS; el render sigue al frame.
-- **Carga de Tiled (`.tmx`)**: capas de tiles, tilesets y capas de objetos.
+- **Carga de Tiled JSON (`.tmj`)**: capas de tiles, tilesets `.tsj` y objetos.
+  Arranque vía `assets/game.json` (sin XML).
+- **Cámara** disponible en el motor; Dungeon Slime usa arena fija 320×180
+  lógica escalada a 1280×720 (sin follow).
 - **Cámara** con seguimiento, predicción y tope a los límites del nivel, sobre
   una única transformación mundo→pantalla.
 - **Índice espacial** (quadtree) por capa, correcto también para entidades que

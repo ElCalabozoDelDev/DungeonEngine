@@ -1,25 +1,22 @@
 #include <doctest/doctest.h>
 #include <engine/components/dimension_component.hpp>
-#include <engine/components/solid_body_component.hpp>
 #include <engine/components/transform_component.hpp>
 #include <engine/components/velocity_component.hpp>
 #include <engine/core/delta_time.hpp>
-#include <engine/spatial/spatial_index.hpp>
-#include <engine/systems/collision_system.hpp>
-#include <game/components/enemy_component.hpp>
-#include <game/components/health_component.hpp>
-#include <game/components/item_component.hpp>
+#include <engine/core/paused.hpp>
+#include <engine/input/action_map.hpp>
+#include <engine/input/input_state.hpp>
+#include <game/components/bat_component.hpp>
 #include <game/components/player_component.hpp>
+#include <game/components/snake_component.hpp>
 #include <game/state.hpp>
-#include <game/systems/combat_system.hpp>
-#include <game/systems/enemy_ai_system.hpp>
+#include <game/systems/bat_system.hpp>
+#include <game/systems/snake_system.hpp>
 
 using namespace de;
 
 namespace
 {
-/// A registry with the context the gameplay systems read, and a spatial index
-/// over a small world. No window, no SDL: these systems only touch components.
 struct World
 {
     entt::registry registry;
@@ -28,188 +25,115 @@ struct World
     {
         registry.ctx().emplace<DeltaTime>(
             DeltaTime{1.0f / 60.0f, 1.0f / 60.0f, 0.0f, 0.0});
-        registry.ctx().emplace<GameState>();
+        registry.ctx().emplace<Paused>();
+        auto& state = registry.ctx().emplace<GameState>();
+        state.roomBounds = Rectangle{20.0f, 20.0f, 280.0f, 140.0f};
+        state.playState = PlayState::Playing;
 
-        auto& spatial = registry.ctx().emplace<SpatialIndex>();
-        auto getBox = [this](const entt::entity& entity)
-        {
-            const auto& t = registry.get<TransformComponent>(entity);
-            const auto& d = registry.get<DimensionComponent>(entity);
-            return Box<float>(t.position.getX(), t.position.getY(), d.width,
-                              d.height);
-        };
-        const Box<float> bounds(0, 0, 512, 512);
-        spatial.create(Layer::Collision, getBox, bounds);
-        spatial.create(Layer::Overlay, getBox, bounds);
-        spatial.create(Layer::Object, getBox, bounds);
+        registry.ctx().emplace<InputState>();
+        registry.ctx().emplace<ActionMap>();
     }
 
-    SpatialIndex& spatial() { return registry.ctx().get<SpatialIndex>(); }
     GameState& state() { return registry.ctx().get<GameState>(); }
 
-    entt::entity spawn(float x, float y)
+    entt::entity spawnSnake(float x, float y, int segments = 3)
     {
         auto entity = registry.create();
-        registry.emplace<TransformComponent>(entity, Vector2D<float>(x, y));
-        registry.emplace<DimensionComponent>(entity, 16.0f, 16.0f);
-        registry.emplace<VelocityComponent>(entity, Vector2D<float>(0, 0));
-        return entity;
-    }
-
-    entt::entity spawnPlayer(float x, float y)
-    {
-        auto entity = spawn(x, y);
         registry.emplace<PlayerComponent>(entity);
-        registry.emplace<HealthComponent>(entity);
-        registry.emplace<SolidBodyComponent>(entity);
-        spatial().insert(Layer::Object, entity);
+        SnakeComponent snake;
+        snake.stride = 16.0f;
+        for (int i = 0; i < segments; ++i)
+        {
+            SlimeSegment segment;
+            segment.at = Vector2D<float>(x - static_cast<float>(i) * 16.0f, y);
+            segment.to = segment.at;
+            segment.direction = Vector2D<float>(1.0f, 0.0f);
+            snake.segments.push_back(segment);
+        }
+        snake.nextDirection = Vector2D<float>(1.0f, 0.0f);
+        registry.emplace<SnakeComponent>(entity, snake);
+        registry.emplace<TransformComponent>(
+            entity, Vector2D<float>(x - 8.0f, y - 8.0f));
+        registry.emplace<DimensionComponent>(entity, 16.0f, 16.0f);
         return entity;
     }
 
-    Vector2D<float> positionOf(entt::entity entity)
+    void step(int times = 1)
     {
-        return registry.get<TransformComponent>(entity).position;
+        SnakeSystem snake;
+        BatSystem bat;
+        for (int i = 0; i < times; ++i)
+        {
+            snake.run(registry);
+            bat.run(registry);
+        }
     }
 };
 
 } // namespace
 
-TEST_CASE("a solid body is pushed out of a wall")
+TEST_CASE("snake grows when pendingGrowth is set")
 {
     World world;
+    auto entity = world.spawnSnake(100.0f, 80.0f, 2);
+    auto& snake = world.registry.get<SnakeComponent>(entity);
+    snake.pendingGrowth = 1;
 
-    auto wall = world.spawn(100, 100);
-    world.spatial().insert(Layer::Collision, wall);
+    // Advance past one movement interval (0.2s at 60Hz ≈ 12 steps).
+    world.step(13);
 
-    // Overlapping the wall by 6px on X, aligned on Y.
-    auto player = world.spawnPlayer(94, 100);
-
-    CollisionSystem collision;
-    collision.run(world.registry);
-
-    SUBCASE("along the axis of least overlap")
-    {
-        CHECK(world.positionOf(player).getX() <= 84.0f + 0.001f);
-    }
-
-    SUBCASE("and not along the other one")
-    {
-        CHECK(world.positionOf(player).getY() == doctest::Approx(100.0f));
-    }
+    CHECK(snake.segments.size() == 3);
 }
 
-TEST_CASE("an entity with no SolidBodyComponent passes through")
+TEST_CASE("snake dies on self collision")
 {
     World world;
-    auto wall = world.spawn(100, 100);
-    world.spatial().insert(Layer::Collision, wall);
+    auto entity = world.spawnSnake(100.0f, 80.0f, 4);
+    auto& snake = world.registry.get<SnakeComponent>(entity);
 
-    auto ghost = world.spawn(94, 100);
-    const auto before = world.positionOf(ghost);
+    // U-turn fold: keep the tail so the new head lands on it.
+    snake.pendingGrowth = 1;
+    snake.segments[0].to = Vector2D<float>(100.0f, 80.0f);
+    snake.segments[1].to = Vector2D<float>(84.0f, 80.0f);
+    snake.segments[2].to = Vector2D<float>(84.0f, 96.0f);
+    snake.segments[3].to = Vector2D<float>(100.0f, 96.0f);
+    snake.segments[0].direction = Vector2D<float>(0.0f, 1.0f);
+    snake.nextDirection = Vector2D<float>(0.0f, 1.0f);
 
-    CollisionSystem collision;
-    collision.run(world.registry);
+    world.step(13);
 
-    CHECK(world.positionOf(ghost).getX() == doctest::Approx(before.getX()));
-}
-
-TEST_CASE("enemies chase the player only within range")
-{
-    World world;
-    auto player = world.spawnPlayer(100, 100);
-    (void)player;
-
-    auto near = world.spawn(130, 100);
-    world.registry.emplace<EnemyComponent>(near);
-
-    auto far = world.spawn(460, 460);
-    world.registry.emplace<EnemyComponent>(far);
-
-    EnemyAISystem ai;
-    ai.run(world.registry);
-
-    const auto nearVelocity =
-        world.registry.get<VelocityComponent>(near).velocity;
-    const auto farVelocity =
-        world.registry.get<VelocityComponent>(far).velocity;
-
-    CHECK(nearVelocity.length() > 1.0f);
-    CHECK(nearVelocity.getX() < 0.0f); // the player is to its left
-    CHECK(farVelocity.length() == doctest::Approx(0.0f));
-}
-
-TEST_CASE("contact damage respects its cooldown")
-{
-    World world;
-    auto player = world.spawnPlayer(100, 100);
-    auto enemy = world.spawn(100, 100); // exactly on top of the player
-    world.registry.emplace<EnemyComponent>(enemy);
-
-    CombatSystem combat;
-    const int startingHealth =
-        world.registry.get<HealthComponent>(player).current;
-
-    combat.run(world.registry);
-    CHECK(world.registry.get<HealthComponent>(player).current ==
-          startingHealth - 1);
-
-    SUBCASE("no second hit while still invulnerable")
-    {
-        combat.run(world.registry);
-        CHECK(world.registry.get<HealthComponent>(player).current ==
-              startingHealth - 1);
-    }
-
-    SUBCASE("hit again once the cooldown expires")
-    {
-        // The cooldown is one second; each run advances one fixed step.
-        for (int i = 0; i < 70; ++i)
-        {
-            combat.run(world.registry);
-        }
-        CHECK(world.registry.get<HealthComponent>(player).current <
-              startingHealth - 1);
-    }
-}
-
-TEST_CASE("an item is collected, destroyed, and removed from the index")
-{
-    World world;
-    auto player = world.spawnPlayer(100, 100);
-    (void)player;
-
-    auto item = world.spawn(100, 100);
-    world.registry.emplace<ItemComponent>(item);
-    world.spatial().insert(Layer::Object, item);
-    world.state().itemsTotal = 1;
-
-    CombatSystem combat;
-    combat.run(world.registry);
-
-    CHECK(world.state().itemsCollected == 1);
-    CHECK_FALSE(world.registry.valid(item));
-
-    SUBCASE("the index does not keep a handle to the destroyed entity")
-    {
-        const auto hits =
-            world.spatial().query(Layer::Object, Box<float>(96, 96, 24, 24));
-        CHECK(std::find(hits.begin(), hits.end(), item) == hits.end());
-    }
-}
-
-TEST_CASE("running out of health raises game over")
-{
-    World world;
-    auto player = world.spawnPlayer(100, 100);
-    auto enemy = world.spawn(100, 100);
-    world.registry.emplace<EnemyComponent>(enemy);
-
-    auto& health = world.registry.get<HealthComponent>(player);
-    health.current = 1;
-
-    CombatSystem combat;
-    combat.run(world.registry);
-
-    CHECK(health.current == 0); // floors, does not go negative
+    CHECK(world.state().playState == PlayState::GameOver);
     CHECK(world.state().gameOver);
+}
+
+TEST_CASE("snake dies outside room bounds")
+{
+    World world;
+    auto entity = world.spawnSnake(290.0f, 80.0f, 1);
+    auto& snake = world.registry.get<SnakeComponent>(entity);
+    snake.nextDirection = Vector2D<float>(1.0f, 0.0f);
+
+    world.step(13);
+
+    CHECK(world.state().playState == PlayState::GameOver);
+}
+
+TEST_CASE("eating a bat grows the snake and awards score")
+{
+    World world;
+    auto snakeEntity = world.spawnSnake(100.0f, 80.0f, 2);
+    auto& snake = world.registry.get<SnakeComponent>(snakeEntity);
+
+    auto bat = world.registry.create();
+    world.registry.emplace<BatComponent>(bat);
+    world.registry.emplace<TransformComponent>(bat,
+                                               Vector2D<float>(92.0f, 72.0f));
+    world.registry.emplace<DimensionComponent>(bat, 16.0f, 16.0f);
+    world.registry.emplace<VelocityComponent>(bat, Vector2D<float>(0, 0));
+
+    BatSystem batSystem;
+    batSystem.run(world.registry);
+
+    CHECK(snake.pendingGrowth == 1);
+    CHECK(world.state().score == SnakeComponent::scorePerBat);
 }

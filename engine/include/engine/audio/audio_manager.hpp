@@ -8,11 +8,10 @@
 
 namespace de
 {
-/// Owns the loaded sound effects and the mixer device.
+/// Owns loaded sound effects, optional music, and the mixer device.
 ///
-/// Lives in the registry context and frees its chunks in the destructor, the
-/// same ownership story as TextureCache. SDL2_mixer was linked from the start
-/// and never used.
+/// Lives in the registry context and frees its chunks / music in the
+/// destructor, the same ownership story as TextureCache.
 class AudioManager
 {
 public:
@@ -24,27 +23,44 @@ public:
     AudioManager(AudioManager&& other) noexcept;
     AudioManager& operator=(AudioManager&& other) noexcept;
 
-    /// Opens the mixer device. Returns an error message on failure; audio is
-    /// not worth aborting startup over, so callers usually just report it and
-    /// carry on muted.
+    /// Opens the mixer device. Returns false on failure; audio is not worth
+    /// aborting startup over, so callers usually report it and carry on muted.
     bool open(std::string* error = nullptr);
 
     bool isOpen() const { return m_open; }
 
-    /// Loads a WAV under `id`, replacing anything already there.
+    /// Loads a WAV (or other Mix_LoadWAV format) under `id`.
     bool loadSound(std::string_view id, const std::string& fileName);
 
-    /// Plays a previously loaded sound. Unknown ids and a closed device are
-    /// no-ops.
-    void playSound(std::string_view id, int volumePercent = 100) const;
+    /// Loads streaming music (e.g. OGG) under `id`.
+    bool loadMusic(std::string_view id, const std::string& fileName);
+
+    /// Plays a previously loaded sound using the current SFX volume.
+    void playSound(std::string_view id) const;
+
+    /// Plays previously loaded music. `loop` true means infinite loop.
+    void playMusic(std::string_view id, bool loop = true);
+
+    void stopMusic();
+
+    /// 0–100. Applied to subsequent SFX plays and Mix_VolumeMusic.
+    void setSfxVolume(int percent);
+    void setMusicVolume(int percent);
+
+    int sfxVolume() const { return m_sfxVolume; }
+    int musicVolume() const { return m_musicVolume; }
 
     void clear();
 
 private:
     void destroyAll() noexcept;
+    static int clampPercent(int percent);
 
     bool m_open = false;
+    int m_sfxVolume = 100;
+    int m_musicVolume = 100;
     std::map<std::string, Mix_Chunk*, std::less<>> m_sounds;
+    std::map<std::string, Mix_Music*, std::less<>> m_music;
 };
 
 } // namespace de

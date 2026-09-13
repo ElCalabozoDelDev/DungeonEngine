@@ -1,71 +1,19 @@
-# Documentos de diseño
+# Diseño — Dungeon Slime
 
-Esta carpeta es la **fuente de verdad de diseño** de DungeonEngine. El código
-dice *cómo* funciona el juego; esto dice *por qué* es así y qué se pretende que
-sea.
+Fuente de verdad del *diseño* del juego ejemplo. El código, los comentarios y
+el tooling de agentes están en inglés; estos documentos, en español.
 
-`README.md` y `AGENTS.md` en la raíz siguen siendo la referencia técnica: build,
-arquitectura, convenciones (`CLAUDE.md` solo apunta a eso para Claude Code).
-Aquí no se documenta el engine, se documenta el juego.
+Dungeon Slime es un snake temático: el jugador controla una cadena de slimes
+que crece al comer murciélagos. La jugabilidad sigue el tutorial
+[Building 2D Games with MonoGame](https://docs.monogame.net/articles/tutorials/building_2d_games/index.html);
+la implementación usa el ECS de este repositorio, no GameObjects.
 
-## Cómo leerlo
-
-| Carpeta | Contiene |
+| Documento | Contenido |
 |---|---|
-| `00-pilares.md` | Los pilares. El filtro para decir que no. |
-| `10-core-loop.md` | El minuto a minuto de una partida. |
-| `20-sistemas/` | Un documento por sistema de gameplay, espejo de `game/src/systems/`. |
-| `30-biomas/` | Los cuatro temas visuales y qué promete cada uno. |
-| `40-niveles/` | La intención de cada nivel, antes y después del `.tmx`. |
-| `50-balance/` | La tabla canónica de números. |
-| `90-decisiones/` | ADRs: qué se descartó y por qué. |
-| `_plantillas/` | Plantillas para documentos nuevos. |
-
-## Qué es normativo y qué no
-
-Cada documento declara un `estado` en su front-matter:
-
-| `estado` | Significa |
-|---|---|
-| `implementado` | Está en el código y el documento lo describe con fidelidad. |
-| `parcial` | Parte está en el código; el documento marca explícitamente qué falta. |
-| `propuesto` | No existe en el código. Es intención, no descripción. |
-| `descartado` | Se consideró y se rechazó. Se conserva con el porqué. |
-
-**Solo `implementado` y `parcial` describen el juego que existe.** Todo lo demás
-es material de trabajo. Si lees un documento y quieres saber si es real, mira el
-`estado` antes que el texto.
-
-## Front-matter obligatorio
-
-```yaml
----
-id: SYS-CMB
-titulo: Combate
-estado: implementado
-pilares: [PILAR-01, PILAR-02]
-codigo:
-  - game/src/systems/combat_system.cpp
-  - game/include/game/components/health_component.hpp
----
-```
-
-- `id` — único en todo el árbol. Es cómo se enlaza y cómo se referencia desde el
-  código y desde los commits.
-- `codigo` — los archivos que implementan lo que describe el documento. Es lo que
-  permite detectar automáticamente cuándo el código avanzó y el documento no.
-  Documentos `propuesto` llevan la lista vacía.
-
-Los enlaces entre documentos se escriben `[[SYS-CMB]]`, con el `id`, no con la
-ruta: los archivos se mueven, los ids no.
-
-## Reglas
-
-1. **Si tocas un sistema, actualiza su documento en el mismo cambio.** Un hook
-   te lo recuerda, pero no te obliga.
-2. **Si cambias un número de balance**, cambia los tres sitios:
-   el default del componente, `tests/test_balance.cpp` y
-   [[BAL-01]]. El test existe para que no se te olvide.
-3. **Si una idea no cabe en un pilar, no cabe en el juego.** Ese es el trabajo de
-   `00-pilares.md`; si te descubres peleando con él, discute el pilar en un ADR
-   en vez de ignorarlo.
+| [00-pilares.md](00-pilares.md) | Principios cerrados |
+| [10-core-loop.md](10-core-loop.md) | Cómo se juega una partida |
+| [20-sistemas/](20-sistemas/) | Un sistema por archivo |
+| [40-niveles/](40-niveles/) | Intención del arena |
+| [50-balance/tablas.md](50-balance/tablas.md) | Números pinneados |
+| [90-decisiones/](90-decisiones/) | ADRs |
+| [_plantillas/](_plantillas/) | Plantillas para documentos nuevos |
