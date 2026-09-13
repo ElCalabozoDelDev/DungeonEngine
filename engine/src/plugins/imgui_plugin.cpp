@@ -57,10 +57,9 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
             if (auto* renderer = registry.ctx().find<MainRenderer>();
                 renderer != nullptr && renderer->get() != nullptr)
             {
-                SDL_RenderWindowToLogical(renderer->get(),
-                                          static_cast<int>(io.MousePos.x),
-                                          static_cast<int>(io.MousePos.y), &mx,
-                                          &my);
+                SDL_RenderWindowToLogical(
+                    renderer->get(), static_cast<int>(io.MousePos.x),
+                    static_cast<int>(io.MousePos.y), &mx, &my);
             }
             else
             {

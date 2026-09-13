@@ -51,11 +51,10 @@ void drawPauseLikePanel(entt::registry& registry, ImDrawList* draw,
     const ImVec2 panel1(panel0.x + panelW, panel0.y + panelH);
     game::ui::drawPanel(registry, draw, panel0, panel1);
 
-    game::ui::drawText(
-        registry, draw,
-        ImVec2(panel0.x + game::ui::kPauseTitleInset,
-               panel0.y + game::ui::kPauseTitleInset),
-        title, game::ui::kFontPanelTitle, IM_COL32_WHITE);
+    game::ui::drawText(registry, draw,
+                       ImVec2(panel0.x + game::ui::kPauseTitleInset,
+                              panel0.y + game::ui::kPauseTitleInset),
+                       title, game::ui::kFontPanelTitle, IM_COL32_WHITE);
 
     const ImVec2 leftSize = game::ui::buttonSizeForLabel(registry, leftLabel);
     const ImVec2 rightSize = game::ui::buttonSizeForLabel(registry, rightLabel);
@@ -75,8 +74,8 @@ void drawPauseLikePanel(entt::registry& registry, ImDrawList* draw,
         ImVec2(right0.x + rightSize.x, right0.y + rightSize.y), rightLabel,
         game::ui::kFontButton, game::ui::kButtonTextColor);
 
-    leftActivated =
-        game::ui::hitButton(leftLabel, left0, leftSize) || (confirm && focus == 0);
+    leftActivated = game::ui::hitButton(leftLabel, left0, leftSize) ||
+                    (confirm && focus == 0);
     rightActivated = game::ui::hitButton(rightLabel, right0, rightSize) ||
                      (confirm && focus == 1);
 }

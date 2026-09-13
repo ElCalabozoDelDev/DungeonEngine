@@ -84,8 +84,7 @@ bool WorldColorGradePass::gradeCurrentTarget(SDL_Renderer* renderer,
         return false;
     }
     applyLuminanceGrade(m_pixels.data(), m_w * m_h, colorAmount);
-    return SDL_UpdateTexture(m_present, nullptr, m_pixels.data(), m_w * 4) ==
-           0;
+    return SDL_UpdateTexture(m_present, nullptr, m_pixels.data(), m_w * 4) == 0;
 }
 
 void WorldColorGradePass::present(SDL_Renderer* renderer) const

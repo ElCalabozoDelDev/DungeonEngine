@@ -21,8 +21,7 @@ void setPlayState(entt::registry& registry, PlayState next)
 void resetRunPresentation(entt::registry& registry)
 {
     setPlayState(registry, PlayState::Playing);
-    if (auto* grade = registry.ctx().find<WorldColorGrade>();
-        grade != nullptr)
+    if (auto* grade = registry.ctx().find<WorldColorGrade>(); grade != nullptr)
     {
         grade->colorAmount = 1.0f;
     }

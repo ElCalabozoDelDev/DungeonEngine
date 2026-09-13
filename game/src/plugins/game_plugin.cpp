@@ -62,9 +62,7 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
     // Destroy BMFont textures before SDL tears down the renderer.
     gameLoop.addTeardownCallback(
         [](entt::registry& registry)
-        {
-            registry.ctx().erase<game::ui::BitmapFont>();
-        });
+        { registry.ctx().erase<game::ui::BitmapFont>(); });
 
     gameLoop.addFrameBeginCallback(
         [](entt::registry& registry)

@@ -89,15 +89,15 @@ void OptionsWidget::render(entt::registry& registry, de::gui::Hooks& h)
         }
     }
 
-    game::ui::drawText(registry, draw,
-                       ImVec2(game::ui::kOptionsLabelX, game::ui::kOptionsLabelY),
-                       "OPTIONS", game::ui::kFontPanelTitle, IM_COL32_WHITE);
+    game::ui::drawText(
+        registry, draw,
+        ImVec2(game::ui::kOptionsLabelX, game::ui::kOptionsLabelY), "OPTIONS",
+        game::ui::kFontPanelTitle, IM_COL32_WHITE);
 
     const float sliderX = (canvas.x - game::ui::kSliderPanelW) * 0.5f;
-    game::ui::drawOptionsSlider(registry, draw,
-                                ImVec2(sliderX, game::ui::kOptionsMusicY),
-                                "MUSIC", settings.musicPercent / 100.0f,
-                                focus == 0);
+    game::ui::drawOptionsSlider(
+        registry, draw, ImVec2(sliderX, game::ui::kOptionsMusicY), "MUSIC",
+        settings.musicPercent / 100.0f, focus == 0);
     game::ui::drawOptionsSlider(registry, draw,
                                 ImVec2(sliderX, game::ui::kOptionsSfxY), "SFX",
                                 settings.sfxPercent / 100.0f, focus == 1);

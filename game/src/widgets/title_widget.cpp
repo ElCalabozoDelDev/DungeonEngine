@@ -38,9 +38,8 @@ void TitleWidget::render(entt::registry& registry, de::gui::Hooks& h)
             const ImVec2 topLeft(std::floor(center.x - size.x * 0.5f),
                                  std::floor(center.y - size.y * 0.5f));
             const ImVec2 shadow = game::ui::kTitleShadowOffset;
-            bm->draw(draw,
-                     ImVec2(topLeft.x + shadow.x, topLeft.y + shadow.y), text,
-                     game::ui::kFontTitle, game::ui::kTitleShadow);
+            bm->draw(draw, ImVec2(topLeft.x + shadow.x, topLeft.y + shadow.y),
+                     text, game::ui::kFontTitle, game::ui::kTitleShadow);
             bm->draw(draw, topLeft, text, game::ui::kFontTitle, IM_COL32_WHITE);
         };
         drawTitle("Dungeon", game::ui::kTitleDungeonCenter);
@@ -74,24 +73,22 @@ void TitleWidget::render(entt::registry& registry, de::gui::Hooks& h)
         game::ui::buttonSizeForLabel(registry, "Options");
     const ImVec2 start0(game::ui::kTitleButtonMarginX,
                         canvas.y - game::ui::kTitleButtonMarginY - startSize.y);
-    const ImVec2 options0(canvas.x - game::ui::kTitleButtonMarginX - optionsSize.x,
-                          canvas.y - game::ui::kTitleButtonMarginY -
-                              optionsSize.y);
+    const ImVec2 options0(
+        canvas.x - game::ui::kTitleButtonMarginX - optionsSize.x,
+        canvas.y - game::ui::kTitleButtonMarginY - optionsSize.y);
 
     game::ui::drawButton(registry, draw, start0, startSize, focus == 0,
                          elapsed);
-    game::ui::drawCenteredText(registry, draw, start0,
-                               ImVec2(start0.x + startSize.x,
-                                      start0.y + startSize.y),
-                               "Start", game::ui::kFontButton,
-                               game::ui::kButtonTextColor);
+    game::ui::drawCenteredText(
+        registry, draw, start0,
+        ImVec2(start0.x + startSize.x, start0.y + startSize.y), "Start",
+        game::ui::kFontButton, game::ui::kButtonTextColor);
     game::ui::drawButton(registry, draw, options0, optionsSize, focus == 1,
                          elapsed);
-    game::ui::drawCenteredText(registry, draw, options0,
-                               ImVec2(options0.x + optionsSize.x,
-                                      options0.y + optionsSize.y),
-                               "Options", game::ui::kFontButton,
-                               game::ui::kButtonTextColor);
+    game::ui::drawCenteredText(
+        registry, draw, options0,
+        ImVec2(options0.x + optionsSize.x, options0.y + optionsSize.y),
+        "Options", game::ui::kFontButton, game::ui::kButtonTextColor);
 
     const bool confirm = input != nullptr && actions != nullptr &&
                          actions->wasPressedRaw(*input, "confirm");

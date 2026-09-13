@@ -92,7 +92,8 @@ void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
     for (std::size_t i = 0; i < snake.segments.size(); ++i)
     {
         const auto& segment = snake.segments[i];
-        const auto pos = game::lerp(segment.at, segment.to, snake.movementProgress);
+        const auto pos =
+            game::lerp(segment.at, segment.to, snake.movementProgress);
         auto& transform =
             registry.get<TransformComponent>(segmentEntities[i]).position;
         transform = Vector2D<float>(pos.getX() - game::kSegmentSize * 0.5f,
@@ -109,8 +110,9 @@ void syncPlayerTransform(entt::registry& registry, entt::entity entity,
     }
     const auto& head = snake.segments.front();
     const auto pos = game::lerp(head.at, head.to, snake.movementProgress);
-    registry.get<TransformComponent>(entity).position = Vector2D<float>(
-        pos.getX() - game::kSegmentSize * 0.5f, pos.getY() - game::kSegmentSize * 0.5f);
+    registry.get<TransformComponent>(entity).position =
+        Vector2D<float>(pos.getX() - game::kSegmentSize * 0.5f,
+                        pos.getY() - game::kSegmentSize * 0.5f);
 }
 
 } // namespace
@@ -205,7 +207,8 @@ void SnakeSystem::run(entt::registry& registry)
                 head.to + snake.nextDirection * snake.stride;
 
             // Die on the last valid floor cell — do not step onto the wall.
-            if (spriteOutsideRoom(nextPos, game::kSegmentSize, state->roomBounds))
+            if (spriteOutsideRoom(nextPos, game::kSegmentSize,
+                                  state->roomBounds))
             {
                 setPlayState(registry, PlayState::GameOver);
                 if (auto* audio = registry.ctx().find<AudioManager>())

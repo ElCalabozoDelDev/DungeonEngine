@@ -249,11 +249,9 @@ void InGameScene::spawnBat(entt::registry& registry)
     }
     auto& rng = registry.ctx().get<GameRng>().engine;
     std::uniform_real_distribution<float> dx(
-        state.roomBounds.left(),
-        state.roomBounds.right() - game::kSegmentSize);
+        state.roomBounds.left(), state.roomBounds.right() - game::kSegmentSize);
     std::uniform_real_distribution<float> dy(
-        state.roomBounds.top(),
-        state.roomBounds.bottom() - game::kSegmentSize);
+        state.roomBounds.top(), state.roomBounds.bottom() - game::kSegmentSize);
     std::uniform_real_distribution<float> angleDist(
         0.0f, 2.0f * std::numbers::pi_v<float>);
 

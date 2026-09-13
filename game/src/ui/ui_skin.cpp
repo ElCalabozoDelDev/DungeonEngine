@@ -25,10 +25,7 @@ SDL_Texture* tex(TextureCache& cache, const char* id)
     return t;
 }
 
-ImTextureID asId(SDL_Texture* t)
-{
-    return reinterpret_cast<ImTextureID>(t);
-}
+ImTextureID asId(SDL_Texture* t) { return reinterpret_cast<ImTextureID>(t); }
 
 void loadOne(TextureCache& textures, const AssetPaths& assets, const char* id,
              const char* relative)
@@ -193,8 +190,7 @@ void drawOptionsSlider(entt::registry& registry, ImDrawList* draw, ImVec2 p0,
     }
     value01 = std::clamp(value01, 0.0f, 1.0f);
     const ImVec2 p1(p0.x + kSliderPanelW, p0.y + kSliderPanelH);
-    const ImU32 tint =
-        focused ? IM_COL32_WHITE : IM_COL32(160, 160, 160, 255);
+    const ImU32 tint = focused ? IM_COL32_WHITE : IM_COL32(160, 160, 160, 255);
     drawPanel(registry, draw, p0, p1, tint);
 
     const ImU32 textColor =

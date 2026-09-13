@@ -19,9 +19,8 @@ public:
     WorldColorGradePass& operator=(const WorldColorGradePass&) = delete;
 
     WorldColorGradePass(WorldColorGradePass&& other) noexcept
-        : m_target(other.m_target), m_present(other.m_present),
-          m_w(other.m_w), m_h(other.m_h),
-          m_pixels(std::move(other.m_pixels))
+        : m_target(other.m_target), m_present(other.m_present), m_w(other.m_w),
+          m_h(other.m_h), m_pixels(std::move(other.m_pixels))
     {
         other.m_target = nullptr;
         other.m_present = nullptr;

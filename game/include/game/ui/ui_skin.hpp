@@ -69,8 +69,8 @@ void drawNineSlice(ImDrawList* draw, ImTextureID tex, ImVec2 p0, ImVec2 p1,
                    float texW, float texH, float border = kPanelBorder,
                    ImU32 tint = IM_COL32_WHITE);
 
-void drawPanel(entt::registry& registry, ImDrawList* draw, ImVec2 p0,
-               ImVec2 p1, ImU32 tint = IM_COL32_WHITE);
+void drawPanel(entt::registry& registry, ImDrawList* draw, ImVec2 p0, ImVec2 p1,
+               ImU32 tint = IM_COL32_WHITE);
 
 ImVec2 buttonSizeForLabel(entt::registry& registry, std::string_view label);
 

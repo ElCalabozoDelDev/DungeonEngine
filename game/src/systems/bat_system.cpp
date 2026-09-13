@@ -45,8 +45,7 @@ float dot(const Vector2D<float>& a, const Vector2D<float>& b)
 }
 
 /// v' = v - 2 * dot(v, n) * n  (n must be unit length).
-Vector2D<float> reflect(const Vector2D<float>& velocity,
-                        Vector2D<float> normal)
+Vector2D<float> reflect(const Vector2D<float>& velocity, Vector2D<float> normal)
 {
     normal.normalize();
     return velocity - normal * (2.0f * dot(velocity, normal));
@@ -62,8 +61,7 @@ Circle batCircle(const Vector2D<float>& topLeft, float width, float height)
 Circle slimeHeadCircle(const SnakeComponent& snake)
 {
     const auto& head = snake.segments.front();
-    const auto pos =
-        game::lerp(head.at, head.to, snake.movementProgress);
+    const auto pos = game::lerp(head.at, head.to, snake.movementProgress);
     // Tutorial Slime.GetBounds: radius = Width * 0.5 around the visual centre.
     return Circle{pos.getX(), pos.getY(), game::kSegmentSize * 0.5f};
 }
@@ -73,7 +71,8 @@ void randomizeVelocity(BatComponent& bat, std::mt19937& rng)
     std::uniform_real_distribution<float> angleDist(
         0.0f, 2.0f * std::numbers::pi_v<float>);
     const float angle = angleDist(rng);
-    bat.velocity = Vector2D<float>(std::cos(angle), std::sin(angle)) * bat.speed;
+    bat.velocity =
+        Vector2D<float>(std::cos(angle), std::sin(angle)) * bat.speed;
 }
 
 void bounce(BatComponent& bat, Vector2D<float>& position, float width,
@@ -209,8 +208,8 @@ void BatSystem::run(entt::registry& registry)
 
         if (normal.lengthSquared() > 0.0f)
         {
-            bounce(batComp, transform, dimension.width, dimension.height, normal,
-                   audio);
+            bounce(batComp, transform, dimension.width, dimension.height,
+                   normal, audio);
         }
 
         bounds = batCircle(transform, dimension.width, dimension.height);
@@ -235,8 +234,9 @@ void BatSystem::run(entt::registry& registry)
                 audio->playSound("collect");
             }
 
-            positionBatAwayFromSlime(transform, dimension.width, dimension.height,
-                                     snake, state->roomBounds, rng);
+            positionBatAwayFromSlime(transform, dimension.width,
+                                     dimension.height, snake, state->roomBounds,
+                                     rng);
             randomizeVelocity(batComp, rng);
             bounds = batCircle(transform, dimension.width, dimension.height);
         }
