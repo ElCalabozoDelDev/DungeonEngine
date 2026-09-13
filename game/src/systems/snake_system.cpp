@@ -128,9 +128,7 @@ void SnakeSystem::run(entt::registry& registry)
         return;
     }
 
-    // Freeze the final pose on Game Over so the head sits on the wall cell
-    // instead of snapping back to the previous tile (which looked like an
-    // early collision and made the overlay easy to miss).
+    // Keep the settled pose on Game Over (last valid floor cell).
     if (state->playState == PlayState::GameOver)
     {
         auto view = registry.view<PlayerComponent, SnakeComponent>();
@@ -207,45 +205,58 @@ void SnakeSystem::run(entt::registry& registry)
             }
 
             const auto& head = snake.segments.front();
-            SlimeSegment newHead;
-            newHead.at = head.to;
-            newHead.direction = snake.nextDirection;
-            newHead.to = head.to + snake.nextDirection * snake.stride;
+            const Vector2D<float> nextPos =
+                head.to + snake.nextDirection * snake.stride;
 
-            snake.segments.insert(snake.segments.begin(), newHead);
-
-            if (snake.pendingGrowth > 0)
-            {
-                --snake.pendingGrowth;
-            }
-            else
-            {
-                snake.segments.pop_back();
-            }
-
-            const auto& headPos = snake.segments.front().to;
-            for (std::size_t i = 2; i < snake.segments.size(); ++i)
-            {
-                if (segmentsOverlap(headPos, snake.segments[i].to, SegmentSize))
-                {
-                    state->playState = PlayState::GameOver;
-                    state->gameOver = true;
-                    break;
-                }
-            }
-
-            if (!state->gameOver &&
-                spriteOutsideRoom(headPos, SegmentSize, state->roomBounds))
+            // Die on the last valid floor cell — do not step onto the wall.
+            if (spriteOutsideRoom(nextPos, SegmentSize, state->roomBounds))
             {
                 state->playState = PlayState::GameOver;
                 state->gameOver = true;
-            }
-
-            if (state->gameOver)
-            {
-                // Show the head on the cell that killed it.
+                if (paused != nullptr)
+                {
+                    paused->value = true;
+                }
+                snake.segments.front().at = head.to;
+                snake.segments.front().to = head.to;
                 snake.movementProgress = 1.0f;
                 snake.movementTimer = 0.0f;
+            }
+            else
+            {
+                SlimeSegment newHead;
+                newHead.at = head.to;
+                newHead.direction = snake.nextDirection;
+                newHead.to = nextPos;
+
+                snake.segments.insert(snake.segments.begin(), newHead);
+
+                if (snake.pendingGrowth > 0)
+                {
+                    --snake.pendingGrowth;
+                }
+                else
+                {
+                    snake.segments.pop_back();
+                }
+
+                const auto& headPos = snake.segments.front().to;
+                for (std::size_t i = 2; i < snake.segments.size(); ++i)
+                {
+                    if (segmentsOverlap(headPos, snake.segments[i].to,
+                                        SegmentSize))
+                    {
+                        state->playState = PlayState::GameOver;
+                        state->gameOver = true;
+                        if (paused != nullptr)
+                        {
+                            paused->value = true;
+                        }
+                        snake.movementProgress = 1.0f;
+                        snake.movementTimer = 0.0f;
+                        break;
+                    }
+                }
             }
         }
 

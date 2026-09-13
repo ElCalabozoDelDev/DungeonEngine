@@ -116,9 +116,9 @@ TEST_CASE("snake dies outside room bounds")
     world.step(13);
 
     CHECK(world.state().playState == PlayState::GameOver);
-    // Head is frozen on the cell that left the room, not the previous tile.
+    // Stays on the last floor cell (290), never steps onto the wall (310).
     CHECK(snake.movementProgress == doctest::Approx(1.0f));
-    CHECK(snake.segments.front().to.getX() == doctest::Approx(310.0f));
+    CHECK(snake.segments.front().to.getX() == doctest::Approx(290.0f));
 }
 
 TEST_CASE("eating a bat grows the snake and awards score")
