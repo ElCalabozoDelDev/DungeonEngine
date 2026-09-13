@@ -33,13 +33,18 @@ Vector2D<float> lerp(const Vector2D<float>& a, const Vector2D<float>& b,
     return a + (b - a) * t;
 }
 
-bool outsideRoom(const Vector2D<float>& center, float radius,
-                 const Rectangle& box)
+/// MonoGame-style AABB: sprite top-left at center - half size must stay inside
+/// roomBounds (the open floor inset by one wall tile).
+bool spriteOutsideRoom(const Vector2D<float>& center, float size,
+                       const Rectangle& box)
 {
-    return center.getX() - radius < box.left() ||
-           center.getX() + radius > box.right() ||
-           center.getY() - radius < box.top() ||
-           center.getY() + radius > box.bottom();
+    const float half = size * 0.5f;
+    const float left = center.getX() - half;
+    const float right = center.getX() + half;
+    const float top = center.getY() - half;
+    const float bottom = center.getY() + half;
+    return left < box.left() || right > box.right() || top < box.top() ||
+           bottom > box.bottom();
 }
 
 bool segmentsOverlap(const Vector2D<float>& a, const Vector2D<float>& b,
@@ -99,13 +104,47 @@ void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
     }
 }
 
+void syncPlayerTransform(entt::registry& registry, entt::entity entity,
+                         const SnakeComponent& snake)
+{
+    if (snake.segments.empty() || !registry.all_of<TransformComponent>(entity))
+    {
+        return;
+    }
+    const auto& head = snake.segments.front();
+    const auto pos = lerp(head.at, head.to, snake.movementProgress);
+    registry.get<TransformComponent>(entity).position = Vector2D<float>(
+        pos.getX() - SegmentSize * 0.5f, pos.getY() - SegmentSize * 0.5f);
+}
+
 } // namespace
 
 void SnakeSystem::run(entt::registry& registry)
 {
     auto* state = registry.ctx().find<GameState>();
     auto* paused = registry.ctx().find<Paused>();
-    if (state == nullptr || state->playState != PlayState::Playing)
+    if (state == nullptr)
+    {
+        return;
+    }
+
+    // Freeze the final pose on Game Over so the head sits on the wall cell
+    // instead of snapping back to the previous tile (which looked like an
+    // early collision and made the overlay easy to miss).
+    if (state->playState == PlayState::GameOver)
+    {
+        auto view = registry.view<PlayerComponent, SnakeComponent>();
+        for (auto entity : view)
+        {
+            auto& snake = view.get<SnakeComponent>(entity);
+            snake.movementProgress = 1.0f;
+            syncSegmentSprites(registry, snake, snake.segmentEntities);
+            syncPlayerTransform(registry, entity, snake);
+        }
+        return;
+    }
+
+    if (state->playState != PlayState::Playing)
     {
         return;
     }
@@ -184,7 +223,6 @@ void SnakeSystem::run(entt::registry& registry)
                 snake.segments.pop_back();
             }
 
-            // Self-collision: skip the immediate neck segment.
             const auto& headPos = snake.segments.front().to;
             for (std::size_t i = 2; i < snake.segments.size(); ++i)
             {
@@ -197,28 +235,27 @@ void SnakeSystem::run(entt::registry& registry)
             }
 
             if (!state->gameOver &&
-                outsideRoom(headPos, SegmentSize * 0.5f, state->roomBounds))
+                spriteOutsideRoom(headPos, SegmentSize, state->roomBounds))
             {
                 state->playState = PlayState::GameOver;
                 state->gameOver = true;
             }
+
+            if (state->gameOver)
+            {
+                // Show the head on the cell that killed it.
+                snake.movementProgress = 1.0f;
+                snake.movementTimer = 0.0f;
+            }
         }
 
-        snake.movementProgress =
-            snake.movementTimer / SnakeComponent::movementInterval;
+        if (!state->gameOver)
+        {
+            snake.movementProgress =
+                snake.movementTimer / SnakeComponent::movementInterval;
+        }
 
         syncSegmentSprites(registry, snake, snake.segmentEntities);
-
-        // Keep the Player transform on the interpolated head centre so the
-        // bat system can find it.
-        if (!snake.segments.empty())
-        {
-            const auto& head = snake.segments.front();
-            const auto pos = lerp(head.at, head.to, snake.movementProgress);
-            auto& transform = registry.get<TransformComponent>(entity);
-            transform.position =
-                Vector2D<float>(pos.getX() - SegmentSize * 0.5f,
-                                pos.getY() - SegmentSize * 0.5f);
-        }
+        syncPlayerTransform(registry, entity, snake);
     }
 }

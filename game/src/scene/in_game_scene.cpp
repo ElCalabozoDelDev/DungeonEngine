@@ -163,6 +163,9 @@ void InGameScene::onExit(entt::registry& registry)
 
 void InGameScene::tagObjectsByType(entt::registry& registry)
 {
+    const auto& state = registry.ctx().get<GameState>();
+    const float tile = static_cast<float>(state.tileWidth);
+
     auto view = registry.view<ObjectTypeComponent, TransformComponent>();
     for (auto entity : view)
     {
@@ -170,29 +173,37 @@ void InGameScene::tagObjectsByType(entt::registry& registry)
         if (objectType.type == "Player")
         {
             const auto& pos = view.get<TransformComponent>(entity).position;
-            // Rebuild as a proper snake head; drop the placeholder sprite.
             if (registry.valid(entity))
             {
-                // Reuse the entity: strip object sprite extras and add snake.
+                // Snap to the centre of the tile the object sits in so stride
+                // steps stay flush with the wall cells.
+                const int col = static_cast<int>(std::floor(pos.getX() / tile));
+                const int row = static_cast<int>(std::floor(pos.getY() / tile));
+                const Vector2D<float> center(
+                    static_cast<float>(col) * tile + tile * 0.5f,
+                    static_cast<float>(row) * tile + tile * 0.5f);
+
                 registry.emplace_or_replace<PlayerComponent>(entity);
                 SnakeComponent snake;
+                snake.stride = tile;
                 SlimeSegment head;
-                head.at =
-                    Vector2D<float>(pos.getX() + 10.0f, pos.getY() + 10.0f);
-                head.to = head.at;
+                head.at = center;
+                head.to = center;
                 head.direction = Vector2D<float>(1.0f, 0.0f);
                 snake.segments.push_back(head);
                 snake.nextDirection = head.direction;
-                snake.stride = 20.0f;
                 registry.emplace_or_replace<SnakeComponent>(entity, snake);
-                registry.emplace_or_replace<DimensionComponent>(entity, 20.0f,
-                                                                20.0f);
+                registry.emplace_or_replace<DimensionComponent>(entity, tile,
+                                                                tile);
                 registry.emplace_or_replace<TextureComponent>(entity, "slime");
                 registry.emplace_or_replace<SpriteComponent>(entity, 0, 0, 0);
                 AnimationComponent anim;
                 anim.totalFrames = 2;
                 anim.animationTime = 0.2f;
                 registry.emplace_or_replace<AnimationComponent>(entity, anim);
+                registry.emplace_or_replace<TransformComponent>(
+                    entity, Vector2D<float>(center.getX() - tile * 0.5f,
+                                            center.getY() - tile * 0.5f));
             }
         }
     }

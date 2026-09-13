@@ -24,7 +24,7 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
 
     if (state != nullptr)
     {
-        ImGui::Text("SCORE %d", state->score);
+        ImGui::Text("SCORE: %06d", state->score);
     }
     ImGui::End();
 
@@ -39,13 +39,16 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
     {
         ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always,
                                 ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowSize(ImVec2(420, 160), ImGuiCond_Always);
         ImGui::Begin("Paused", nullptr,
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                         ImGuiWindowFlags_AlwaysAutoResize |
-                         ImGuiWindowFlags_NoCollapse);
+                         ImGuiWindowFlags_NoCollapse |
+                         ImGuiWindowFlags_NoTitleBar);
+        ImGui::SetWindowFontScale(1.4f);
         ImGui::TextUnformatted("PAUSED");
-        ImGui::TextUnformatted("Esc resumes.");
+        ImGui::SetWindowFontScale(1.0f);
         ImGui::Separator();
+        ImGui::TextUnformatted("Esc resumes.");
         if (ImGui::Button("QUIT", ImVec2(160, 0)))
         {
             registry.ctx().get<Paused>().value = false;
@@ -60,23 +63,40 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
     {
         ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always,
                                 ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowSize(ImVec2(520, 200), ImGuiCond_Always);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg,
+                              ImVec4(0.15f, 0.18f, 0.35f, 0.92f));
+        ImGui::PushStyleColor(ImGuiCol_Border,
+                              ImVec4(0.75f, 0.85f, 1.0f, 1.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.0f);
         ImGui::Begin("GameOver", nullptr,
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                         ImGuiWindowFlags_AlwaysAutoResize |
-                         ImGuiWindowFlags_NoCollapse);
+                         ImGuiWindowFlags_NoCollapse |
+                         ImGuiWindowFlags_NoTitleBar);
+        ImGui::SetWindowFontScale(1.8f);
+        const float titleWidth = ImGui::CalcTextSize("GAME OVER").x;
+        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - titleWidth) * 0.5f);
         ImGui::TextUnformatted("GAME OVER");
-        ImGui::Text("Score: %d", state->score);
-        ImGui::Separator();
-        if (ImGui::Button("RETRY", ImVec2(160, 0)))
+        ImGui::SetWindowFontScale(1.0f);
+        ImGui::Dummy(ImVec2(0, 12));
+
+        const float buttonWidth = 160.0f;
+        const float gap = 24.0f;
+        const float rowWidth = buttonWidth * 2.0f + gap;
+        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - rowWidth) * 0.5f);
+        if (ImGui::Button("RETRY", ImVec2(buttonWidth, 0)))
         {
             registry.ctx().get<SceneSystem>().requestScene(
                 std::make_unique<InGameScene>());
         }
-        if (ImGui::Button("QUIT", ImVec2(160, 0)))
+        ImGui::SameLine(0.0f, gap);
+        if (ImGui::Button("QUIT", ImVec2(buttonWidth, 0)))
         {
             registry.ctx().get<SceneSystem>().requestScene(
                 std::make_unique<TitleScene>());
         }
         ImGui::End();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor(2);
     }
 }
