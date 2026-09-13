@@ -66,6 +66,16 @@ public:
         return *this;
     }
 
+    /// Runs in every fixed step, after every addFixedSystem(). Bookkeeping
+    /// that must see the step's final positions goes here -- re-filing the
+    /// spatial index, for one -- so it does not depend on the order plugins
+    /// were mounted in.
+    GameLoop& addFixedSystemLast(std::shared_ptr<System> system)
+    {
+        m_fixedSystemsLast.push_back(std::move(system));
+        return *this;
+    }
+
     /// Runs once per frame, after every addSystem(). Rendering goes here.
     GameLoop& addSystemLast(std::shared_ptr<System> system)
     {
@@ -169,20 +179,30 @@ public:
             // and no accumulation, so unpausing does not replay the pause as
             // a backlog. Frame systems keep running, which is what draws the
             // pause overlay.
-            const auto* paused = m_registry.ctx().find<Paused>();
-            const bool isPaused = paused != nullptr && paused->value;
-
-            // Fixed systems consume whole steps; whatever is left over is
-            // carried into the next frame and reported as `alpha`.
-            if (!isPaused)
+            if (!isPaused())
             {
                 accumulator += dt.value;
             }
+
+            // Fixed systems consume whole steps; whatever is left over is
+            // carried into the next frame and reported as `alpha`.
+            //
+            // Pause is checked before every step, not once per frame: a step
+            // that pauses (the snake dying) must be the last one, rather than
+            // the rest of a slow frame's steps running on a finished game.
             int steps = 0;
-            while (!isPaused && accumulator >= dt.fixed &&
-                   steps < MaxFixedStepsPerFrame)
+            while (accumulator >= dt.fixed && steps < MaxFixedStepsPerFrame)
             {
+                if (isPaused())
+                {
+                    accumulator = 0.0f;
+                    break;
+                }
                 for (auto& system : m_fixedSystems)
+                {
+                    system->run(m_registry);
+                }
+                for (auto& system : m_fixedSystemsLast)
                 {
                     system->run(m_registry);
                 }
@@ -215,6 +235,12 @@ public:
     }
 
 private:
+    bool isPaused() const
+    {
+        const auto* paused = m_registry.ctx().find<Paused>();
+        return paused != nullptr && paused->value;
+    }
+
     entt::registry m_registry;
     ControlFlow m_controlFlow = ControlFlow::Exit;
 
@@ -223,6 +249,7 @@ private:
 
     std::vector<std::unique_ptr<Plugin>> m_plugins;
     std::vector<std::shared_ptr<System>> m_fixedSystems;
+    std::vector<std::shared_ptr<System>> m_fixedSystemsLast;
     std::vector<std::shared_ptr<System>> m_systems;
     std::vector<std::shared_ptr<System>> m_systemsLast;
 

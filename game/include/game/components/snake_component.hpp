@@ -19,6 +19,7 @@ struct SlimeSegment
 struct SnakeComponent
 {
     std::vector<SlimeSegment> segments;
+    /// Sprite entities for segments[1..]; the head entity draws segments[0].
     std::vector<entt::entity> segmentEntities;
     de::Vector2D<float> nextDirection{1.0f, 0.0f};
     float stride = 20.0f;

@@ -1,5 +1,7 @@
+#include <algorithm>
 #include <doctest/doctest.h>
 #include <engine/components/dimension_component.hpp>
+#include <engine/components/texture_component.hpp>
 #include <engine/components/transform_component.hpp>
 #include <engine/core/delta_time.hpp>
 #include <engine/core/paused.hpp>
@@ -162,4 +164,53 @@ TEST_CASE("bat reflects when leaving room bounds")
     CHECK(after.velocity.getX() > 0.0f);
     CHECK(world.registry.get<TransformComponent>(bat).position.getX() >=
           doctest::Approx(20.0f));
+}
+
+TEST_CASE("the snake head is drawn by exactly one sprite")
+{
+    // Regression test. The head entity carries its own sprite, and
+    // SnakeSystem also created a sprite entity for segment 0, so the head was
+    // drawn twice, one sprite on top of the other.
+    World world;
+    auto entity = world.spawnSnake(100.0f, 80.0f, 3);
+    auto& snake = world.registry.get<SnakeComponent>(entity);
+
+    world.step();
+
+    // spawnSnake gives the head no texture, so every "slime" texture here
+    // belongs to a sprite SnakeSystem created: one per body segment.
+    const auto countSprites = [&world]
+    {
+        return static_cast<std::size_t>(
+            world.registry.view<TextureComponent>().size());
+    };
+    CHECK(snake.segmentEntities.size() == 2);
+    CHECK(countSprites() == 2);
+    CHECK(std::find(snake.segmentEntities.begin(), snake.segmentEntities.end(),
+                    entity) == snake.segmentEntities.end());
+
+    SUBCASE("and growing adds one body sprite")
+    {
+        snake.pendingGrowth = 1;
+        world.step(13);
+        REQUIRE(snake.segments.size() == 4);
+        CHECK(snake.segmentEntities.size() == 3);
+        CHECK(countSprites() == 3);
+    }
+
+    SUBCASE("and each body sprite sits on its own segment")
+    {
+        for (std::size_t i = 0; i < snake.segmentEntities.size(); ++i)
+        {
+            const auto& segment = snake.segments[i + 1];
+            const auto& position =
+                world.registry.get<TransformComponent>(snake.segmentEntities[i])
+                    .position;
+            // Spawned segments start at rest (at == to), so no lerp.
+            CHECK(position.getX() ==
+                  doctest::Approx(segment.to.getX() - 10.0f));
+            CHECK(position.getY() ==
+                  doctest::Approx(segment.to.getY() - 10.0f));
+        }
+    }
 }

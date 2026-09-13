@@ -4,8 +4,9 @@
 #include <engine/systems/system.hpp>
 #include <game/state.hpp>
 
-/// Fades world colour toward grayscale while paused / game-over — same curve
-/// as learn-monogame-2d GameScene (`FADE_SPEED = 0.02` per frame).
+/// Fades world colour toward grayscale while paused / game-over — the curve
+/// of learn-monogame-2d GameScene (`FADE_SPEED = 0.02` per 60 Hz frame),
+/// expressed per second so it does not depend on the display's refresh rate.
 class GrayscaleFadeSystem final : public de::System
 {
 public:

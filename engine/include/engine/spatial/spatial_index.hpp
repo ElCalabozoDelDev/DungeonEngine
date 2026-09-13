@@ -7,6 +7,7 @@
 #include <engine/spatial/quadtree.hpp>
 #include <entt/entt.hpp>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <unordered_map>
 #include <vector>
@@ -36,6 +37,13 @@ enum class Layer : std::uint8_t
 /// that still holds it. update() removes with the remembered box and re-adds
 /// with the current one.
 ///
+/// The trees themselves only ever see the remembered boxes. When a node
+/// splits, the tree redistributes its values by their boxes; given the
+/// entities' *current* bounds, one that had moved but was not yet re-filed
+/// landed in a branch its remembered box does not lead to, and could then be
+/// neither removed nor found -- only added again, as a duplicate. With the
+/// remembered boxes the tree and this index cannot disagree.
+///
 /// Lives in the registry context, so it dies with the registry instead of
 /// outliving the level like the QuadtreeManager singleton did. Changing scenes
 /// must call clear(); otherwise the trees keep handles to destroyed entities
@@ -46,7 +54,7 @@ public:
     using BoxFn = std::function<Box<float>(const entt::entity&)>;
     using Tree = Quadtree<entt::entity, BoxFn>;
 
-    SpatialIndex() = default;
+    SpatialIndex();
 
     SpatialIndex(const SpatialIndex&) = delete;
     SpatialIndex& operator=(const SpatialIndex&) = delete;
@@ -71,6 +79,14 @@ public:
     /// Returns the number of layers that were actually re-filed.
     int update(entt::entity entity);
 
+    /// Re-files every entity in `layer` under its current bounds, whatever
+    /// moved it. Entities that have been destroyed are dropped instead.
+    /// Returns the number that were re-filed.
+    ///
+    /// Per layer because only some layers hold things that move: re-checking
+    /// every tile of a map each fixed step would be pure waste.
+    int updateLayer(const entt::registry& registry, Layer layer);
+
     std::vector<entt::entity> query(Layer layer, const Box<float>& box) const;
 
     /// Drops every tree. Call this whenever the entities they refer to are
@@ -89,14 +105,27 @@ private:
     struct LayerData
     {
         std::optional<Tree> tree;
-        /// Kept alongside the tree so update() can recompute current bounds.
+        /// The caller's bounds function, for the entity's current box.
         BoxFn getBox;
-        /// The box each entity was filed under, needed to remove it again
-        /// after it has moved.
+        /// The box each entity was filed under. The tree reads its boxes
+        /// from here, and removal navigates with them.
         std::unordered_map<entt::entity, Box<float>> filedAs;
     };
 
-    std::array<LayerData, LayerCount> m_layers;
+    /// Re-files one entry whose bounds are now `current`. Returns false
+    /// when it no longer fits the tree and was dropped.
+    static bool refile(LayerData& data, entt::entity entity,
+                       const Box<float>& current);
+
+    LayerData& layerData(Layer layer) { return *m_layers[indexOf(layer)]; }
+    const LayerData& layerData(Layer layer) const
+    {
+        return *m_layers[indexOf(layer)];
+    }
+
+    /// Heap-allocated so each tree's box function can point at its own
+    /// `filedAs` and keep pointing at it when the index is moved.
+    std::array<std::unique_ptr<LayerData>, LayerCount> m_layers;
 };
 
 } // namespace de

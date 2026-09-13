@@ -10,11 +10,14 @@ add_executable(tests
     test_animation.cpp
     test_balance.cpp
     test_config_loader.cpp
+    test_engine_systems.cpp
+    test_game_loop.cpp
     test_gameplay.cpp
     test_play_state.cpp
     test_spatial_index.cpp
     test_tiled_loader.cpp
     test_vector_2d.cpp
+    test_widgets.cpp
 )
 
 target_link_libraries(tests PRIVATE game_lib doctest::doctest)

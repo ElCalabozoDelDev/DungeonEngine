@@ -85,6 +85,12 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
 {
     game::ui::ensureLoaded(registry);
 
+    // Hooks are matched by call order, so each menu's focus is declared on
+    // every frame, before any branch. Declaring one inside each branch gave
+    // both the same slot, and the focus left on Game Over carried into Pause.
+    auto [pauseFocus, setPauseFocus] = h.use_state(0);
+    auto [gameOverFocus, setGameOverFocus] = h.use_state(0);
+
     const auto* state = registry.ctx().find<GameState>();
     const ImVec2 canvas = game::ui::canvasSize(registry);
     const auto* input = registry.ctx().find<InputState>();
@@ -114,13 +120,12 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
 
     if (state->playState == PlayState::Paused)
     {
-        auto [focus, setFocus] = h.use_state(0);
-        handleSideFocus(registry, input, actions, setFocus);
+        handleSideFocus(registry, input, actions, setPauseFocus);
 
         bool left = false;
         bool right = false;
         drawPauseLikePanel(registry, draw, canvas, "PAUSED", "RESUME", "QUIT",
-                           focus, elapsed, confirm, left, right);
+                           pauseFocus, elapsed, confirm, left, right);
         if (left)
         {
             game::ui::playUi(registry);
@@ -137,13 +142,12 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
 
     if (state->playState == PlayState::GameOver)
     {
-        auto [focus, setFocus] = h.use_state(0);
-        handleSideFocus(registry, input, actions, setFocus);
+        handleSideFocus(registry, input, actions, setGameOverFocus);
 
         bool left = false;
         bool right = false;
         drawPauseLikePanel(registry, draw, canvas, "GAME OVER", "RETRY", "QUIT",
-                           focus, elapsed, confirm, left, right);
+                           gameOverFocus, elapsed, confirm, left, right);
         if (left)
         {
             game::ui::playUi(registry);

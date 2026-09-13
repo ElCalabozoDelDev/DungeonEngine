@@ -6,10 +6,11 @@
 
 namespace de
 {
-/// Re-files moving entities in the spatial index.
+/// Re-files the Object layer of the spatial index.
 ///
-/// Runs as a fixed system, so anything integration moved is back in the right
-/// quadtree node before collision or rendering query it. Without this, an
+/// Registered with addFixedSystemLast(), so it runs after every system that
+/// moves things in the step -- the game's included -- and the index is right
+/// before collision or rendering query it. Without this, an
 /// entity stays filed under the position it had when it was inserted: queries
 /// near where it actually is never find it, and queries near where it used to
 /// be still do.

@@ -201,7 +201,7 @@ Regla práctica para código nuevo: **si nombra un componente de gameplay, va en
 
 ```
 frame begin   input (eventos SDL -> InputState)  ->  ImGui::NewFrame
-pasos fijos   sync espacial, luego los sistemas del juego (serpiente, murciélago)
+pasos fijos   los sistemas del juego (serpiente, murciélago), luego sync espacial
               (cero o más veces, cada uno avanza DeltaTime::fixed)
 frame         animación, fundido a gris, escenas, debug
 last          passes de render por `order`, luego la GUI
@@ -210,6 +210,8 @@ frame end     present
 
 Los sistemas que no deben depender de los FPS van en `addFixedSystem`. El resto
 en `addSystem`, y el render en `addSystemLast`.
+`addFixedSystemLast` corre tras todos los sistemas fijos en cada paso, para
+tareas que deben ver las posiciones finales del paso (el sync del índice espacial).
 
 ---
 
