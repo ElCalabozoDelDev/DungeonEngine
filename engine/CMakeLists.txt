@@ -23,6 +23,7 @@ add_library(engine STATIC
     src/plugins/input_plugin.cpp
     src/plugins/sdl_plugin.cpp
     src/scene/scene_system.cpp
+    src/spatial/level_spatial_index.cpp
     src/spatial/spatial_index.cpp
     src/systems/camera_system.cpp
     src/systems/collision_system.cpp

@@ -26,8 +26,13 @@ The splitting rule: **if it names a gameplay component, it belongs in `game/`.**
 
 When the engine genuinely needs game knowledge, invert it, the way the Tiled loader
 does: the engine records Tiled's `type` string in `de::ObjectTypeComponent`, and
-`InGameScene::tagObjectsByType` decides that `"Player"` means `PlayerComponent`.
+`InGameScene::spawnPlayer` decides that `"Player"` means the snake head.
 The engine provides the generic hook; the game supplies the meaning.
+
+Entities are built by the prefabs in `game/src/prefabs.cpp` — add components
+there, not at each spawn site, so Tiled objects and code spawns stay identical.
+Keep game rules as free functions on components where you can (see
+`game::snake::advance`): they test without a registry.
 
 ## 3. Write the component
 

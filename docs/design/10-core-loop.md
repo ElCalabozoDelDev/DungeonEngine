@@ -8,6 +8,7 @@ codigo:
   - game/src/scene/title_scene.cpp
   - game/src/systems/snake_system.cpp
   - game/src/systems/bat_system.cpp
+  - game/src/assets.cpp
   - game/include/game/state.hpp
 ---
 
