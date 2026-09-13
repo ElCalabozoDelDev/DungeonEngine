@@ -119,7 +119,9 @@ void TitleWidget::render(entt::registry& registry, de::gui::Hooks& h)
         }
     }
 
-    // Title: SpriteFont 5x at screen positions → logical /4, BMFont scale.
+    // Title: BMFont at native logical size (scale 1). Each atlas texel maps
+    // 1:1 in logical space, then SDL nearest-presents ×4 — chunky pixels, no
+    // TTF antialias fringe. Positions / shadow match TitleScene screen space.
     if (game::ui::BitmapFont* bm = game::ui::font(registry);
         bm != nullptr && bm->ok())
     {
@@ -129,8 +131,8 @@ void TitleWidget::render(entt::registry& registry, de::gui::Hooks& h)
         auto drawTitle = [&](const char* text, ImVec2 center)
         {
             const ImVec2 size = bm->measure(text, game::ui::kFontTitle);
-            const ImVec2 origin(size.x * 0.5f, size.y * 0.5f);
-            const ImVec2 topLeft(center.x - origin.x, center.y - origin.y);
+            const ImVec2 topLeft(std::floor(center.x - size.x * 0.5f),
+                                 std::floor(center.y - size.y * 0.5f));
             bm->draw(bg,
                      ImVec2(topLeft.x + shadow.x, topLeft.y + shadow.y), text,
                      game::ui::kFontTitle, game::ui::kTitleShadow);

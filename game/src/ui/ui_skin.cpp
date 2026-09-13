@@ -232,11 +232,12 @@ void drawOptionsSlider(entt::registry& registry, ImDrawList* draw, ImVec2 p0,
     drawCenteredText(registry, draw, max0, max1, "MAX", kFontButton,
                      kButtonTextColor);
 
+    // Gum ColoredRectangleRuntime uses opaque White/Gray on the track only.
     const float fillW = (kMidW - 4.0f) * value01;
     if (fillW > 0.0f)
     {
         const ImU32 fill =
-            focused ? IM_COL32(255, 255, 255, 220) : IM_COL32(160, 160, 160, 200);
+            focused ? IM_COL32_WHITE : IM_COL32(160, 160, 160, 255);
         draw->AddRectFilled(ImVec2(mid0.x + 2.0f, mid0.y + 2.0f),
                             ImVec2(mid0.x + 2.0f + fillW, mid1.y - 2.0f), fill);
     }
@@ -252,8 +253,8 @@ void drawCenteredText(entt::registry& registry, ImDrawList* draw, ImVec2 p0,
         return;
     }
     const ImVec2 size = bm->measure(text, fontScale);
-    const ImVec2 pos((p0.x + p1.x - size.x) * 0.5f,
-                     (p0.y + p1.y - size.y) * 0.5f);
+    const ImVec2 pos(std::floor((p0.x + p1.x - size.x) * 0.5f),
+                     std::floor((p0.y + p1.y - size.y) * 0.5f));
     bm->draw(draw, pos, text, fontScale, color);
 }
 

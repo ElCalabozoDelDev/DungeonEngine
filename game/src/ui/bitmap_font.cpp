@@ -1,10 +1,13 @@
 #include <SDL.h>
 #include <SDL_image.h>
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <game/ui/bitmap_font.hpp>
 #include <iostream>
 #include <string>
+#include <vector>
 
 namespace game::ui
 {
@@ -19,23 +22,6 @@ int readKeyInt(const std::string& line, const char* key, int fallback = 0)
         return fallback;
     }
     return std::atoi(line.c_str() + pos + token.size());
-}
-
-std::string readKeyString(const std::string& line, const char* key)
-{
-    const std::string token = std::string(key) + "=\"";
-    const auto pos = line.find(token);
-    if (pos == std::string::npos)
-    {
-        return {};
-    }
-    const auto start = pos + token.size();
-    const auto end = line.find('"', start);
-    if (end == std::string::npos)
-    {
-        return {};
-    }
-    return line.substr(start, end - start);
 }
 } // namespace
 
@@ -61,8 +47,6 @@ bool BitmapFont::load(SDL_Renderer* renderer, const std::string& fntPath,
         if (line.starts_with("common "))
         {
             m_lineHeight = readKeyInt(line, "lineHeight", 35);
-            m_pageW = readKeyInt(line, "scaleW", 256);
-            m_pageH = readKeyInt(line, "scaleH", 512);
         }
         else if (line.starts_with("char "))
         {
@@ -79,16 +63,95 @@ bool BitmapFont::load(SDL_Renderer* renderer, const std::string& fntPath,
         }
     }
 
-    SDL_Surface* surface = IMG_Load(pagePath.c_str());
-    if (surface == nullptr)
+    SDL_Surface* src = IMG_Load(pagePath.c_str());
+    if (src == nullptr)
     {
-        // Fallback: SDL_image header via texture cache path — include here.
         std::cerr << "BitmapFont: cannot load page '" << pagePath
                   << "': " << IMG_GetError() << '\n';
         return false;
     }
-    m_texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_FreeSurface(surface);
+
+    // Snapshot source rects, then pack into a padded private page so sampling
+    // never bleeds slime/UI texels from the shared atlas.png.
+    struct SrcGlyph
+    {
+        int srcX;
+        int srcY;
+        Glyph* glyph;
+    };
+    std::vector<SrcGlyph> items;
+    items.reserve(m_glyphs.size());
+    for (auto& [id, g] : m_glyphs)
+    {
+        (void)id;
+        items.push_back({g.x, g.y, &g});
+    }
+    std::sort(items.begin(), items.end(),
+              [](const SrcGlyph& a, const SrcGlyph& b)
+              { return a.glyph->height > b.glyph->height; });
+
+    constexpr int kPad = 1;
+    constexpr int kAtlasW = 512;
+    int cursorX = kPad;
+    int cursorY = kPad;
+    int rowH = 0;
+    int packedW = kPad;
+    int packedH = kPad;
+    for (SrcGlyph& item : items)
+    {
+        if (item.glyph->width <= 0 || item.glyph->height <= 0)
+        {
+            item.glyph->x = 0;
+            item.glyph->y = 0;
+            continue;
+        }
+        const int cellW = item.glyph->width + kPad * 2;
+        const int cellH = item.glyph->height + kPad * 2;
+        if (cursorX + cellW > kAtlasW)
+        {
+            cursorX = kPad;
+            cursorY += rowH;
+            rowH = 0;
+        }
+        item.glyph->x = cursorX + kPad;
+        item.glyph->y = cursorY + kPad;
+        cursorX += cellW;
+        rowH = std::max(rowH, cellH);
+        packedW = std::max(packedW, cursorX);
+        packedH = std::max(packedH, cursorY + rowH);
+    }
+    packedW = std::max(packedW + kPad, 1);
+    packedH = std::max(packedH + kPad, 1);
+
+    SDL_Surface* dst = SDL_CreateRGBSurfaceWithFormat(0, packedW, packedH, 32,
+                                                      SDL_PIXELFORMAT_RGBA32);
+    if (dst == nullptr)
+    {
+        SDL_FreeSurface(src);
+        std::cerr << "BitmapFont: CreateRGBSurface failed: " << SDL_GetError()
+                  << '\n';
+        return false;
+    }
+    SDL_FillRect(dst, nullptr, SDL_MapRGBA(dst->format, 0, 0, 0, 0));
+
+    for (const SrcGlyph& item : items)
+    {
+        if (item.glyph->width <= 0 || item.glyph->height <= 0)
+        {
+            continue;
+        }
+        SDL_Rect srcRect{item.srcX, item.srcY, item.glyph->width,
+                         item.glyph->height};
+        SDL_Rect dstRect{item.glyph->x, item.glyph->y, item.glyph->width,
+                         item.glyph->height};
+        SDL_BlitSurface(src, &srcRect, dst, &dstRect);
+    }
+    SDL_FreeSurface(src);
+
+    m_texture = SDL_CreateTextureFromSurface(renderer, dst);
+    m_pageW = dst->w;
+    m_pageH = dst->h;
+    SDL_FreeSurface(dst);
     if (m_texture == nullptr)
     {
         std::cerr << "BitmapFont: CreateTexture failed: " << SDL_GetError()
@@ -97,18 +160,6 @@ bool BitmapFont::load(SDL_Renderer* renderer, const std::string& fntPath,
     }
     SDL_SetTextureBlendMode(m_texture, SDL_BLENDMODE_BLEND);
     SDL_SetTextureScaleMode(m_texture, SDL_ScaleModeNearest);
-
-    // The .fnt common line often keeps the original BMFont page size
-    // (scaleW=256) even after glyphs were pasted into a larger atlas.png
-    // (512×512). UVs must use the real texture dimensions.
-    int texW = 0;
-    int texH = 0;
-    SDL_QueryTexture(m_texture, nullptr, nullptr, &texW, &texH);
-    if (texW > 0 && texH > 0)
-    {
-        m_pageW = texW;
-        m_pageH = texH;
-    }
     return true;
 }
 
@@ -150,11 +201,18 @@ void BitmapFont::draw(ImDrawList* draw, ImVec2 pos, std::string_view text,
     {
         return;
     }
+    // Integer logical origin; nearest sampling so upscales expand texels
+    // instead of blending a soft fringe (no TTF antialias).
+    pos.x = std::floor(pos.x);
+    pos.y = std::floor(pos.y);
+    SDL_SetTextureScaleMode(m_texture, SDL_ScaleModeNearest);
+    SDL_SetTextureBlendMode(m_texture, SDL_BLENDMODE_BLEND);
     const ImTextureID id = reinterpret_cast<ImTextureID>(m_texture);
     const float invW = 1.0f / static_cast<float>(m_pageW);
     const float invH = 1.0f / static_cast<float>(m_pageH);
     float cursorX = pos.x;
     const float cursorY = pos.y;
+    const bool integerScale = std::floor(scale) == scale;
     for (unsigned char ch : text)
     {
         const Glyph* g = glyph(static_cast<int>(ch));
@@ -164,10 +222,19 @@ void BitmapFont::draw(ImDrawList* draw, ImVec2 pos, std::string_view text,
         }
         if (g->width > 0 && g->height > 0)
         {
-            const ImVec2 p0(cursorX + static_cast<float>(g->xOffset) * scale,
-                            cursorY + static_cast<float>(g->yOffset) * scale);
-            const ImVec2 p1(p0.x + static_cast<float>(g->width) * scale,
-                            p0.y + static_cast<float>(g->height) * scale);
+            float x = cursorX + static_cast<float>(g->xOffset) * scale;
+            float y = cursorY + static_cast<float>(g->yOffset) * scale;
+            float w = static_cast<float>(g->width) * scale;
+            float h = static_cast<float>(g->height) * scale;
+            if (integerScale)
+            {
+                x = std::floor(x);
+                y = std::floor(y);
+                w = std::floor(w);
+                h = std::floor(h);
+            }
+            const ImVec2 p0(x, y);
+            const ImVec2 p1(x + w, y + h);
             const ImVec2 uv0(static_cast<float>(g->x) * invW,
                              static_cast<float>(g->y) * invH);
             const ImVec2 uv1(static_cast<float>(g->x + g->width) * invW,

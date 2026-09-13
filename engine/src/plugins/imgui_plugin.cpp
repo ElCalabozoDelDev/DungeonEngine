@@ -5,6 +5,7 @@
 #include <engine/core/asset_paths.hpp>
 #include <engine/core/startup_error.hpp>
 #include <engine/graphics/sdl_resources.hpp>
+#include <engine/graphics/ui_fonts.hpp>
 #include <engine/plugins/imgui_plugin.hpp>
 #include <filesystem>
 
@@ -38,8 +39,7 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
             style.AntiAliasedLines = false;
             style.AntiAliasedFill = false;
 
-            // Prefer the game's pixel font when present; keep ImGui's default
-            // as fallback if the file is missing or fails to load.
+            UiFonts fonts{};
             if (const auto* assets = registry.ctx().find<AssetPaths>();
                 assets != nullptr)
             {
@@ -50,12 +50,12 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
                     cfg.PixelSnapH = true;
                     cfg.OversampleH = 1;
                     cfg.OversampleV = 1;
-                    // Size in logical pixels; SDL scales the present 4× with
-                    // nearest filtering so glyphs stay crisp.
-                    io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(),
-                                                 16.0f, &cfg);
+                    // Debug / fallback only — title and game UI use BMFont.
+                    fonts.body = io.Fonts->AddFontFromFileTTF(
+                        fontPath.string().c_str(), 16.0f, &cfg);
                 }
             }
+            registry.ctx().emplace<UiFonts>(fonts);
 
             ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
             ImGui_ImplSDLRenderer2_Init(renderer);

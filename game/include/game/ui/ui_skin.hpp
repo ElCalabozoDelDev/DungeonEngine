@@ -20,7 +20,8 @@ constexpr float kCanvasW = 320.0f;
 constexpr float kCanvasH = 180.0f;
 constexpr float kButtonH = 14.0f;
 constexpr float kButtonMinW = 65.0f;
-constexpr float kPanelBorder = 4.0f;
+/// panel-background.png is 15×15 with a 5×5 α=175 centre (Gum 1/3 nine-slice).
+constexpr float kPanelBorder = 5.0f;
 constexpr float kPausePanelW = 264.0f;
 constexpr float kPausePanelH = 70.0f;
 constexpr float kSliderPanelW = 264.0f;
@@ -30,8 +31,10 @@ constexpr float kSliderPanelH = 55.0f;
 constexpr float kFontScore = 0.25f;
 constexpr float kFontButton = 0.25f;
 constexpr float kFontPanelTitle = 0.5f;
-/// Screen-space 04B_30_5x (87.5px) → logical after /4.
-constexpr float kFontTitle = 87.5f / 4.0f / 35.0f;
+/// Title screen: native BMFont pixels in logical space, nearest-upscaled ×4
+/// by the present (chunky texels — no TTF antialias). Matches the weight of
+/// MonoGame's 04B_30_5x better than shrinking the .fnt with AA TTF.
+constexpr float kFontTitle = 1.0f;
 
 constexpr ImU32 kButtonTextColor = IM_COL32(70, 86, 130, 255);
 constexpr ImU32 kTitleShadow = IM_COL32(0, 0, 0, 128);

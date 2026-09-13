@@ -11,6 +11,7 @@ add_library(game_lib STATIC
     src/scene/title_scene.cpp
     src/sim/sim_plugin.cpp
     src/systems/bat_system.cpp
+    src/systems/grayscale_fade_system.cpp
     src/systems/snake_system.cpp
     src/ui/bitmap_font.cpp
     src/ui/ui_skin.cpp

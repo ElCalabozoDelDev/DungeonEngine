@@ -12,6 +12,7 @@
 #include <game/scene/title_scene.hpp>
 #include <game/state.hpp>
 #include <game/systems/bat_system.hpp>
+#include <game/systems/grayscale_fade_system.hpp>
 #include <game/systems/snake_system.hpp>
 #include <memory>
 
@@ -97,6 +98,7 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
     gameLoop.addFixedSystem(std::make_shared<BatSystem>());
 
     gameLoop.addSystem(std::make_shared<CameraSystem>());
+    gameLoop.addSystem(std::make_shared<GrayscaleFadeSystem>());
     gameLoop.addSystem(sceneSystem);
     gameLoop.addSystem(debugSystem);
 }
