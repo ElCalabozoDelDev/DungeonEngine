@@ -8,12 +8,12 @@
 
 namespace de
 {
-/// Logical canvas size (SDL_RenderSetLogicalSize / Config cameraWidth×Height).
+/// Logical canvas size (SDL_RenderSetLogicalSize / Config logicalWidth×Height).
 inline std::pair<float, float> logicalSize(entt::registry& registry)
 {
     if (const auto* config = registry.ctx().find<Config>(); config != nullptr)
     {
-        return {config->cameraWidth, config->cameraHeight};
+        return {config->logicalWidth, config->logicalHeight};
     }
     return {320.0f, 180.0f};
 }
@@ -21,9 +21,9 @@ inline std::pair<float, float> logicalSize(entt::registry& registry)
 inline float windowToLogicalScale(entt::registry& registry)
 {
     if (const auto* config = registry.ctx().find<Config>();
-        config != nullptr && config->cameraWidth > 0.0f)
+        config != nullptr && config->logicalWidth > 0.0f)
     {
-        return static_cast<float>(config->screenWidth) / config->cameraWidth;
+        return static_cast<float>(config->screenWidth) / config->logicalWidth;
     }
     return 4.0f;
 }

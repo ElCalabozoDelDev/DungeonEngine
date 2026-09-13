@@ -23,6 +23,6 @@ Los números viven en tres sitios a la vez: default del componente,
 | Velocidad bat | **75 px/s** | `BatComponent::speed` |
 | Sprite slime/bat | **20×20** | `DimensionComponent` + sheets `slime.png` / `bat.png` |
 | Ventana | **1280×720** | `Config::screenWidth/Height` |
-| Lógico | **320×180** | `Config::cameraWidth/Height` |
+| Lógico | **320×180** | `Config::logicalWidth/Height` |
 | Escala efectiva | **4×** | ventana / lógico |
 | Música / SFX default | **60 %** | `AudioSettings` |

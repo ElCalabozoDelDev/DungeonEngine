@@ -2,7 +2,6 @@
 #include <array>
 #include <engine/components/transform_component.hpp>
 #include <engine/core/game_loop.hpp>
-#include <engine/core/startup_error.hpp>
 #include <engine/input/action_map.hpp>
 #include <engine/input/input_state.hpp>
 #include <game/components/bat_component.hpp>
@@ -31,12 +30,6 @@ void SimPlugin::mount(de::GameLoop& gameLoop)
     gameLoop.addSetupCallback(
         [this](entt::registry& registry)
         {
-            // Nothing to seed or record if startup already failed; the loop
-            // reports the error and runs no frame.
-            if (registry.ctx().contains<StartupError>())
-            {
-                return;
-            }
             // Installed by GamePlugin, which is mounted before this plugin.
             registry.ctx().get<GameRng>().engine.seed(m_options.seed);
 

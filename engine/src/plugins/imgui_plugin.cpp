@@ -2,7 +2,6 @@
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_sdlrenderer2.h"
 #include <SDL_render.h>
-#include <engine/core/startup_error.hpp>
 #include <engine/graphics/logical_size.hpp>
 #include <engine/graphics/sdl_resources.hpp>
 #include <engine/loaders/config.hpp>
@@ -15,10 +14,6 @@ void ImGuiPlugin::mount(GameLoop& gameLoop)
     gameLoop.addSetupCallback(
         [](entt::registry& registry)
         {
-            if (registry.ctx().contains<StartupError>())
-            {
-                return;
-            }
             SDL_Renderer* renderer = registry.ctx().get<MainRenderer>().get();
             SDL_Window* window = registry.ctx().get<Window>().get();
             IMGUI_CHECKVERSION();

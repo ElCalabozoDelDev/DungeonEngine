@@ -22,8 +22,8 @@ TEST_CASE("the balance values match the design document")
     SUBCASE("logical render size")
     {
         de::Config config;
-        CHECK(config.cameraWidth == doctest::Approx(320.0f));
-        CHECK(config.cameraHeight == doctest::Approx(180.0f));
+        CHECK(config.logicalWidth == doctest::Approx(320.0f));
+        CHECK(config.logicalHeight == doctest::Approx(180.0f));
         CHECK(config.screenWidth == 1280);
         CHECK(config.screenHeight == 720);
         CHECK(config.zoomLevel == doctest::Approx(1.0f));

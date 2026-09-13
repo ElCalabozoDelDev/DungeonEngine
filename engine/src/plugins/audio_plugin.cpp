@@ -1,5 +1,4 @@
 #include <engine/audio/audio_manager.hpp>
-#include <engine/core/startup_error.hpp>
 #include <engine/plugins/audio_plugin.hpp>
 #include <iostream>
 #include <string>
@@ -11,11 +10,6 @@ void AudioPlugin::mount(GameLoop& gameLoop)
     gameLoop.addSetupCallback(
         [](entt::registry& registry)
         {
-            if (registry.ctx().contains<StartupError>())
-            {
-                return;
-            }
-
             auto& audio = registry.ctx().emplace<AudioManager>();
             std::string error;
             if (!audio.open(&error))

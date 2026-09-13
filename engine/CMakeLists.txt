@@ -8,11 +8,11 @@
 add_library(engine STATIC
     src/audio/audio_manager.cpp
     src/core/asset_paths.cpp
+    src/core/game_loop.cpp
     src/input/action_map.cpp
     src/graphics/camera2d.cpp
-    src/graphics/render_bottom.cpp
-    src/graphics/render_object.cpp
-    src/graphics/render_overlay.cpp
+    src/graphics/layer_passes.cpp
+    src/graphics/renderer.cpp
     src/graphics/texture_cache.cpp
     src/graphics/world_color_grade_pass.cpp
     src/loaders/config_loader.cpp
@@ -22,6 +22,7 @@ add_library(engine STATIC
     src/plugins/imgui_plugin.cpp
     src/plugins/input_plugin.cpp
     src/plugins/sdl_plugin.cpp
+    src/scene/scene.cpp
     src/scene/scene_system.cpp
     src/spatial/level_spatial_index.cpp
     src/spatial/spatial_index.cpp

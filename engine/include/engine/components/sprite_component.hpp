@@ -5,9 +5,9 @@ namespace de
 {
 struct SpriteComponent
 {
-    int spriteRow;     // Sprite row in the sheet
-    int currentCol;    // Sprite column in the sheet
-    int currentSprite; // Current animation sprite
+    int spriteRow = 0;     // Sprite row in the sheet
+    int currentCol = 0;    // Sprite column in the sheet
+    int currentSprite = 0; // Current animation sprite
 };
 
 } // namespace de

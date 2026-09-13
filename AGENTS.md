@@ -91,6 +91,14 @@ in `game/`.
   `de::Paused` is derived from it. Change both only through
   `setPlayState()`. Fixed systems do not check for pause: the loop does
   not step them while `Paused` is set.
+- Scenes hand the entities they create to `Scene::track()`; `SceneSystem`
+  destroys them after `onExit()`. `TiledLoader::load` returns every entity
+  it created in `LoadedLevel::entities` for exactly that.
+- Setup callbacks do not check for `StartupError`: `GameLoop` stops calling
+  them after the first one that reports it. Teardown callbacks still run
+  and must cope with a partial setup.
+- `BasePlugin` provides `SceneSystem` and `DebugSystem` (context references);
+  mount game plugins after it.
 - Vector maths (`lerp`, `reflect`, `Circle`, `Vector2D::dot`) lives in
   `engine/core/math.hpp`; do not re-declare it in game code.
 

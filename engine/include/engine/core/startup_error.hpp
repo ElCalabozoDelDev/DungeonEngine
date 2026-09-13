@@ -6,8 +6,8 @@
 namespace de
 {
 /// Placed in the registry context by a setup callback that could not do its
-/// job. GameLoop reports it and skips the frame loop instead of running on
-/// with a null window, and later setup callbacks skip their own work.
+/// job. GameLoop calls no further setup callbacks, reports it, and skips the
+/// frame loop instead of running on with a null window.
 ///
 /// Setup runs inside run(), not mount(), so failures cannot be returned from
 /// the plugin that caused them.

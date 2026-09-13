@@ -24,11 +24,11 @@ struct Config
     bool vsync = true;
     bool debug = false;
 
-    /// Logical render size (SDL_RenderSetLogicalSize / fixed camera defaults),
-    /// not a gameplay follow-camera. Mapped from game.json's logicalWidth and
-    /// logicalHeight so SDLPlugin keeps working without a rename.
-    float cameraWidth = 320.0f;
-    float cameraHeight = 180.0f;
+    /// The resolution the game draws in (SDL_RenderSetLogicalSize), which SDL
+    /// scales to the window. Everything downstream -- camera, culling, the
+    /// GUI -- works in these logical pixels.
+    float logicalWidth = 320.0f;
+    float logicalHeight = 180.0f;
     float zoomLevel = 1.0f;
 
     std::map<std::string, std::string> levels;
