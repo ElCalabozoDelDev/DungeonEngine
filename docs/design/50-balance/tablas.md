@@ -19,6 +19,7 @@ Los números viven en tres sitios a la vez: default del componente,
 | Intervalo de tick | **0.2 s** | `SnakeComponent::movementInterval` |
 | Puntos por bat | **100** | `SnakeComponent::scorePerBat` |
 | Stride (celda) | **20 px** | `SnakeComponent::stride` |
+| Sprite slime/bat | **20×20** | `DimensionComponent` + sheets `slime.png` / `bat.png` |
 | Ventana | **1280×720** | `Config::screenWidth/Height` |
 | Lógico | **320×180** | `Config::cameraWidth/Height` |
 | Escala efectiva | **4×** | ventana / lógico |

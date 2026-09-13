@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <engine/components/animation_component.hpp>
 #include <engine/components/dimension_component.hpp>
 #include <engine/components/sprite_component.hpp>
 #include <engine/components/texture_component.hpp>
@@ -19,7 +20,7 @@ using namespace de;
 
 namespace
 {
-constexpr float SegmentSize = 16.0f;
+constexpr float SegmentSize = 20.0f;
 
 float dot(const Vector2D<float>& a, const Vector2D<float>& b)
 {
@@ -59,9 +60,11 @@ void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
         registry.emplace<TransformComponent>(entity, Vector2D<float>{});
         registry.emplace<DimensionComponent>(entity, SegmentSize, SegmentSize);
         registry.emplace<SpriteComponent>(entity, 0, 0, 0);
-        const bool isHead = segmentEntities.empty();
-        registry.emplace<TextureComponent>(entity, isHead ? "slime-head"
-                                                          : "slime-body");
+        registry.emplace<TextureComponent>(entity, "slime");
+        AnimationComponent anim;
+        anim.totalFrames = 2;
+        anim.animationTime = 0.2f;
+        registry.emplace<AnimationComponent>(entity, anim);
         if (auto* spatial = registry.ctx().find<SpatialIndex>();
             spatial != nullptr && spatial->get(Layer::Object) != nullptr)
         {
@@ -93,9 +96,6 @@ void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
             registry.get<TransformComponent>(segmentEntities[i]).position;
         transform = Vector2D<float>(pos.getX() - SegmentSize * 0.5f,
                                     pos.getY() - SegmentSize * 0.5f);
-
-        auto& texture = registry.get<TextureComponent>(segmentEntities[i]);
-        texture.id = (i == 0) ? "slime-head" : "slime-body";
     }
 }
 

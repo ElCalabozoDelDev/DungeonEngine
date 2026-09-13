@@ -16,7 +16,7 @@ using namespace de;
 
 namespace
 {
-constexpr float HeadSize = 16.0f;
+constexpr float HeadSize = 20.0f;
 
 bool aabbOverlap(const Vector2D<float>& aPos, float aW, float aH,
                  const Vector2D<float>& bPos, float bW, float bH)

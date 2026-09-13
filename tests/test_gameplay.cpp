@@ -41,11 +41,11 @@ struct World
         auto entity = registry.create();
         registry.emplace<PlayerComponent>(entity);
         SnakeComponent snake;
-        snake.stride = 16.0f;
+        snake.stride = 20.0f;
         for (int i = 0; i < segments; ++i)
         {
             SlimeSegment segment;
-            segment.at = Vector2D<float>(x - static_cast<float>(i) * 16.0f, y);
+            segment.at = Vector2D<float>(x - static_cast<float>(i) * 20.0f, y);
             segment.to = segment.at;
             segment.direction = Vector2D<float>(1.0f, 0.0f);
             snake.segments.push_back(segment);
@@ -53,8 +53,8 @@ struct World
         snake.nextDirection = Vector2D<float>(1.0f, 0.0f);
         registry.emplace<SnakeComponent>(entity, snake);
         registry.emplace<TransformComponent>(
-            entity, Vector2D<float>(x - 8.0f, y - 8.0f));
-        registry.emplace<DimensionComponent>(entity, 16.0f, 16.0f);
+            entity, Vector2D<float>(x - 10.0f, y - 10.0f));
+        registry.emplace<DimensionComponent>(entity, 20.0f, 20.0f);
         return entity;
     }
 
@@ -94,9 +94,9 @@ TEST_CASE("snake dies on self collision")
     // U-turn fold: keep the tail so the new head lands on it.
     snake.pendingGrowth = 1;
     snake.segments[0].to = Vector2D<float>(100.0f, 80.0f);
-    snake.segments[1].to = Vector2D<float>(84.0f, 80.0f);
-    snake.segments[2].to = Vector2D<float>(84.0f, 96.0f);
-    snake.segments[3].to = Vector2D<float>(100.0f, 96.0f);
+    snake.segments[1].to = Vector2D<float>(80.0f, 80.0f);
+    snake.segments[2].to = Vector2D<float>(80.0f, 100.0f);
+    snake.segments[3].to = Vector2D<float>(100.0f, 100.0f);
     snake.segments[0].direction = Vector2D<float>(0.0f, 1.0f);
     snake.nextDirection = Vector2D<float>(0.0f, 1.0f);
 
@@ -127,8 +127,8 @@ TEST_CASE("eating a bat grows the snake and awards score")
     auto bat = world.registry.create();
     world.registry.emplace<BatComponent>(bat);
     world.registry.emplace<TransformComponent>(bat,
-                                               Vector2D<float>(92.0f, 72.0f));
-    world.registry.emplace<DimensionComponent>(bat, 16.0f, 16.0f);
+                                               Vector2D<float>(90.0f, 70.0f));
+    world.registry.emplace<DimensionComponent>(bat, 20.0f, 20.0f);
     world.registry.emplace<VelocityComponent>(bat, Vector2D<float>(0, 0));
 
     BatSystem batSystem;

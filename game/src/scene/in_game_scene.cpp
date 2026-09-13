@@ -1,6 +1,7 @@
 #include <SDL_render.h>
 #include <cmath>
 #include <engine/audio/audio_manager.hpp>
+#include <engine/components/animation_component.hpp>
 #include <engine/components/bottom_layer_component.hpp>
 #include <engine/components/camera_component.hpp>
 #include <engine/components/dimension_component.hpp>
@@ -82,9 +83,9 @@ void InGameScene::onEnter(entt::registry& registry)
                   static_cast<float>((state.mapRows - 2) * state.tileHeight)};
 
     auto& textures = registry.ctx().get<TextureCache>();
-    textures.load("slime-head", assets.resolve("images/slime-1.png").string());
-    textures.load("slime-body", assets.resolve("images/slime-2.png").string());
-    textures.load("bat", assets.resolve("images/bat-1.png").string());
+    // Horizontal strips: slime 2×20, bat 3×20 — AnimationComponent walks columns.
+    textures.load("slime", assets.resolve("images/slime.png").string());
+    textures.load("bat", assets.resolve("images/bat.png").string());
     textures.load("bg-pattern",
                   assets.resolve("images/background-pattern.png").string());
 
@@ -183,11 +184,14 @@ void InGameScene::tagObjectsByType(entt::registry& registry)
                 snake.nextDirection = head.direction;
                 snake.stride = 20.0f;
                 registry.emplace_or_replace<SnakeComponent>(entity, snake);
-                registry.emplace_or_replace<DimensionComponent>(entity, 16.0f,
-                                                                16.0f);
-                registry.emplace_or_replace<TextureComponent>(entity,
-                                                              "slime-head");
+                registry.emplace_or_replace<DimensionComponent>(entity, 20.0f,
+                                                                20.0f);
+                registry.emplace_or_replace<TextureComponent>(entity, "slime");
                 registry.emplace_or_replace<SpriteComponent>(entity, 0, 0, 0);
+                AnimationComponent anim;
+                anim.totalFrames = 2;
+                anim.animationTime = 0.2f;
+                registry.emplace_or_replace<AnimationComponent>(entity, anim);
             }
         }
     }
@@ -206,10 +210,14 @@ void InGameScene::spawnSnake(entt::registry& registry, float x, float y)
     snake.nextDirection = head.direction;
     registry.emplace<SnakeComponent>(entity, snake);
     registry.emplace<TransformComponent>(entity,
-                                         Vector2D<float>(x - 8.0f, y - 8.0f));
-    registry.emplace<DimensionComponent>(entity, 16.0f, 16.0f);
-    registry.emplace<TextureComponent>(entity, "slime-head");
+                                         Vector2D<float>(x - 10.0f, y - 10.0f));
+    registry.emplace<DimensionComponent>(entity, 20.0f, 20.0f);
+    registry.emplace<TextureComponent>(entity, "slime");
     registry.emplace<SpriteComponent>(entity, 0, 0, 0);
+    AnimationComponent anim;
+    anim.totalFrames = 2;
+    anim.animationTime = 0.2f;
+    registry.emplace<AnimationComponent>(entity, anim);
     registry.emplace<VelocityComponent>(entity, Vector2D<float>(0, 0));
     m_entities.push_back(entity);
 }
@@ -219,18 +227,22 @@ void InGameScene::spawnBat(entt::registry& registry)
     const auto& state = registry.ctx().get<GameState>();
     static std::mt19937 rng{std::random_device{}()};
     std::uniform_real_distribution<float> dx(state.roomBounds.left(),
-                                             state.roomBounds.right() - 16.0f);
+                                             state.roomBounds.right() - 20.0f);
     std::uniform_real_distribution<float> dy(state.roomBounds.top(),
-                                             state.roomBounds.bottom() - 16.0f);
+                                             state.roomBounds.bottom() - 20.0f);
     std::uniform_real_distribution<float> dir(-1.0f, 1.0f);
 
     auto entity = registry.create();
     registry.emplace<BatComponent>(entity);
     registry.emplace<TransformComponent>(entity,
                                          Vector2D<float>(dx(rng), dy(rng)));
-    registry.emplace<DimensionComponent>(entity, 16.0f, 16.0f);
+    registry.emplace<DimensionComponent>(entity, 20.0f, 20.0f);
     registry.emplace<TextureComponent>(entity, "bat");
     registry.emplace<SpriteComponent>(entity, 0, 0, 0);
+    AnimationComponent anim;
+    anim.totalFrames = 3;
+    anim.animationTime = 0.1f;
+    registry.emplace<AnimationComponent>(entity, anim);
     Vector2D<float> velocity(dir(rng), dir(rng));
     if (velocity.lengthSquared() < 0.01f)
     {
