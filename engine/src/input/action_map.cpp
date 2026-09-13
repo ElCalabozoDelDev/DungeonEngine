@@ -55,6 +55,18 @@ bool ActionMap::wasPressed(const InputState& input,
                        { return input.wasPressed(key); });
 }
 
+bool ActionMap::wasPressedRaw(const InputState& input,
+                              std::string_view action) const
+{
+    const auto* keys = find(action);
+    if (keys == nullptr)
+    {
+        return false;
+    }
+    return std::any_of(keys->begin(), keys->end(), [&input](SDL_Scancode key)
+                       { return input.wasPressedRaw(key); });
+}
+
 bool ActionMap::wasReleased(const InputState& input,
                             std::string_view action) const
 {

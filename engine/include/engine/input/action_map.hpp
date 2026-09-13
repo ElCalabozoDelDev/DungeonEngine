@@ -40,6 +40,8 @@ public:
 
     bool isDown(const InputState& input, std::string_view action) const;
     bool wasPressed(const InputState& input, std::string_view action) const;
+    /// Like wasPressed, but ignores ImGui keyboard capture (for menu widgets).
+    bool wasPressedRaw(const InputState& input, std::string_view action) const;
     bool wasReleased(const InputState& input, std::string_view action) const;
 
     /// -1, 0 or +1 from a pair of opposing actions, for building a direction.

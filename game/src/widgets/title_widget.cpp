@@ -24,11 +24,39 @@ ImVec2 logicalSize(entt::registry& registry)
     }
     return ImVec2(320.0f, 180.0f);
 }
+
+void playUi(entt::registry& registry)
+{
+    if (auto* audio = registry.ctx().find<AudioManager>())
+    {
+        audio->playSound("ui");
+    }
+}
+
+bool menuButton(const char* label, bool selected, const ImVec2& size)
+{
+    if (selected)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button,
+                              ImVec4(0.55f, 0.65f, 0.95f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                              ImVec4(0.65f, 0.75f, 1.0f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                              ImVec4(0.45f, 0.55f, 0.85f, 1.0f));
+    }
+    const bool clicked = ImGui::Button(label, size);
+    if (selected)
+    {
+        ImGui::PopStyleColor(3);
+    }
+    return clicked;
+}
 } // namespace
 
 void TitleWidget::render(entt::registry& registry, de::gui::Hooks& h)
 {
     const ImVec2 screen = logicalSize(registry);
+    auto [focus, setFocus] = h.use_state(0); // START / OPTIONS / QUIT
 
     if (auto* textures = registry.ctx().find<TextureCache>();
         textures != nullptr)
@@ -56,6 +84,24 @@ void TitleWidget::render(entt::registry& registry, de::gui::Hooks& h)
         }
     }
 
+    const auto* input = registry.ctx().find<InputState>();
+    const auto* actions = registry.ctx().find<ActionMap>();
+    if (input != nullptr && actions != nullptr)
+    {
+        if (actions->wasPressedRaw(*input, "move_up") ||
+            actions->wasPressedRaw(*input, "move_left"))
+        {
+            setFocus((focus + 2) % 3);
+            playUi(registry);
+        }
+        if (actions->wasPressedRaw(*input, "move_down") ||
+            actions->wasPressedRaw(*input, "move_right"))
+        {
+            setFocus((focus + 1) % 3);
+            playUi(registry);
+        }
+    }
+
     ImGui::SetNextWindowPos(ImVec2(screen.x * 0.5f, screen.y * 0.5f),
                             ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::Begin("title", nullptr,
@@ -69,34 +115,27 @@ void TitleWidget::render(entt::registry& registry, de::gui::Hooks& h)
     ImGui::SetWindowFontScale(0.55f);
     ImGui::Separator();
 
-    const auto* input = registry.ctx().find<InputState>();
-    const auto* actions = registry.ctx().find<ActionMap>();
-    const bool confirmPressed = input != nullptr && actions != nullptr &&
-                                actions->wasPressed(*input, "confirm");
+    const bool confirm = input != nullptr && actions != nullptr &&
+                         actions->wasPressedRaw(*input, "confirm");
 
-    auto playUi = [&]()
+    if (menuButton("START", focus == 0, ImVec2(90, 0)) ||
+        (confirm && focus == 0))
     {
-        if (auto* audio = registry.ctx().find<AudioManager>())
-        {
-            audio->playSound("ui");
-        }
-    };
-
-    if (ImGui::Button("START", ImVec2(90, 0)) || confirmPressed)
-    {
-        playUi();
+        playUi(registry);
         registry.ctx().get<SceneSystem>().requestScene(
             std::make_unique<InGameScene>());
     }
-    if (ImGui::Button("OPTIONS", ImVec2(90, 0)))
+    if (menuButton("OPTIONS", focus == 1, ImVec2(90, 0)) ||
+        (confirm && focus == 1))
     {
-        playUi();
+        playUi(registry);
         registry.ctx().get<SceneSystem>().requestScene(
             std::make_unique<OptionsScene>());
     }
-    if (ImGui::Button("QUIT", ImVec2(90, 0)))
+    if (menuButton("QUIT", focus == 2, ImVec2(90, 0)) ||
+        (confirm && focus == 2))
     {
-        playUi();
+        playUi(registry);
         registry.ctx().get<ControlFlow>() = ControlFlow::Exit;
     }
 

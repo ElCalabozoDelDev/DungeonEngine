@@ -27,8 +27,14 @@ public:
     /// True only on the frame the key went down.
     bool wasPressed(SDL_Scancode key) const
     {
-        return !m_keyboardCaptured && get(m_current, key) &&
-               !get(m_previous, key);
+        return !m_keyboardCaptured && wasPressedRaw(key);
+    }
+
+    /// Like wasPressed, but ignores ImGui keyboard capture. Menu widgets use
+    /// this so an open overlay cannot swallow Enter / arrows.
+    bool wasPressedRaw(SDL_Scancode key) const
+    {
+        return get(m_current, key) && !get(m_previous, key);
     }
 
     /// True only on the frame the key came up.
