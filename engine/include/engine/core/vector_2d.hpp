@@ -29,6 +29,16 @@ public:
 
     constexpr T lengthSquared() const noexcept { return m_x * m_x + m_y * m_y; }
 
+    constexpr T dot(const Vector2D<T>& other) const noexcept
+    {
+        return m_x * other.m_x + m_y * other.m_y;
+    }
+
+    constexpr bool operator==(const Vector2D<T>& other) const noexcept
+    {
+        return m_x == other.m_x && m_y == other.m_y;
+    }
+
     constexpr Vector2D<T> operator+(const Vector2D<T>& v2) const noexcept
     {
         return Vector2D<T>(m_x + v2.m_x, m_y + v2.m_y);

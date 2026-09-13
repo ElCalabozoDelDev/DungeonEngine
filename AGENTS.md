@@ -83,6 +83,16 @@ in `game/`.
 - Systems that must not depend on frame rate go in `addFixedSystem`; the
   rest in `addSystem`, rendering in `addSystemLast`. `addFixedSystemLast`
   is for per-step bookkeeping after all movement (spatial index sync).
+- Game-wide context resources (`GameState`, `AudioSettings`, `GameRng`,
+  `de::Paused`, `de::WorldColorGrade`) are installed once, in
+  `GamePlugin`'s setup. Everything else reads them with `ctx().get` —
+  never `if (!contains) emplace`, which hides a missing resource.
+- `GameState::playState` is the truth about pause and game over;
+  `de::Paused` is derived from it. Change both only through
+  `setPlayState()`. Fixed systems do not check for pause: the loop does
+  not step them while `Paused` is set.
+- Vector maths (`lerp`, `reflect`, `Circle`, `Vector2D::dot`) lives in
+  `engine/core/math.hpp`; do not re-declare it in game code.
 
 ## Design documents
 

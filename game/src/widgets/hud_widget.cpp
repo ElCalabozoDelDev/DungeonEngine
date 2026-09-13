@@ -91,7 +91,7 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
     auto [pauseFocus, setPauseFocus] = h.use_state(0);
     auto [gameOverFocus, setGameOverFocus] = h.use_state(0);
 
-    const auto* state = registry.ctx().find<GameState>();
+    const auto& state = registry.ctx().get<GameState>();
     const ImVec2 canvas = game::ui::canvasSize(registry);
     const auto* input = registry.ctx().find<InputState>();
     const auto* actions = registry.ctx().find<ActionMap>();
@@ -100,25 +100,16 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
                                : 0.0;
     ImDrawList* draw = ImGui::GetForegroundDrawList();
 
-    if (state != nullptr)
-    {
-        char scoreLabel[32];
-        std::snprintf(scoreLabel, sizeof(scoreLabel), "SCORE: %06d",
-                      state->score);
-        game::ui::drawText(registry, draw,
-                           ImVec2(game::ui::kScoreX, game::ui::kScoreY),
-                           scoreLabel, game::ui::kFontScore, IM_COL32_WHITE);
-    }
-
-    if (state == nullptr)
-    {
-        return;
-    }
+    char scoreLabel[32];
+    std::snprintf(scoreLabel, sizeof(scoreLabel), "SCORE: %06d", state.score);
+    game::ui::drawText(registry, draw,
+                       ImVec2(game::ui::kScoreX, game::ui::kScoreY), scoreLabel,
+                       game::ui::kFontScore, IM_COL32_WHITE);
 
     const bool confirm = input != nullptr && actions != nullptr &&
                          actions->wasPressedRaw(*input, "confirm");
 
-    if (state->playState == PlayState::Paused)
+    if (state.playState == PlayState::Paused)
     {
         handleSideFocus(registry, input, actions, setPauseFocus);
 
@@ -140,7 +131,7 @@ void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
         return;
     }
 
-    if (state->playState == PlayState::GameOver)
+    if (state.playState == PlayState::GameOver)
     {
         handleSideFocus(registry, input, actions, setGameOverFocus);
 

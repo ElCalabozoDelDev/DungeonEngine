@@ -2,6 +2,7 @@
 #include <array>
 #include <engine/components/transform_component.hpp>
 #include <engine/core/game_loop.hpp>
+#include <engine/core/startup_error.hpp>
 #include <engine/input/action_map.hpp>
 #include <engine/input/input_state.hpp>
 #include <game/components/bat_component.hpp>
@@ -30,10 +31,13 @@ void SimPlugin::mount(de::GameLoop& gameLoop)
     gameLoop.addSetupCallback(
         [this](entt::registry& registry)
         {
-            if (!registry.ctx().contains<GameRng>())
+            // Nothing to seed or record if startup already failed; the loop
+            // reports the error and runs no frame.
+            if (registry.ctx().contains<StartupError>())
             {
-                registry.ctx().emplace<GameRng>();
+                return;
             }
+            // Installed by GamePlugin, which is mounted before this plugin.
             registry.ctx().get<GameRng>().engine.seed(m_options.seed);
 
             m_csv.open(m_options.csvPath);
@@ -82,14 +86,10 @@ void SimPlugin::mount(de::GameLoop& gameLoop)
             }
 
             ++m_steps;
-            int score = 0;
+            const auto& state = registry.ctx().get<GameState>();
+            const int score = state.score;
+            const bool over = state.playState == PlayState::GameOver;
             int length = 0;
-            bool over = false;
-            if (const auto* state = registry.ctx().find<GameState>())
-            {
-                score = state->score;
-                over = state->playState == PlayState::GameOver;
-            }
             Vector2D<float> head;
             for (auto entity : registry.view<PlayerComponent, SnakeComponent>())
             {

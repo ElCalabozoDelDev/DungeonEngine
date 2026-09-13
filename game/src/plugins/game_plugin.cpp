@@ -2,6 +2,7 @@
 #include <engine/core/game_loop.hpp>
 #include <engine/core/paused.hpp>
 #include <engine/core/startup_error.hpp>
+#include <engine/graphics/world_color_grade.hpp>
 #include <engine/input/action_map.hpp>
 #include <engine/input/input_state.hpp>
 #include <engine/scene/scene_system.hpp>
@@ -47,10 +48,15 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
             actions.bind("confirm", SDL_SCANCODE_SPACE);
             actions.bind("reload_scene", SDL_SCANCODE_F5);
 
+            // The game's shared resources, installed exactly once. Scenes,
+            // systems and widgets read them with ctx().get and never create
+            // them: a missing resource should fail loudly here, not be
+            // quietly default-constructed wherever it was first needed.
             registry.ctx().emplace<GameState>();
             registry.ctx().emplace<AudioSettings>();
             registry.ctx().emplace<Paused>();
             registry.ctx().emplace<GameRng>();
+            registry.ctx().emplace<WorldColorGrade>();
 
             registry.ctx().emplace<SceneSystem&>(*sceneSystem);
             registry.ctx().emplace<DebugSystem&>(*debugSystem);
@@ -66,24 +72,21 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
     gameLoop.addFrameBeginCallback(
         [](entt::registry& registry)
         {
-            auto* scenes = registry.ctx().find<SceneSystem>();
-            auto* input = registry.ctx().find<InputState>();
-            auto* actions = registry.ctx().find<ActionMap>();
-            auto* state = registry.ctx().find<GameState>();
-            if (scenes == nullptr || input == nullptr || actions == nullptr ||
-                state == nullptr)
-            {
-                return;
-            }
+            // Frames only run after a successful setup, which installed all
+            // of these.
+            auto& scenes = registry.ctx().get<SceneSystem>();
+            const auto& input = registry.ctx().get<InputState>();
+            const auto& actions = registry.ctx().get<ActionMap>();
+            const auto& state = registry.ctx().get<GameState>();
 
             // Esc toggles pause while playing; UI owns GameOver transitions.
             // Fixed systems: SnakeSystem then BatSystem (eat after move).
-            if (state->playState == PlayState::Playing ||
-                state->playState == PlayState::Paused)
+            if (state.playState == PlayState::Playing ||
+                state.playState == PlayState::Paused)
             {
-                if (actions->wasPressed(*input, "pause"))
+                if (actions.wasPressed(input, "pause"))
                 {
-                    if (state->playState == PlayState::Playing)
+                    if (state.playState == PlayState::Playing)
                     {
                         setPlayState(registry, PlayState::Paused);
                     }
@@ -94,9 +97,9 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
                 }
             }
 
-            if (actions->wasPressed(*input, "reload_scene"))
+            if (actions.wasPressed(input, "reload_scene"))
             {
-                scenes->requestScene(std::make_unique<InGameScene>());
+                scenes.requestScene(std::make_unique<InGameScene>());
             }
         });
 

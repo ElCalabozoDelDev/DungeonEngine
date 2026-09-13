@@ -7,7 +7,7 @@
 #include <engine/components/texture_component.hpp>
 #include <engine/components/transform_component.hpp>
 #include <engine/core/delta_time.hpp>
-#include <engine/core/paused.hpp>
+#include <engine/core/math.hpp>
 #include <engine/input/action_map.hpp>
 #include <engine/input/input_state.hpp>
 #include <engine/spatial/spatial_index.hpp>
@@ -23,23 +23,18 @@ using namespace de;
 
 namespace
 {
-float dot(const Vector2D<float>& a, const Vector2D<float>& b)
-{
-    return a.getX() * b.getX() + a.getY() * b.getY();
-}
-
 /// MonoGame-style AABB: sprite top-left at center - half size must stay inside
 /// roomBounds (the open floor inset by one wall tile).
 bool spriteOutsideRoom(const Vector2D<float>& center, float size,
-                       const Rectangle& box)
+                       const Box<float>& box)
 {
     const float half = size * 0.5f;
     const float left = center.getX() - half;
     const float right = center.getX() + half;
     const float top = center.getY() - half;
     const float bottom = center.getY() + half;
-    return left < box.left() || right > box.right() || top < box.top() ||
-           bottom > box.bottom();
+    return left < box.getLeft() || right > box.getRight() ||
+           top < box.getTop() || bottom > box.getBottom();
 }
 
 bool segmentsOverlap(const Vector2D<float>& a, const Vector2D<float>& b,
@@ -98,8 +93,7 @@ void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
     for (std::size_t i = 0; i < bodyCount; ++i)
     {
         const auto& segment = snake.segments[i + 1];
-        const auto pos =
-            game::lerp(segment.at, segment.to, snake.movementProgress);
+        const auto pos = lerp(segment.at, segment.to, snake.movementProgress);
         auto& transform =
             registry.get<TransformComponent>(segmentEntities[i]).position;
         transform = Vector2D<float>(pos.getX() - game::kSegmentSize * 0.5f,
@@ -115,7 +109,7 @@ void syncPlayerTransform(entt::registry& registry, entt::entity entity,
         return;
     }
     const auto& head = snake.segments.front();
-    const auto pos = game::lerp(head.at, head.to, snake.movementProgress);
+    const auto pos = lerp(head.at, head.to, snake.movementProgress);
     registry.get<TransformComponent>(entity).position =
         Vector2D<float>(pos.getX() - game::kSegmentSize * 0.5f,
                         pos.getY() - game::kSegmentSize * 0.5f);
@@ -125,36 +119,10 @@ void syncPlayerTransform(entt::registry& registry, entt::entity entity,
 
 void SnakeSystem::run(entt::registry& registry)
 {
-    auto* state = registry.ctx().find<GameState>();
-    auto* paused = registry.ctx().find<Paused>();
-    if (state == nullptr)
-    {
-        return;
-    }
-
-    // Keep the settled pose on Game Over (last valid floor cell).
-    if (state->playState == PlayState::GameOver)
-    {
-        auto view = registry.view<PlayerComponent, SnakeComponent>();
-        for (auto entity : view)
-        {
-            auto& snake = view.get<SnakeComponent>(entity);
-            snake.movementProgress = 1.0f;
-            syncSegmentSprites(registry, snake, snake.segmentEntities);
-            syncPlayerTransform(registry, entity, snake);
-        }
-        return;
-    }
-
-    if (state->playState != PlayState::Playing)
-    {
-        return;
-    }
-    if (paused != nullptr && paused->value)
-    {
-        return;
-    }
-
+    // No pause or game-over check here: the loop does not step fixed systems
+    // while de::Paused is set, and setPlayState() sets it for every state but
+    // Playing. The step that ends the game settles the pose itself, below.
+    auto& state = registry.ctx().get<GameState>();
     auto* input = registry.ctx().find<InputState>();
     auto* actions = registry.ctx().find<ActionMap>();
     const float dt = registry.ctx().get<DeltaTime>().fixed;
@@ -187,7 +155,7 @@ void SnakeSystem::run(entt::registry& registry)
             if (!snake.segments.empty())
             {
                 const auto& facing = snake.segments.front().direction;
-                if (dot(desired, facing) >= 0.0f)
+                if (desired.dot(facing) >= 0.0f)
                 {
                     snake.nextDirection = desired;
                 }
@@ -214,7 +182,7 @@ void SnakeSystem::run(entt::registry& registry)
 
             // Die on the last valid floor cell — do not step onto the wall.
             if (spriteOutsideRoom(nextPos, game::kSegmentSize,
-                                  state->roomBounds))
+                                  state.roomBounds))
             {
                 setPlayState(registry, PlayState::GameOver);
                 if (auto* audio = registry.ctx().find<AudioManager>())
@@ -263,7 +231,8 @@ void SnakeSystem::run(entt::registry& registry)
             }
         }
 
-        if (state->playState == PlayState::Playing)
+        // Unless this step ended the game, which froze the pose above.
+        if (state.playState == PlayState::Playing)
         {
             snake.movementProgress =
                 snake.movementTimer / SnakeComponent::movementInterval;

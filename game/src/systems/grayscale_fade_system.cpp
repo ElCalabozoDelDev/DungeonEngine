@@ -16,34 +16,26 @@ constexpr float kFadePerSecond = 0.02f * 60.0f;
 
 void GrayscaleFadeSystem::run(entt::registry& registry)
 {
-    auto* state = registry.ctx().find<GameState>();
-    if (state == nullptr)
-    {
-        return;
-    }
-    if (!registry.ctx().contains<WorldColorGrade>())
-    {
-        registry.ctx().emplace<WorldColorGrade>();
-    }
+    const auto& state = registry.ctx().get<GameState>();
     auto& grade = registry.ctx().get<WorldColorGrade>();
 
-    if (state->playState != m_lastState)
+    if (state.playState != m_lastState)
     {
         // Tutorial resets Saturation to 1.0f on entering pause / game over,
         // then fades on subsequent frames.
-        if (state->playState == PlayState::Paused ||
-            state->playState == PlayState::GameOver)
+        if (state.playState == PlayState::Paused ||
+            state.playState == PlayState::GameOver)
         {
             grade.colorAmount = 1.0f;
         }
-        m_lastState = state->playState;
+        m_lastState = state.playState;
         return;
     }
 
-    if (state->playState == PlayState::Playing)
+    if (state.playState == PlayState::Playing)
     {
         grade.colorAmount = 1.0f;
-        m_lastState = state->playState;
+        m_lastState = state.playState;
         return;
     }
 
