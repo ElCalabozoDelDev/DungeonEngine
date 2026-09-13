@@ -1,0 +1,224 @@
+#include <algorithm>
+#include <cmath>
+#include <engine/components/animation_component.hpp>
+#include <engine/components/dimension_component.hpp>
+#include <engine/components/sprite_component.hpp>
+#include <engine/components/texture_component.hpp>
+#include <engine/components/transform_component.hpp>
+#include <engine/core/delta_time.hpp>
+#include <engine/core/paused.hpp>
+#include <engine/input/action_map.hpp>
+#include <engine/input/input_state.hpp>
+#include <engine/spatial/spatial_index.hpp>
+#include <game/components/player_component.hpp>
+#include <game/components/snake_component.hpp>
+#include <game/state.hpp>
+#include <game/systems/snake_system.hpp>
+#include <vector>
+
+using namespace de;
+
+namespace
+{
+constexpr float SegmentSize = 20.0f;
+
+float dot(const Vector2D<float>& a, const Vector2D<float>& b)
+{
+    return a.getX() * b.getX() + a.getY() * b.getY();
+}
+
+Vector2D<float> lerp(const Vector2D<float>& a, const Vector2D<float>& b,
+                     float t)
+{
+    return a + (b - a) * t;
+}
+
+bool outsideRoom(const Vector2D<float>& center, float radius,
+                 const Rectangle& box)
+{
+    return center.getX() - radius < box.left() ||
+           center.getX() + radius > box.right() ||
+           center.getY() - radius < box.top() ||
+           center.getY() + radius > box.bottom();
+}
+
+bool segmentsOverlap(const Vector2D<float>& a, const Vector2D<float>& b,
+                     float size)
+{
+    const float half = size * 0.5f;
+    const Box<float> aa(a.getX() - half, a.getY() - half, size, size);
+    const Box<float> bb(b.getX() - half, b.getY() - half, size, size);
+    return aa.intersects(bb);
+}
+
+void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
+                        std::vector<entt::entity>& segmentEntities)
+{
+    while (segmentEntities.size() < snake.segments.size())
+    {
+        auto entity = registry.create();
+        registry.emplace<TransformComponent>(entity, Vector2D<float>{});
+        registry.emplace<DimensionComponent>(entity, SegmentSize, SegmentSize);
+        registry.emplace<SpriteComponent>(entity, 0, 0, 0);
+        registry.emplace<TextureComponent>(entity, "slime");
+        AnimationComponent anim;
+        anim.totalFrames = 2;
+        anim.animationTime = 0.2f;
+        registry.emplace<AnimationComponent>(entity, anim);
+        if (auto* spatial = registry.ctx().find<SpatialIndex>();
+            spatial != nullptr && spatial->get(Layer::Object) != nullptr)
+        {
+            spatial->insert(Layer::Object, entity);
+        }
+        segmentEntities.push_back(entity);
+    }
+
+    while (segmentEntities.size() > snake.segments.size())
+    {
+        auto entity = segmentEntities.back();
+        segmentEntities.pop_back();
+        if (auto* spatial = registry.ctx().find<SpatialIndex>();
+            spatial != nullptr && spatial->get(Layer::Object) != nullptr)
+        {
+            spatial->remove(Layer::Object, entity);
+        }
+        if (registry.valid(entity))
+        {
+            registry.destroy(entity);
+        }
+    }
+
+    for (std::size_t i = 0; i < snake.segments.size(); ++i)
+    {
+        const auto& segment = snake.segments[i];
+        const auto pos = lerp(segment.at, segment.to, snake.movementProgress);
+        auto& transform =
+            registry.get<TransformComponent>(segmentEntities[i]).position;
+        transform = Vector2D<float>(pos.getX() - SegmentSize * 0.5f,
+                                    pos.getY() - SegmentSize * 0.5f);
+    }
+}
+
+} // namespace
+
+void SnakeSystem::run(entt::registry& registry)
+{
+    auto* state = registry.ctx().find<GameState>();
+    auto* paused = registry.ctx().find<Paused>();
+    if (state == nullptr || state->playState != PlayState::Playing)
+    {
+        return;
+    }
+    if (paused != nullptr && paused->value)
+    {
+        return;
+    }
+
+    auto* input = registry.ctx().find<InputState>();
+    auto* actions = registry.ctx().find<ActionMap>();
+    const float dt = registry.ctx().get<DeltaTime>().fixed;
+
+    auto view = registry.view<PlayerComponent, SnakeComponent>();
+    for (auto entity : view)
+    {
+        auto& snake = view.get<SnakeComponent>(entity);
+
+        if (input != nullptr && actions != nullptr)
+        {
+            Vector2D<float> desired = snake.nextDirection;
+            if (actions->isDown(*input, "move_up"))
+            {
+                desired = Vector2D<float>(0.0f, -1.0f);
+            }
+            else if (actions->isDown(*input, "move_down"))
+            {
+                desired = Vector2D<float>(0.0f, 1.0f);
+            }
+            else if (actions->isDown(*input, "move_left"))
+            {
+                desired = Vector2D<float>(-1.0f, 0.0f);
+            }
+            else if (actions->isDown(*input, "move_right"))
+            {
+                desired = Vector2D<float>(1.0f, 0.0f);
+            }
+
+            if (!snake.segments.empty())
+            {
+                const auto& facing = snake.segments.front().direction;
+                if (dot(desired, facing) >= 0.0f)
+                {
+                    snake.nextDirection = desired;
+                }
+            }
+            else
+            {
+                snake.nextDirection = desired;
+            }
+        }
+
+        snake.movementTimer += dt;
+        if (snake.movementTimer >= SnakeComponent::movementInterval)
+        {
+            snake.movementTimer -= SnakeComponent::movementInterval;
+
+            if (snake.segments.empty())
+            {
+                continue;
+            }
+
+            const auto& head = snake.segments.front();
+            SlimeSegment newHead;
+            newHead.at = head.to;
+            newHead.direction = snake.nextDirection;
+            newHead.to = head.to + snake.nextDirection * snake.stride;
+
+            snake.segments.insert(snake.segments.begin(), newHead);
+
+            if (snake.pendingGrowth > 0)
+            {
+                --snake.pendingGrowth;
+            }
+            else
+            {
+                snake.segments.pop_back();
+            }
+
+            // Self-collision: skip the immediate neck segment.
+            const auto& headPos = snake.segments.front().to;
+            for (std::size_t i = 2; i < snake.segments.size(); ++i)
+            {
+                if (segmentsOverlap(headPos, snake.segments[i].to, SegmentSize))
+                {
+                    state->playState = PlayState::GameOver;
+                    state->gameOver = true;
+                    break;
+                }
+            }
+
+            if (!state->gameOver &&
+                outsideRoom(headPos, SegmentSize * 0.5f, state->roomBounds))
+            {
+                state->playState = PlayState::GameOver;
+                state->gameOver = true;
+            }
+        }
+
+        snake.movementProgress =
+            snake.movementTimer / SnakeComponent::movementInterval;
+
+        syncSegmentSprites(registry, snake, snake.segmentEntities);
+
+        // Keep the Player transform on the interpolated head centre so the
+        // bat system can find it.
+        if (!snake.segments.empty())
+        {
+            const auto& head = snake.segments.front();
+            const auto pos = lerp(head.at, head.to, snake.movementProgress);
+            auto& transform = registry.get<TransformComponent>(entity);
+            transform.position =
+                Vector2D<float>(pos.getX() - SegmentSize * 0.5f,
+                                pos.getY() - SegmentSize * 0.5f);
+        }
+    }
+}

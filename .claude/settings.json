@@ -10,7 +10,7 @@
           },
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-tmx.mjs\" 2>/dev/null || true",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-tiled.mjs\" 2>/dev/null || true",
             "statusMessage": "Checking the level"
           },
           {

@@ -20,7 +20,7 @@ Edit **`AGENTS.md`** when changing build/architecture/style guidance. Keep
 - Cursor (compatibility path)
 - GitHub Copilot (documented project skill path)
 
-Workflow skills (`gdd`, `balance`, `tmx-level`, `new-mechanic`, `playtest`)
+Workflow skills (`gdd`, `balance`, `tiled-level`, `new-mechanic`, `playtest`)
 auto-apply when relevant. Former slash commands are skills with
 `disable-model-invocation: true` — invoke explicitly with `/sim`,
 `/gdd-sync`, `/design-review`, `/spike`.
@@ -38,7 +38,7 @@ unless a tool stops reading `.claude/skills/`.
 The hook scripts are plain Node and safe to run from any agent or CI:
 
 ```
-node .claude/hooks/validate-tmx.mjs
+node .claude/hooks/validate-tiled.mjs
 node .claude/hooks/validate-gdd.mjs
 node .claude/hooks/design-drift.mjs
 ```

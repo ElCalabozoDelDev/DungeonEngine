@@ -4,9 +4,9 @@
     "entt",
     "imgui",
     "libpng",
+    "nlohmann-json",
     "sdl2",
     "sdl2-image",
-    "sdl2-mixer",
-    "tinyxml2"
+    "sdl2-mixer"
   ]
 }

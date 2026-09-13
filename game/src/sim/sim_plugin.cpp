@@ -1,43 +1,26 @@
 #include <SDL.h>
+#include <array>
 #include <engine/core/game_loop.hpp>
+#include <engine/input/action_map.hpp>
+#include <engine/input/input_state.hpp>
 #include <game/components/player_component.hpp>
+#include <game/components/snake_component.hpp>
 #include <game/sim/sim_plugin.hpp>
+#include <game/state.hpp>
 #include <iostream>
 
 using namespace de;
 
-namespace
-{
-/// Frames the menu is allowed to take before the level appears. The level is
-/// requested in a setup callback and applied by SceneSystem mid-frame, so a
-/// few frames without a player are normal; three hundred are not.
-constexpr int MaxFramesWithoutPlayer = 300;
-
-} // namespace
-
 SimPlugin::SimPlugin(SimOptions options) : m_options(std::move(options)) {}
-
-bool SimPlugin::cleared() const
-{
-    return m_sampler != nullptr && m_sampler->summary().outcome == "cleared";
-}
 
 void SimPlugin::mount(de::GameLoop& gameLoop)
 {
-    // mount() runs at addPlugin() time and SDLPlugin only *registers* a setup
-    // callback, so SDL is not up yet and these still take effect. Set with
-    // overwrite = 0: a CTest ENVIRONMENT entry, or a user who wants to watch,
-    // both win over this default.
     if (!m_options.window)
     {
         SDL_setenv("SDL_VIDEODRIVER", "dummy", 0);
         SDL_setenv("SDL_AUDIODRIVER", "dummy", 0);
         SDL_setenv("SDL_RENDER_DRIVER", "software", 0);
     }
-
-    m_policy.setSeed(m_options.seed);
-    m_sampler =
-        std::make_shared<TelemetrySampler>(m_policy, m_options.maxSteps);
 
     gameLoop.addSetupCallback(
         [this](entt::registry& registry)
@@ -47,81 +30,69 @@ void SimPlugin::mount(de::GameLoop& gameLoop)
             {
                 std::cerr << "sim: cannot write " << m_options.csvPath << "\n";
                 m_failed = true;
-                // Not a StartupError: that would abort before teardown and
-                // would report a level-loading problem, which this is not.
                 if (auto* flow = registry.ctx().find<ControlFlow>())
                 {
                     *flow = ControlFlow::Exit;
                 }
                 return;
             }
-            m_writer = std::make_unique<TelemetryWriter>(m_csv);
-            m_writer->writeHeader();
-            m_sampler->setWriter(m_writer.get());
+            m_csv << "step,score,length,game_over\n";
         });
 
     gameLoop.addFrameBeginCallback(
+        [](entt::registry& registry)
+        {
+            auto* input = registry.ctx().find<InputState>();
+            auto* actions = registry.ctx().find<ActionMap>();
+            if (input == nullptr || actions == nullptr)
+            {
+                return;
+            }
+
+            std::array<Uint8, SDL_NUM_SCANCODES> keys{};
+            for (SDL_Scancode key : actions->keysFor("move_right"))
+            {
+                keys[static_cast<std::size_t>(key)] = 1;
+            }
+            input->setKeyboard(keys.data(), SDL_NUM_SCANCODES);
+        });
+
+    gameLoop.addFrameEndCallback(
         [this](entt::registry& registry)
         {
-            m_policy.update(registry);
+            if (m_failed || !m_csv)
+            {
+                return;
+            }
 
-            if (m_sampler->finished())
+            ++m_steps;
+            int score = 0;
+            int length = 0;
+            bool over = false;
+            if (const auto* state = registry.ctx().find<GameState>())
             {
-                return;
+                score = state->score;
+                over =
+                    state->gameOver || state->playState == PlayState::GameOver;
             }
-            const auto players = registry.view<PlayerComponent>();
-            if (players.begin() != players.end())
+            for (auto entity : registry.view<PlayerComponent, SnakeComponent>())
             {
-                m_framesWithoutPlayer = 0;
-                return;
+                length = static_cast<int>(
+                    registry.get<SnakeComponent>(entity).segments.size());
             }
-            if (++m_framesWithoutPlayer >= MaxFramesWithoutPlayer)
+
+            m_csv << m_steps << ',' << score << ',' << length << ','
+                  << (over ? 1 : 0) << '\n';
+
+            if (over || m_steps >= m_options.maxSteps)
             {
-                std::cerr << "sim: no player entity after "
-                          << MaxFramesWithoutPlayer << " frames\n";
-                m_failed = true;
+                std::cout << "sim: outcome=" << (over ? "game_over" : "timeout")
+                          << " score=" << score << " length=" << length
+                          << " steps=" << m_steps << '\n';
                 if (auto* flow = registry.ctx().find<ControlFlow>())
                 {
                     *flow = ControlFlow::Exit;
                 }
             }
         });
-
-    // Last in the fixed step, so it observes post-collision, post-damage,
-    // post-pickup state.
-    gameLoop.addFixedSystem(m_sampler);
-
-    gameLoop.addTeardownCallback(
-        [this](entt::registry&)
-        {
-            SimSummary summary = m_sampler->summary();
-            if (!m_sampler->finished() && summary.steps > 0)
-            {
-                // Something else ended the loop first -- --frames, or a quit.
-                summary.outcome = "interrupted";
-            }
-            summary.seed = m_options.seed;
-            summary.csvPath = m_options.csvPath;
-
-            m_csv.flush();
-            m_csv.close();
-
-            const std::string text = TelemetryWriter::summary(summary);
-            std::cout << text << std::flush;
-            if (!m_options.summaryPath.empty())
-            {
-                std::ofstream out(m_options.summaryPath);
-                if (out)
-                {
-                    out << text;
-                }
-                else
-                {
-                    std::cerr << "sim: cannot write " << m_options.summaryPath
-                              << "\n";
-                }
-            }
-        });
-    // Teardown callbacks are connected front-first, so the last plugin
-    // mounted tears down first: the files are written before SDL_Quit.
 }

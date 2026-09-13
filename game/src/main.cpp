@@ -19,12 +19,8 @@ namespace
 {
 struct Options
 {
-    /// Exit after this many frames. 0 means run until the player quits.
-    /// Exists so CI can run the whole startup path headlessly.
     int frames = 0;
-    /// Start in the level instead of the menu.
     bool skipMenu = false;
-    /// Run the scripted telemetry pass instead of waiting for a human.
     bool sim = false;
     SimOptions simOptions;
 };
@@ -84,8 +80,6 @@ Options parseArguments(int argc, char* argv[])
         }
     }
 
-    // The menu produces no gameplay data and would need a synthetic confirm
-    // press to get past; booting straight into the level is simpler.
     if (options.sim)
     {
         options.skipMenu = true;
@@ -99,8 +93,6 @@ int main(int argc, char* argv[])
 {
     const Options options = parseArguments(argc, argv);
 
-    // Assets are found relative to the executable, so the game runs from any
-    // working directory -- including a double-click from the file explorer.
     auto assets = de::AssetPaths::discover();
     if (!assets)
     {
@@ -108,7 +100,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    auto config = de::ConfigLoader::load(assets->resolve("game.xml"));
+    auto config = de::ConfigLoader::load(assets->resolve("game.json"));
     if (!config)
     {
         std::cerr << "Config: " << config.error() << std::endl;
@@ -120,20 +112,12 @@ int main(int argc, char* argv[])
         std::make_unique<de::BasePlugin>(std::move(*config), *assets));
     gameLoop.addPlugin(std::make_unique<GamePlugin>());
 
-    // After GamePlugin, so its frame-begin injection overwrites the keyboard
-    // InputPlugin just read. GameLoop owns the plugin for its whole lifetime,
-    // so this pointer stays good -- and it is the only way back to the
-    // result, since the registry is private to the loop.
     SimPlugin* sim = nullptr;
     if (options.sim)
     {
         auto plugin = std::make_unique<SimPlugin>(options.simOptions);
         sim = plugin.get();
         gameLoop.addPlugin(std::move(plugin));
-
-        // The synthetic clock. Without it the number of fixed steps in a
-        // frame depends on how fast the machine is, and two runs of the same
-        // binary produce different data.
         gameLoop.setFrameDelta(de::DeltaTime{}.fixed);
     }
 
@@ -167,9 +151,6 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // A run that completed and wrote its CSV exits 0 whatever happened in it,
-    // dying included: a balance harness must not go red because the level is
-    // hard. --sim-require-clear is the opt-in gate for when it should.
     if (sim != nullptr && options.simOptions.requireClear && !sim->cleared())
     {
         return 2;

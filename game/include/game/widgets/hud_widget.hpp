@@ -4,8 +4,7 @@
 #include <engine/widgets/gui.hpp>
 #include <entt/entt.hpp>
 
-/// Health and items collected, plus the pause overlay when the game is
-/// paused.
+/// Score HUD plus pause and game-over overlays.
 class HudWidget : public de::gui::WidgetComponent
 {
 public:

@@ -1,49 +1,42 @@
 #include <SDL_render.h>
+#include <cmath>
 #include <engine/audio/audio_manager.hpp>
+#include <engine/components/animation_component.hpp>
 #include <engine/components/bottom_layer_component.hpp>
-#include <engine/components/camera_bounds_component.hpp>
 #include <engine/components/camera_component.hpp>
-#include <engine/components/collision_layer_component.hpp>
 #include <engine/components/dimension_component.hpp>
-#include <engine/components/follow_component.hpp>
 #include <engine/components/object_type_component.hpp>
 #include <engine/components/overlay_layer_component.hpp>
-#include <engine/components/solid_body_component.hpp>
 #include <engine/components/sprite_component.hpp>
+#include <engine/components/texture_component.hpp>
 #include <engine/components/tile_layer_component.hpp>
 #include <engine/components/transform_component.hpp>
+#include <engine/components/velocity_component.hpp>
 #include <engine/core/asset_paths.hpp>
 #include <engine/core/paused.hpp>
 #include <engine/core/startup_error.hpp>
+#include <engine/graphics/render.hpp>
 #include <engine/graphics/render_bottom.hpp>
-#include <engine/graphics/render_collision.hpp>
 #include <engine/graphics/render_object.hpp>
 #include <engine/graphics/render_overlay.hpp>
-#include <engine/loaders/tmx_loader.hpp>
+#include <engine/graphics/texture_cache.hpp>
+#include <engine/loaders/tiled_loader.hpp>
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/systems/debug_system.hpp>
 #include <engine/widgets/widget.hpp>
-#include <game/components/enemy_component.hpp>
-#include <game/components/health_component.hpp>
-#include <game/components/item_component.hpp>
+#include <functional>
+#include <game/components/bat_component.hpp>
 #include <game/components/player_component.hpp>
-#include <game/components/speed_component.hpp>
-#include <game/debug/player_editor.hpp>
+#include <game/components/snake_component.hpp>
 #include <game/scene/in_game_scene.hpp>
 #include <game/state.hpp>
-#include <game/widgets/counter_widget.hpp>
 #include <game/widgets/hud_widget.hpp>
-#include <iostream>
+#include <random>
 
 using namespace de;
 
-InGameScene::InGameScene()
-{
-    // Nothing to set up until onEnter: the registry does not exist yet.
-}
+InGameScene::InGameScene() = default;
 
-// onEnter runs inside the setup hook, so a failure here is a startup failure:
-// GameLoop reports it and exits rather than leaving an empty black window up.
 void InGameScene::fail(entt::registry& registry, const std::string& reason)
 {
     registry.ctx().emplace<StartupError>(StartupError{"level: " + reason});
@@ -52,46 +45,81 @@ void InGameScene::fail(entt::registry& registry, const std::string& reason)
 void InGameScene::onEnter(entt::registry& registry)
 {
     const auto& config = registry.ctx().get<Config>();
+    const auto& assets = registry.ctx().get<AssetPaths>();
 
-    // Fresh run: this scene is entered again on replay and on F5.
     registry.ctx().insert_or_assign<GameState>(GameState{});
     registry.ctx().get<Paused>().value = false;
 
-    // Load the level
-    const auto& assets = registry.ctx().get<AssetPaths>();
-    auto level = config.levels.find("level1");
+    if (!registry.ctx().contains<AudioSettings>())
+    {
+        registry.ctx().emplace<AudioSettings>();
+    }
+
+    auto level = config.levels.find("arena");
     if (level == config.levels.end())
     {
-        fail(registry, "game.xml declares no level named 'level1'");
+        fail(registry, "game.json declares no level named 'arena'");
         return;
     }
 
-    TMXLoader tmxLoader(&m_entities);
-    if (auto loaded =
-            tmxLoader.loadLevel(registry, assets.resolve(level->second));
+    TiledLoader loader(&m_entities);
+    if (auto loaded = loader.loadLevel(registry, assets.resolve(level->second));
         !loaded)
     {
         fail(registry, loaded.error());
         return;
     }
 
-    // Turn the Tiled object types into this game's components
-    tagObjectsByType(registry);
+    auto& state = registry.ctx().get<GameState>();
+    state.tileWidth = loader.getTileWidth();
+    state.tileHeight = loader.getTileHeight();
+    state.mapColumns = loader.getWidth();
+    state.mapRows = loader.getHeight();
+    // One-tile inset playable room, matching the MonoGame tutorial.
+    state.roomBounds =
+        Rectangle{static_cast<float>(state.tileWidth),
+                  static_cast<float>(state.tileHeight),
+                  static_cast<float>((state.mapColumns - 2) * state.tileWidth),
+                  static_cast<float>((state.mapRows - 2) * state.tileHeight)};
+
+    auto& textures = registry.ctx().get<TextureCache>();
+    // Horizontal strips: slime 2x20, bat 3x20. AnimationComponent walks
+    // columns.
+    textures.load("slime", assets.resolve("images/slime.png").string());
+    textures.load("bat", assets.resolve("images/bat.png").string());
+    textures.load("bg-pattern",
+                  assets.resolve("images/background-pattern.png").string());
 
     if (auto* audio = registry.ctx().find<AudioManager>(); audio != nullptr)
     {
-        audio->loadSound("pickup", assets.resolve("Audio/pickup.wav").string());
-        audio->loadSound("hurt", assets.resolve("Audio/hurt.wav").string());
+        const auto& settings = registry.ctx().get<AudioSettings>();
+        audio->setMusicVolume(settings.musicPercent);
+        audio->setSfxVolume(settings.sfxPercent);
+        audio->loadSound("bounce", assets.resolve("Audio/bounce.wav").string());
+        audio->loadSound("collect",
+                         assets.resolve("Audio/collect.wav").string());
+        audio->loadSound("ui", assets.resolve("Audio/ui.wav").string());
+        audio->loadMusic("theme", assets.resolve("Audio/theme.ogg").string());
+        audio->playMusic("theme", true);
     }
 
-    // Set up the camera
-    int mapWidth = tmxLoader.getWidth() * tmxLoader.getTileWidth();
-    int mapHeight = tmxLoader.getHeight() * tmxLoader.getTileHeight();
-    initializeCamera(registry, mapWidth, mapHeight, config);
+    tagObjectsByType(registry);
 
-    // Spatial indices and render passes
-    initializeQuadtrees(registry, static_cast<float>(mapWidth),
-                        static_cast<float>(mapHeight));
+    // If the map had no Player object, spawn at the room centre.
+    if (registry.view<PlayerComponent>().empty())
+    {
+        spawnSnake(registry, state.roomBounds.x + state.roomBounds.w * 0.5f,
+                   state.roomBounds.y + state.roomBounds.h * 0.5f);
+    }
+
+    spawnBat(registry);
+
+    const float mapWidth =
+        static_cast<float>(loader.getWidth() * loader.getTileWidth());
+    const float mapHeight =
+        static_cast<float>(loader.getHeight() * loader.getTileHeight());
+    initializeCamera(registry, config);
+    initializeQuadtrees(registry, mapWidth, mapHeight);
     populateTileQuadtree(registry);
     populateSpriteQuadtree(registry);
     initializeRenderers(registry);
@@ -103,12 +131,26 @@ void InGameScene::onUpdate(entt::registry& registry) {}
 
 void InGameScene::onExit(entt::registry& registry)
 {
-    // Drop the spatial trees first: they hold entity handles, and a query
-    // after the entities are gone would hand back dangling ones.
+    if (auto* audio = registry.ctx().find<AudioManager>(); audio != nullptr)
+    {
+        audio->stopMusic();
+    }
+
     registry.ctx().get<SpatialIndex>().clear();
 
-    // Destroy every entity this scene created. Checked, because gameplay
-    // destroys some of them itself -- a collected item is already gone.
+    for (auto entity : registry.view<PlayerComponent, SnakeComponent>())
+    {
+        auto& snake = registry.get<SnakeComponent>(entity);
+        for (auto segment : snake.segmentEntities)
+        {
+            if (registry.valid(segment))
+            {
+                registry.destroy(segment);
+            }
+        }
+        snake.segmentEntities.clear();
+    }
+
     for (auto entity : m_entities)
     {
         if (registry.valid(entity))
@@ -119,35 +161,97 @@ void InGameScene::onExit(entt::registry& registry)
     m_entities.clear();
 }
 
-// The TMX loader records each object's Tiled `type` without interpreting it;
-// mapping those strings onto gameplay components is this game's decision.
 void InGameScene::tagObjectsByType(entt::registry& registry)
 {
-    auto& state = registry.ctx().get<GameState>();
-
-    auto view = registry.view<ObjectTypeComponent>();
+    auto view = registry.view<ObjectTypeComponent, TransformComponent>();
     for (auto entity : view)
     {
         const auto& objectType = view.get<ObjectTypeComponent>(entity);
-
         if (objectType.type == "Player")
         {
-            registry.emplace<PlayerComponent>(entity);
-            registry.emplace<SpeedComponent>(entity);
-            registry.emplace<HealthComponent>(entity);
-            registry.emplace<SolidBodyComponent>(entity);
-        }
-        else if (objectType.type == "Enemy")
-        {
-            registry.emplace<EnemyComponent>(entity);
-            registry.emplace<SolidBodyComponent>(entity);
-        }
-        else if (objectType.type == "Item")
-        {
-            registry.emplace<ItemComponent>(entity);
-            ++state.itemsTotal;
+            const auto& pos = view.get<TransformComponent>(entity).position;
+            // Rebuild as a proper snake head; drop the placeholder sprite.
+            if (registry.valid(entity))
+            {
+                // Reuse the entity: strip object sprite extras and add snake.
+                registry.emplace_or_replace<PlayerComponent>(entity);
+                SnakeComponent snake;
+                SlimeSegment head;
+                head.at =
+                    Vector2D<float>(pos.getX() + 10.0f, pos.getY() + 10.0f);
+                head.to = head.at;
+                head.direction = Vector2D<float>(1.0f, 0.0f);
+                snake.segments.push_back(head);
+                snake.nextDirection = head.direction;
+                snake.stride = 20.0f;
+                registry.emplace_or_replace<SnakeComponent>(entity, snake);
+                registry.emplace_or_replace<DimensionComponent>(entity, 20.0f,
+                                                                20.0f);
+                registry.emplace_or_replace<TextureComponent>(entity, "slime");
+                registry.emplace_or_replace<SpriteComponent>(entity, 0, 0, 0);
+                AnimationComponent anim;
+                anim.totalFrames = 2;
+                anim.animationTime = 0.2f;
+                registry.emplace_or_replace<AnimationComponent>(entity, anim);
+            }
         }
     }
+}
+
+void InGameScene::spawnSnake(entt::registry& registry, float x, float y)
+{
+    auto entity = registry.create();
+    registry.emplace<PlayerComponent>(entity);
+    SnakeComponent snake;
+    SlimeSegment head;
+    head.at = Vector2D<float>(x, y);
+    head.to = head.at;
+    head.direction = Vector2D<float>(1.0f, 0.0f);
+    snake.segments.push_back(head);
+    snake.nextDirection = head.direction;
+    registry.emplace<SnakeComponent>(entity, snake);
+    registry.emplace<TransformComponent>(entity,
+                                         Vector2D<float>(x - 10.0f, y - 10.0f));
+    registry.emplace<DimensionComponent>(entity, 20.0f, 20.0f);
+    registry.emplace<TextureComponent>(entity, "slime");
+    registry.emplace<SpriteComponent>(entity, 0, 0, 0);
+    AnimationComponent anim;
+    anim.totalFrames = 2;
+    anim.animationTime = 0.2f;
+    registry.emplace<AnimationComponent>(entity, anim);
+    registry.emplace<VelocityComponent>(entity, Vector2D<float>(0, 0));
+    m_entities.push_back(entity);
+}
+
+void InGameScene::spawnBat(entt::registry& registry)
+{
+    const auto& state = registry.ctx().get<GameState>();
+    static std::mt19937 rng{std::random_device{}()};
+    std::uniform_real_distribution<float> dx(state.roomBounds.left(),
+                                             state.roomBounds.right() - 20.0f);
+    std::uniform_real_distribution<float> dy(state.roomBounds.top(),
+                                             state.roomBounds.bottom() - 20.0f);
+    std::uniform_real_distribution<float> dir(-1.0f, 1.0f);
+
+    auto entity = registry.create();
+    registry.emplace<BatComponent>(entity);
+    registry.emplace<TransformComponent>(entity,
+                                         Vector2D<float>(dx(rng), dy(rng)));
+    registry.emplace<DimensionComponent>(entity, 20.0f, 20.0f);
+    registry.emplace<TextureComponent>(entity, "bat");
+    registry.emplace<SpriteComponent>(entity, 0, 0, 0);
+    AnimationComponent anim;
+    anim.totalFrames = 3;
+    anim.animationTime = 0.1f;
+    registry.emplace<AnimationComponent>(entity, anim);
+    Vector2D<float> velocity(dir(rng), dir(rng));
+    if (velocity.lengthSquared() < 0.01f)
+    {
+        velocity = Vector2D<float>(1.0f, 1.0f);
+    }
+    velocity = velocity / velocity.length() * 60.0f;
+    registry.emplace<VelocityComponent>(entity, velocity);
+    m_entities.push_back(entity);
 }
 
 void InGameScene::initializeQuadtrees(entt::registry& registry, float mapWidth,
@@ -195,17 +299,6 @@ void InGameScene::populateTileQuadtree(entt::registry& registry)
             spatial.insert(Layer::Overlay, tile);
         }
     }
-
-    auto collisionView =
-        registry.view<TileLayerComponent, CollisionLayerComponent>();
-    for (auto entity : collisionView)
-    {
-        auto& tileLayer = registry.get<TileLayerComponent>(entity);
-        for (auto tile : tileLayer.tileEntities)
-        {
-            spatial.insert(Layer::Collision, tile);
-        }
-    }
 }
 
 void InGameScene::populateSpriteQuadtree(entt::registry& registry)
@@ -218,37 +311,23 @@ void InGameScene::populateSpriteQuadtree(entt::registry& registry)
     }
 }
 
-void InGameScene::initializeCamera(entt::registry& registry, int mapWidth,
-                                   int mapHeight, const Config& config)
+void InGameScene::initializeCamera(entt::registry& registry,
+                                   const Config& config)
 {
+    // Fixed camera covering the full logical view; no FollowComponent.
     auto cameraEntity = registry.create();
     registry.emplace<DimensionComponent>(cameraEntity, config.cameraWidth,
                                          config.cameraHeight);
-
     auto& camera = registry.emplace<CameraComponent>(cameraEntity);
     camera.zoomLevel = config.zoomLevel;
-    registry.emplace<CameraBoundsComponent>(cameraEntity, mapWidth, mapHeight);
-
-    auto view = registry.view<PlayerComponent>();
-    if (view.empty())
-    {
-        fail(registry,
-             "the level contains no object with type=\"Player\"; there is "
-             "nothing for the camera to follow");
-        return;
-    }
-
-    auto player = *view.begin();
-    auto& playerTransform = registry.get<TransformComponent>(player).position;
-    registry.emplace<TransformComponent>(cameraEntity, playerTransform);
-    registry.emplace<FollowComponent>(cameraEntity, player);
+    registry.emplace<TransformComponent>(
+        cameraEntity,
+        Vector2D<float>(config.cameraWidth * 0.5f, config.cameraHeight * 0.5f));
     m_entities.push_back(cameraEntity);
 }
 
 void InGameScene::initializeRenderers(entt::registry& registry)
 {
-    // Order is declared, not implied by creation order. They are created here
-    // deliberately out of draw order to make that obvious.
     const auto addPass = [&](std::unique_ptr<Render> pass, int order)
     {
         auto entity = registry.create();
@@ -259,7 +338,6 @@ void InGameScene::initializeRenderers(entt::registry& registry)
     addPass(std::make_unique<RenderOverlay>(), render_order::Overlay);
     addPass(std::make_unique<RenderObject>(), render_order::Object);
     addPass(std::make_unique<RenderBottom>(), render_order::Bottom);
-    addPass(std::make_unique<RenderCollision>(), render_order::Collision);
 }
 
 void InGameScene::initializeHud(entt::registry& registry)
@@ -272,18 +350,14 @@ void InGameScene::initializeHud(entt::registry& registry)
 void InGameScene::initializeDebug(entt::registry& registry, bool open)
 {
     if (!open)
+    {
         return;
+    }
 
     auto& debugSystem = registry.ctx().get<DebugSystem>();
     debugSystem.setOpen(open);
     debugSystem.register_component<PlayerComponent>("Player");
     debugSystem.register_component<CameraComponent>("Camera");
-    debugSystem.register_component<HealthComponent>("Health");
-    debugSystem.register_component<EnemyComponent>("Enemy");
-
-    // Shown alongside the inspector: the worked example of the hook-based GUI
-    // (use_state / use_callback / use_effect), which the HUD does not need.
-    auto counterEntity = registry.create();
-    registry.emplace<Widget>(counterEntity, std::make_unique<CounterWidget>());
-    m_entities.push_back(counterEntity);
+    debugSystem.register_component<SnakeComponent>("Snake");
+    debugSystem.register_component<BatComponent>("Bat");
 }

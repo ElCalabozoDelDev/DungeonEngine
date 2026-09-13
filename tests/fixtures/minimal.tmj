@@ -1,0 +1,81 @@
+{
+ "height":4,
+ "infinite":false,
+ "layers":[
+        {
+         "data":[1,1,1,1,
+            1,0,1,1,
+            1,1,1,1,
+            1,1,1,1],
+         "height":4,
+         "id":1,
+         "name":"Bottom",
+         "opacity":1,
+         "type":"tilelayer",
+         "visible":true,
+         "width":4,
+         "x":0,
+         "y":0
+        },
+        {
+         "draworder":"topdown",
+         "id":2,
+         "name":"Objects",
+         "objects":[
+                {
+                 "height":16,
+                 "id":1,
+                 "name":"Hero",
+                 "type":"Player",
+                 "visible":true,
+                 "width":16,
+                 "x":32,
+                 "y":48,
+                 "properties":[
+                        { "name":"animationTime", "type":"float", "value":0.3 },
+                        { "name":"spriteCol", "type":"int", "value":0 },
+                        { "name":"spriteRow", "type":"int", "value":1 },
+                        { "name":"textureID", "type":"string", "value":"atlas" },
+                        { "name":"totalFrames", "type":"int", "value":3 }
+                 ]
+                },
+                {
+                 "height":16,
+                 "id":2,
+                 "name":"Gem",
+                 "type":"Item",
+                 "visible":true,
+                 "width":16,
+                 "x":16,
+                 "y":16
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }],
+ "nextlayerid":3,
+ "nextobjectid":3,
+ "orientation":"orthogonal",
+ "renderorder":"right-down",
+ "tileheight":16,
+ "tilesets":[
+        {
+         "columns":2,
+         "firstgid":1,
+         "image":"nonexistent.png",
+         "imageheight":32,
+         "imagewidth":32,
+         "margin":0,
+         "name":"tiles",
+         "spacing":0,
+         "tilecount":4,
+         "tileheight":16,
+         "tilewidth":16
+        }],
+ "tilewidth":16,
+ "type":"map",
+ "version":"1.10",
+ "width":4
+}
