@@ -44,14 +44,15 @@ float wrapPositive(float value, float period)
     return value;
 }
 
-void drawScrollingPattern(entt::registry& registry, ImDrawList* draw,
-                          ImVec2 canvas, ImVec2 scroll,
-                          const std::function<void(const ImVec2&)>& setScroll)
+void drawMenuBackground(entt::registry& registry, ImDrawList* draw,
+                        ImVec2 canvas, ImVec2& scroll)
 {
     if (draw == nullptr)
     {
         return;
     }
+    draw->AddRectFilled(ImVec2(0, 0), canvas, kClearColor);
+
     auto* textures = registry.ctx().find<TextureCache>();
     if (textures == nullptr)
     {
@@ -73,17 +74,15 @@ void drawScrollingPattern(entt::registry& registry, ImDrawList* draw,
     const float scale = presentScale(registry);
     const float tileW = static_cast<float>(tw) / scale;
     const float tileH = static_cast<float>(th) / scale;
-    float ox = scroll.x;
-    float oy = scroll.y;
     if (const auto* dt = registry.ctx().find<DeltaTime>(); dt != nullptr)
     {
         const float step = (kPatternScrollSpeed / scale) * dt->value;
-        ox = wrapPositive(ox - step, tileW);
-        oy = wrapPositive(oy - step, tileH);
-        setScroll(ImVec2(ox, oy));
+        scroll.x = wrapPositive(scroll.x - step, tileW);
+        scroll.y = wrapPositive(scroll.y - step, tileH);
     }
-    SDL_SetTextureScaleMode(pattern, SDL_ScaleModeNearest);
-    SDL_SetTextureBlendMode(pattern, SDL_BLENDMODE_BLEND);
+    const float ox = scroll.x;
+    const float oy = scroll.y;
+    // Nearest sampling and blending were set when TextureCache loaded it.
     const ImTextureID id = reinterpret_cast<ImTextureID>(pattern);
     for (float y = -oy; y < canvas.y; y += tileH)
     {

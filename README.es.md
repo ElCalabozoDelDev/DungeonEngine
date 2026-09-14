@@ -29,8 +29,8 @@ lugar del proyecto de otro que hay que desenredar.
   se mueven.
 - **Input** como acciones con nombre y teclas rebindeables, no scancodes
   metidos en los sistemas.
-- **Dear ImGui** integrado, inspector de entidades y una capa de widgets basada
-  en hooks (`use_state`).
+- **Dear ImGui** integrado, inspector de entidades y una capa de widgets: un
+  `render(registry)` por frame, con el estado en miembros del propio widget.
 - **Animación de sprites** con modos en bucle, ping-pong y de una sola pasada,
   multiplicador de velocidad y pausa en cada extremo.
 - **Audio** con SDL2_mixer.

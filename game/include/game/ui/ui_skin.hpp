@@ -60,7 +60,9 @@ constexpr float kFontTitle = 1.0f;
 constexpr ImU32 kButtonTextColor = IM_COL32(70, 86, 130, 255);
 constexpr ImU32 kTitleShadow = IM_COL32(0, 0, 0, 128);
 
-void ensureLoaded(entt::registry& registry);
+/// Loads the menu chrome and the bitmap font. Called once at startup by
+/// game::loadGameAssets; widgets only draw with what it loaded.
+void loadUiAssets(entt::registry& registry);
 BitmapFont* font(entt::registry& registry);
 
 int focusFrame(double elapsedSeconds);

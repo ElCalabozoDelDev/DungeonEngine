@@ -7,6 +7,7 @@ codigo:
   - game/src/ui/ui_skin.cpp
   - game/src/ui/ui_layout.cpp
   - game/src/ui/bitmap_font.cpp
+  - game/src/ui/menu.cpp
   - game/src/widgets/title_widget.cpp
   - game/src/widgets/options_widget.cpp
   - game/src/widgets/hud_widget.cpp

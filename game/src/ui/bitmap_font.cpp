@@ -205,8 +205,6 @@ void BitmapFont::draw(ImDrawList* draw, ImVec2 pos, std::string_view text,
     // instead of blending a soft fringe (no TTF antialias).
     pos.x = std::floor(pos.x);
     pos.y = std::floor(pos.y);
-    SDL_SetTextureScaleMode(m_texture, SDL_ScaleModeNearest);
-    SDL_SetTextureBlendMode(m_texture, SDL_BLENDMODE_BLEND);
     const ImTextureID id = reinterpret_cast<ImTextureID>(m_texture);
     const float invW = 1.0f / static_cast<float>(m_pageW);
     const float invH = 1.0f / static_cast<float>(m_pageH);

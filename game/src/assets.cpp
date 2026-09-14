@@ -3,6 +3,7 @@
 #include <engine/graphics/texture_cache.hpp>
 #include <game/assets.hpp>
 #include <game/state.hpp>
+#include <game/ui/ui_skin.hpp>
 
 using namespace de;
 
@@ -32,6 +33,8 @@ void loadGameAssets(entt::registry& registry)
         audio->setMusicVolume(settings.musicPercent);
         audio->setSfxVolume(settings.sfxPercent);
     }
+
+    ui::loadUiAssets(registry);
 }
 
 } // namespace game

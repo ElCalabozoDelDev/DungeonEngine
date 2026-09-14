@@ -79,9 +79,7 @@ void RenderSystem::renderGUI(entt::registry& registry)
     {
         if (widget.widget)
         {
-            widget.widget->frame_begin();
-            widget.widget->frame_update(registry);
-            widget.widget->frame_end();
+            widget.widget->render(registry);
         }
     }
 

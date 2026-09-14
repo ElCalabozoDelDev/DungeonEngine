@@ -14,16 +14,9 @@ namespace game::ui
 {
 namespace
 {
-SDL_Texture* tex(TextureCache& cache, const char* id)
-{
-    SDL_Texture* t = cache.get(id);
-    if (t != nullptr)
-    {
-        SDL_SetTextureScaleMode(t, SDL_ScaleModeNearest);
-        SDL_SetTextureBlendMode(t, SDL_BLENDMODE_BLEND);
-    }
-    return t;
-}
+/// Nearest sampling and blending are set once, when TextureCache loads a
+/// texture; setting them again on every draw was pure overhead.
+SDL_Texture* tex(TextureCache& cache, const char* id) { return cache.get(id); }
 
 ImTextureID asId(SDL_Texture* t) { return reinterpret_cast<ImTextureID>(t); }
 
@@ -35,15 +28,10 @@ void loadOne(TextureCache& textures, const AssetPaths& assets, const char* id,
         return;
     }
     textures.load(id, assets.resolve(relative).string());
-    if (SDL_Texture* t = textures.get(id); t != nullptr)
-    {
-        SDL_SetTextureScaleMode(t, SDL_ScaleModeNearest);
-        SDL_SetTextureBlendMode(t, SDL_BLENDMODE_BLEND);
-    }
 }
 } // namespace
 
-void ensureLoaded(entt::registry& registry)
+void loadUiAssets(entt::registry& registry)
 {
     auto* textures = registry.ctx().find<TextureCache>();
     auto* assets = registry.ctx().find<AssetPaths>();

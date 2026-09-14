@@ -2,7 +2,6 @@
 #define GAME_UI_UI_LAYOUT_HPP
 
 #include <entt/entt.hpp>
-#include <functional>
 #include <imgui.h>
 
 namespace game::ui
@@ -17,10 +16,11 @@ void playUi(entt::registry& registry);
 
 float wrapPositive(float value, float period);
 
-/// Scrolling PointWrap background pattern (MonoGame title/options).
-void drawScrollingPattern(entt::registry& registry, ImDrawList* draw,
-                          ImVec2 canvas, ImVec2 scroll,
-                          const std::function<void(const ImVec2&)>& setScroll);
+/// The full-screen menu backdrop: the clear colour, then the background
+/// pattern tiled and scrolling diagonally (MonoGame title/options).
+/// `scroll` is the widget's own offset, advanced by this frame's delta.
+void drawMenuBackground(entt::registry& registry, ImDrawList* draw,
+                        ImVec2 canvas, ImVec2& scroll);
 
 } // namespace game::ui
 

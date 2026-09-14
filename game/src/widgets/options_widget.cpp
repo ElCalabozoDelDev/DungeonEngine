@@ -1,10 +1,8 @@
 #include <engine/audio/audio_manager.hpp>
-#include <engine/core/delta_time.hpp>
-#include <engine/input/action_map.hpp>
-#include <engine/input/input_state.hpp>
 #include <engine/scene/scene_system.hpp>
 #include <game/scene/title_scene.hpp>
 #include <game/state.hpp>
+#include <game/ui/menu.hpp>
 #include <game/ui/ui_layout.hpp>
 #include <game/ui/ui_skin.hpp>
 #include <game/widgets/options_widget.hpp>
@@ -12,111 +10,87 @@
 #include <memory>
 
 using namespace de;
+using namespace game::ui;
 
 namespace
 {
-void applyVolume(entt::registry& registry, const AudioSettings& settings,
-                 int focus)
+enum Item
 {
-    if (auto* audio = registry.ctx().find<AudioManager>())
+    Music,
+    Sfx,
+    Back
+};
+
+/// Left/right on a focused slider: a step of 10, within 0..100. Returns true
+/// when a key was pressed.
+bool adjustVolume(entt::registry& registry, int& percent)
+{
+    bool changed = false;
+    if (pressed(registry, "move_left"))
     {
-        if (focus == 0)
-        {
-            audio->setMusicVolume(settings.musicPercent);
-        }
-        else if (focus == 1)
-        {
-            audio->setSfxVolume(settings.sfxPercent);
-        }
+        percent = (percent >= 10) ? percent - 10 : 0;
+        changed = true;
     }
+    if (pressed(registry, "move_right"))
+    {
+        percent = (percent <= 90) ? percent + 10 : 100;
+        changed = true;
+    }
+    return changed;
 }
+
 } // namespace
 
-void OptionsWidget::render(entt::registry& registry, de::gui::Hooks& h)
+void OptionsWidget::render(entt::registry& registry)
 {
-    game::ui::ensureLoaded(registry);
-
     auto& settings = registry.ctx().get<AudioSettings>();
-    const ImVec2 canvas = game::ui::canvasSize(registry);
-    auto [focus, setFocus] = h.use_state(0);
-    auto [scroll, setScroll] = h.use_state(ImVec2(0.0f, 0.0f));
-    const double elapsed = registry.ctx().contains<DeltaTime>()
-                               ? registry.ctx().get<DeltaTime>().elapsed
-                               : 0.0;
-
+    const ImVec2 canvas = canvasSize(registry);
     ImDrawList* draw = ImGui::GetBackgroundDrawList();
-    draw->AddRectFilled(ImVec2(0, 0), canvas, game::ui::kClearColor);
-    game::ui::drawScrollingPattern(registry, draw, canvas, scroll, setScroll);
+    drawMenuBackground(registry, draw, canvas, m_scroll);
 
-    const auto* input = registry.ctx().find<InputState>();
-    const auto* actions = registry.ctx().find<ActionMap>();
-    if (input != nullptr && actions != nullptr)
+    m_nav.update(registry, {"move_up"}, {"move_down"});
+
+    if (m_nav.focused(Music) || m_nav.focused(Sfx))
     {
-        if (actions->wasPressedRaw(*input, "move_up"))
+        const bool music = m_nav.focused(Music);
+        if (adjustVolume(registry,
+                         music ? settings.musicPercent : settings.sfxPercent))
         {
-            setFocus((focus + 2) % 3);
-            game::ui::playUi(registry);
-        }
-        if (actions->wasPressedRaw(*input, "move_down"))
-        {
-            setFocus((focus + 1) % 3);
-            game::ui::playUi(registry);
-        }
-        if (focus == 0 || focus == 1)
-        {
-            int* value =
-                focus == 0 ? &settings.musicPercent : &settings.sfxPercent;
-            bool changed = false;
-            if (actions->wasPressedRaw(*input, "move_left"))
+            playUi(registry);
+            if (auto* audio = registry.ctx().find<AudioManager>())
             {
-                *value = (*value >= 10) ? *value - 10 : 0;
-                changed = true;
-            }
-            if (actions->wasPressedRaw(*input, "move_right"))
-            {
-                *value = (*value <= 90) ? *value + 10 : 100;
-                changed = true;
-            }
-            if (changed)
-            {
-                game::ui::playUi(registry);
-                applyVolume(registry, settings, focus);
+                if (music)
+                {
+                    audio->setMusicVolume(settings.musicPercent);
+                }
+                else
+                {
+                    audio->setSfxVolume(settings.sfxPercent);
+                }
             }
         }
     }
 
-    game::ui::drawText(
-        registry, draw,
-        ImVec2(game::ui::kOptionsLabelX, game::ui::kOptionsLabelY), "OPTIONS",
-        game::ui::kFontPanelTitle, IM_COL32_WHITE);
+    drawText(registry, draw, ImVec2(kOptionsLabelX, kOptionsLabelY), "OPTIONS",
+             kFontPanelTitle, IM_COL32_WHITE);
 
-    const float sliderX = (canvas.x - game::ui::kSliderPanelW) * 0.5f;
-    game::ui::drawOptionsSlider(
-        registry, draw, ImVec2(sliderX, game::ui::kOptionsMusicY), "MUSIC",
-        settings.musicPercent / 100.0f, focus == 0);
-    game::ui::drawOptionsSlider(registry, draw,
-                                ImVec2(sliderX, game::ui::kOptionsSfxY), "SFX",
-                                settings.sfxPercent / 100.0f, focus == 1);
+    const float sliderX = (canvas.x - kSliderPanelW) * 0.5f;
+    drawOptionsSlider(registry, draw, ImVec2(sliderX, kOptionsMusicY), "MUSIC",
+                      settings.musicPercent / 100.0f, m_nav.focused(Music));
+    drawOptionsSlider(registry, draw, ImVec2(sliderX, kOptionsSfxY), "SFX",
+                      settings.sfxPercent / 100.0f, m_nav.focused(Sfx));
 
-    const ImVec2 backSize = game::ui::buttonSizeForLabel(registry, "BACK");
-    const ImVec2 back0(canvas.x - game::ui::kOptionsBackMarginX - backSize.x,
-                       canvas.y - game::ui::kOptionsBackMarginY - backSize.y);
-    game::ui::drawButton(registry, draw, back0, backSize, focus == 2, elapsed);
-    game::ui::drawCenteredText(
-        registry, draw, back0,
-        ImVec2(back0.x + backSize.x, back0.y + backSize.y), "BACK",
-        game::ui::kFontButton, game::ui::kButtonTextColor);
+    const ImVec2 backSize = buttonSizeForLabel(registry, "BACK");
+    const bool back =
+        menuButton(registry, draw, "options-back", "BACK",
+                   ImVec2(canvas.x - kOptionsBackMarginX - backSize.x,
+                          canvas.y - kOptionsBackMarginY - backSize.y),
+                   m_nav.focused(Back), pressed(registry, "confirm")) ||
+        pressed(registry, "pause");
 
-    const bool backHit = game::ui::hitButton("options-back", back0, backSize);
-    const bool backPressed =
-        backHit ||
-        (input != nullptr && actions != nullptr &&
-         (actions->wasPressedRaw(*input, "pause") ||
-          (actions->wasPressedRaw(*input, "confirm") && focus == 2)));
-
-    if (backPressed)
+    if (back)
     {
-        game::ui::playUi(registry);
+        playUi(registry);
         registry.ctx().get<SceneSystem>().requestScene(
             std::make_unique<TitleScene>());
     }
