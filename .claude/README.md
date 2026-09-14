@@ -20,8 +20,10 @@ Edit **`AGENTS.md`** when changing build/architecture/style guidance. Keep
 - Cursor (compatibility path)
 - GitHub Copilot (documented project skill path)
 
-Workflow skills (`gdd`, `balance`, `tiled-level`, `new-mechanic`, `playtest`)
-auto-apply when relevant. Former slash commands are skills with
+Workflow skills (`gdd`, `balance`, `tiled-level`, `new-mechanic`, `playtest`,
+`implement-design`) auto-apply when relevant. `implement-design` is the path
+from design documents to code: for a new game it retires the template's
+example first, then implements one document at a time. Former slash commands are skills with
 `disable-model-invocation: true` — invoke explicitly with `/sim`,
 `/gdd-sync`, `/design-review`, `/spike`.
 
@@ -34,7 +36,7 @@ unless a tool stops reading `.claude/skills/`.
 |---|---|
 | `agents/` | Subagent prompts (pillar-guard, level-designer, …) |
 | `hooks/` + `settings.json` | Post-edit validators, Stop drift check, SessionStart pillars |
-| `hooks/greenfield-guard.mjs` | Wired in `gdd-architect`'s frontmatter, not `settings.json`: while no design doc is `implementado`/`parcial`, blocks that agent's reads of the example game (`game/`, `assets/`, `tests/`, `.git/`, …) |
+| `hooks/greenfield-guard.mjs` | Wired in `gdd-architect`'s frontmatter, not `settings.json`: unless `docs/design/proyecto.json` says `existente`, blocks that agent's reads of the example game (`game/`, `assets/`, `tests/`, `.git/`, implemented design docs, …) |
 
 The hook scripts are plain Node and safe to run from any agent or CI:
 

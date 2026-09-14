@@ -19,32 +19,47 @@ scheme and the `estado` vocabulary, and you must follow it exactly. Its
 examples come from the template's sample game; they illustrate the format,
 not the game you are designing.
 
-## First: which mode are you in?
+## First: ask whether this is a new game
 
-Before anything else, `Glob` for `docs/design/**/*.md` and read the `estado` of
-every document other than `README.md` and `_plantillas/`.
+This repository is a template, and its code is a worked example (Dungeon
+Slime). Only the user knows whether they are designing a new game or the one
+already in the code, so the mode is **their answer, not your inference**.
 
-- **New project** — there are no documents, or none is `implementado` or
-  `parcial`. The repository is a template: whatever is in `game/`, `assets/`,
-  `tests/`, the READMEs and the git history is the template's worked example
-  (Dungeon Slime), **not** the game the user wants to make.
-- **Existing project** — at least one document is `implementado` or `parcial`.
-  There is a real game, and the code is evidence about it.
+Read `docs/design/proyecto.json` (`{ "modo": "nuevo" }` or
+`{ "modo": "existente" }`).
 
-Decide once, at the start, and say which mode you are in in your first message.
-A tree of `propuesto` drafts you wrote a moment ago is still a new project.
+- **Missing or unreadable** — before any interview, and before reading anything
+  else, your whole first message is that one question, in Spanish, with the two
+  options spelled out:
+  1. *Juego nuevo*: the code in `game/`, the levels and the tests are the
+     template's example and will be replaced; the interview starts from zero.
+  2. *El juego existente*: the design documents describe the game already in
+     the repository, and the interview can build on its code.
+
+  Nothing else in that message — no pillar draft, no second question. When the
+  answer comes back, write it to `docs/design/proyecto.json` and continue in
+  that mode. If the answer is ambiguous, ask again rather than pick.
+- **Present** — say which mode is recorded in your first message, in one line,
+  and that the user can tell you if it is wrong. Then continue. Only rewrite the
+  file if the user asks you to.
+
+A `PreToolUse` hook enforces this: until the file says `existente`, reads outside
+`docs/design/`, `.claude/skills/gdd/` and `engine/include/` are blocked, and so
+are design documents marked `implementado` or `parcial`. Do not try to route
+around it, and do not ask the user to paste example-game code in.
 
 ## New project
 
-A `PreToolUse` hook enforces this mode: reads outside `docs/design/`,
-`.claude/skills/gdd/` and `engine/include/` are blocked. Do not try to route
-around it, and do not ask the user to paste example-game code in.
-
 - **Forget the example game.** Ignore anything about Dungeon Slime, snakes,
   slimes, bats, grids, scores or existing levels — including any summary of the
-  code or of git history that came in the prompt you were launched with. If the
-  user's request itself mentions it, ask whether they want to keep any of it
-  rather than assuming.
+  code or of git history that came in the prompt you were launched with.
+- **Leftover example documents.** If `docs/design/` still holds documents from
+  the example (you will see their names in a `Glob`, and the hook will refuse to
+  open the `implementado`/`parcial` ones), do not build on them and do not reuse
+  their ids. Tell the user they describe the example and should be deleted
+  before the new tree is written — you cannot delete files yourself. Leave
+  `docs/design/README.md` alone if it exists and say it needs rewriting; if it
+  does not, write a fresh index.
 - **Start the interview from zero.** Open with the fantasy and the feeling: what
   is the player, what do they do minute to minute, what should be hard, what
   should never happen, what is the one-line pitch. Genre, camera, pacing and
@@ -58,10 +73,10 @@ around it, and do not ask the user to paste example-game code in.
   the document says so.
 - **Pillars are not closed yet.** You are writing them. The "adding one needs an
   ADR" rule starts once the user has agreed to the first set.
-- If `docs/design/README.md` exists it describes the example game and is
-  blocked; leave it alone and tell the user it needs rewriting. If it does not
-  exist, write a fresh index. If `_plantillas/` is missing, take the
-  front-matter from the `gdd` skill.
+- If `_plantillas/` is missing, take the front-matter from the `gdd` skill.
+- **Do not flip the mode.** `nuevo` becomes `existente` when the example game is
+  retired from the code, which is the `implement-design` skill's job. When the
+  design is ready to build, point the user at that skill.
 
 ## Existing project
 
