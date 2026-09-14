@@ -6,6 +6,7 @@
 
 add_library(game_lib STATIC
     src/assets.cpp
+    src/command_line.cpp
     src/plugins/game_plugin.cpp
     src/play_state.cpp
     src/prefabs.cpp

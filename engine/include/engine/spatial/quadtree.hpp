@@ -47,71 +47,39 @@ SOFTWARE.
 
 namespace de
 {
-/// Axis-aligned bounding box, stored as top-left corner plus extents.
+/// Axis-aligned bounding box: top-left corner (`x`, `y`) plus extents.
+///
+/// An aggregate, like Vector2D. Construct it as
+/// `Box<float>(left, top, width, height)`.
 template <typename T>
-class Box
+struct Box
 {
-private:
-    T m_left;
-    T m_top;
-    T m_width;
-    T m_height;
+    T x{};
+    T y{};
+    T width{};
+    T height{};
 
-public:
-    constexpr Box(T left = 0, T top = 0, T width = 0, T height = 0) noexcept
-        : m_left(left), m_top(top), m_width(width), m_height(height)
-    {
-    }
-
-    constexpr Box(const Vector2D<T>& position, const Vector2D<T>& size) noexcept
-        : m_left(position.getX()), m_top(position.getY()), m_width(size.getX()),
-          m_height(size.getY())
-    {
-    }
-
-    constexpr void setLeft(T left) noexcept { m_left = left; }
-    constexpr void setTop(T top) noexcept { m_top = top; }
-    constexpr void setWidth(T width) noexcept { m_width = width; }
-    constexpr void setHeight(T height) noexcept { m_height = height; }
-
-    constexpr T getLeft() const noexcept { return m_left; }
-    constexpr T getTop() const noexcept { return m_top; }
-    constexpr T getRight() const noexcept { return m_left + m_width; }
-    constexpr T getBottom() const noexcept { return m_top + m_height; }
-    constexpr T getWidth() const noexcept { return m_width; }
-    constexpr T getHeight() const noexcept { return m_height; }
-
-    constexpr Vector2D<T> getTopLeft() const noexcept
-    {
-        return Vector2D<T>(m_left, m_top);
-    }
-
-    constexpr Vector2D<T> getCenter() const noexcept
-    {
-        return Vector2D<T>(m_left + m_width / 2, m_top + m_height / 2);
-    }
-
-    constexpr Vector2D<T> getSize() const noexcept
-    {
-        return Vector2D<T>(m_width, m_height);
-    }
+    constexpr T left() const noexcept { return x; }
+    constexpr T top() const noexcept { return y; }
+    constexpr T right() const noexcept { return x + width; }
+    constexpr T bottom() const noexcept { return y + height; }
 
     constexpr bool contains(const Box<T>& box) const noexcept
     {
-        return m_left <= box.m_left && box.getRight() <= getRight() &&
-               m_top <= box.m_top && box.getBottom() <= getBottom();
+        return x <= box.x && box.right() <= right() && y <= box.y &&
+               box.bottom() <= bottom();
     }
 
     constexpr bool operator==(const Box<T>& box) const noexcept
     {
-        return m_left == box.m_left && m_top == box.m_top &&
-               m_width == box.m_width && m_height == box.m_height;
+        return x == box.x && y == box.y && width == box.width &&
+               height == box.height;
     }
 
     constexpr bool intersects(const Box<T>& box) const noexcept
     {
-        return !(m_left >= box.getRight() || getRight() <= box.m_left ||
-                 m_top >= box.getBottom() || getBottom() <= box.m_top);
+        return !(x >= box.right() || right() <= box.x || y >= box.bottom() ||
+                 bottom() <= box.y);
     }
 };
 
@@ -212,31 +180,22 @@ private:
 
     Box<Float> computeBox(const Box<Float>& box, int i) const
     {
-        auto origin = box.getTopLeft();
-        auto childSize = box.getSize() / static_cast<Float>(2);
+        const Float halfW = box.width / static_cast<Float>(2);
+        const Float halfH = box.height / static_cast<Float>(2);
         switch (i)
         {
             // North West
             case 0:
-                return Box<Float>(origin, childSize);
+                return Box<Float>(box.x, box.y, halfW, halfH);
             // North East
             case 1:
-                return Box<Float>(
-                    Vector2D<Float>(origin.getX() + childSize.getX(),
-                                    origin.getY()),
-                    childSize);
+                return Box<Float>(box.x + halfW, box.y, halfW, halfH);
             // South West
             case 2:
-                return Box<Float>(
-                    Vector2D<Float>(origin.getX(),
-                                    origin.getY() + childSize.getY()),
-                    childSize);
+                return Box<Float>(box.x, box.y + halfH, halfW, halfH);
             // South East
             case 3:
-                return Box<Float>(
-                    Vector2D<Float>(origin.getX() + childSize.getX(),
-                                    origin.getY() + childSize.getY()),
-                    childSize);
+                return Box<Float>(box.x + halfW, box.y + halfH, halfW, halfH);
             default:
                 assert(false && "Invalid child index");
                 return Box<Float>();
@@ -245,28 +204,29 @@ private:
 
     int getQuadrant(const Box<Float>& nodeBox, const Box<Float>& valueBox) const
     {
-        auto center = nodeBox.getCenter();
+        const Vector2D<Float> center(nodeBox.x + nodeBox.width / 2,
+                                     nodeBox.y + nodeBox.height / 2);
         // West
-        if (valueBox.getRight() < center.getX())
+        if (valueBox.right() < center.x)
         {
             // North West
-            if (valueBox.getBottom() < center.getY())
+            if (valueBox.bottom() < center.y)
                 return 0;
             // South West
-            else if (valueBox.getTop() >= center.getY())
+            else if (valueBox.top() >= center.y)
                 return 2;
             // Not contained in any quadrant
             else
                 return -1;
         }
         // East
-        else if (valueBox.getLeft() >= center.getX())
+        else if (valueBox.left() >= center.x)
         {
             // North East
-            if (valueBox.getBottom() < center.getY())
+            if (valueBox.bottom() < center.y)
                 return 1;
             // South East
-            else if (valueBox.getTop() >= center.getY())
+            else if (valueBox.top() >= center.y)
                 return 3;
             // Not contained in any quadrant
             else

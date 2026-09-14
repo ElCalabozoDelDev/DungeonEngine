@@ -91,7 +91,8 @@ Reach the three coins without letting the skeletons touch you.
 | F5 | reload the level |
 
 Two flags exist for CI and debugging: `--frames N` exits after N frames, and
-`--level` starts in the level instead of the menu.
+`--level` starts in the level instead of the menu. A bad command line is
+rejected with a message and exit code 2 rather than guessed at.
 
 ## Measure
 
@@ -123,7 +124,8 @@ files — which is what makes a before/after comparison mean anything.
 
 Exit code is 0 whenever the run completed and wrote its CSV — dying included, so
 a balance harness does not go red because the game is hard. 1 is an
-infrastructure failure.
+infrastructure failure; 2 is a command line that did not parse (an unknown
+option, a missing value, or a number that is not one).
 
 The policy's numbers are a floor on difficulty, not a verdict on how the game
 feels.

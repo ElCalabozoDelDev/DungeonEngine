@@ -37,21 +37,21 @@ void TransformSystem::run(entt::registry& registry)
         const int levelWidth = camera.levelWidth;
         const int levelHeight = camera.levelHeight;
 
-        if (trf.position.getX() < 0)
+        if (trf.position.x < 0)
         {
-            trf.position.setX(0);
+            trf.position.x = 0;
         }
-        else if (trf.position.getX() + dim.width > levelWidth)
+        else if (trf.position.x + dim.width > levelWidth)
         {
-            trf.position.setX(levelWidth - dim.width);
+            trf.position.x = levelWidth - dim.width;
         }
-        if (trf.position.getY() < 0)
+        if (trf.position.y < 0)
         {
-            trf.position.setY(0);
+            trf.position.y = 0;
         }
-        else if (trf.position.getY() + dim.height > levelHeight)
+        else if (trf.position.y + dim.height > levelHeight)
         {
-            trf.position.setY(levelHeight - dim.height);
+            trf.position.y = levelHeight - dim.height;
         }
         updateSpritePosition(registry, entity, trf.position);
     }

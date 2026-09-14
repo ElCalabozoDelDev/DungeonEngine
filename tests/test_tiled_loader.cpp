@@ -121,11 +121,11 @@ TEST_CASE("a json-encoded level loads")
         for (auto entity : tiles)
         {
             const auto& p = tiles.get<TransformComponent>(entity).position;
-            CHECK(p.getX() >= 0.0f);
-            CHECK(p.getX() < 64.0f);
-            CHECK(p.getY() >= 0.0f);
-            CHECK(p.getY() < 64.0f);
-            if (p.getX() == 0.0f && p.getY() == 0.0f)
+            CHECK(p.x >= 0.0f);
+            CHECK(p.x < 64.0f);
+            CHECK(p.y >= 0.0f);
+            CHECK(p.y < 64.0f);
+            if (p.x == 0.0f && p.y == 0.0f)
             {
                 foundOrigin = true;
             }

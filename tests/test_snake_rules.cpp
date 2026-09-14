@@ -35,8 +35,8 @@ SnakeComponent snakeAt(Vector2D<float> head, int segments)
     for (int i = 0; i < segments; ++i)
     {
         SlimeSegment segment;
-        segment.at = Vector2D<float>(
-            head.getX() - static_cast<float>(i) * 20.0f, head.getY());
+        segment.at =
+            Vector2D<float>(head.x - static_cast<float>(i) * 20.0f, head.y);
         segment.to = segment.at;
         snake.segments.push_back(segment);
     }

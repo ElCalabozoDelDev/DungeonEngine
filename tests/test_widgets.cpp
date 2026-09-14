@@ -93,7 +93,7 @@ TEST_CASE("the camera inspector copes with a camera that has no bounds")
     registry.emplace<CameraBoundsComponent>(camera, 640, 360);
     editorWidget<CameraComponent>(registry, camera);
 
-    CHECK(registry.get<TransformComponent>(camera).position.getX() ==
+    CHECK(registry.get<TransformComponent>(camera).position.x ==
           doctest::Approx(1.0f));
 }
 

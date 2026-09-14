@@ -41,7 +41,7 @@ TEST_CASE("TransformSystem integrates one fixed step, not one frame")
 
     TransformSystem().run(registry);
 
-    CHECK(registry.get<TransformComponent>(mover).position.getX() ==
+    CHECK(registry.get<TransformComponent>(mover).position.x ==
           doctest::Approx(101.0f)); // 60 px/s for 1/60 s
 }
 
@@ -67,7 +67,7 @@ TEST_CASE("CameraSystem follows a target that has no velocity")
 
     CameraSystem().run(registry);
 
-    const float x = registry.get<TransformComponent>(camera).position.getX();
+    const float x = registry.get<TransformComponent>(camera).position.x;
     CHECK(x > 400.0f);
     CHECK(x < 600.0f);
 
@@ -75,7 +75,7 @@ TEST_CASE("CameraSystem follows a target that has no velocity")
     {
         registry.destroy(target);
         CameraSystem().run(registry);
-        CHECK(registry.get<TransformComponent>(camera).position.getX() ==
+        CHECK(registry.get<TransformComponent>(camera).position.x ==
               doctest::Approx(x));
     }
 }
@@ -92,7 +92,7 @@ TEST_CASE("SpatialSyncSystem re-files sprites that move without a velocity")
         [&registry](const entt::entity& entity)
         {
             const auto& p = registry.get<TransformComponent>(entity).position;
-            return Box<float>(p.getX(), p.getY(), 10.0f, 10.0f);
+            return Box<float>(p.x, p.y, 10.0f, 10.0f);
         },
         Box<float>(0.0f, 0.0f, 1000.0f, 1000.0f));
 

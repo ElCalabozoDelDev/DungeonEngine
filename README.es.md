@@ -95,7 +95,9 @@ Llega a las tres monedas sin que te toquen los esqueletos.
 | F5 | recargar el nivel |
 
 Hay dos flags para CI y depuración: `--frames N` sale tras N frames, y
-`--level` arranca directamente en el nivel en lugar del menú.
+`--level` arranca directamente en el nivel en lugar del menú. Una línea de
+comandos inválida se rechaza con un mensaje y código de salida 2, en vez de
+adivinar.
 
 ## Medir
 
@@ -129,7 +131,8 @@ signifique algo.
 
 El código de salida es 0 siempre que la corrida terminara y escribiera su CSV,
 incluida la muerte: un harness de balance no debe ponerse rojo porque el juego
-sea difícil. 1 es fallo de infraestructura.
+sea difícil. 1 es fallo de infraestructura; 2, una línea de comandos inválida
+(opción desconocida, valor ausente o un número que no lo es).
 
 Las cifras de la política son una cota inferior de dificultad, no un veredicto
 sobre cómo se siente el juego.

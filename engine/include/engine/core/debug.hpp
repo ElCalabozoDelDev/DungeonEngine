@@ -26,15 +26,15 @@ ComponentEditorWidget<de::CameraComponent>(entt::registry& registry,
 
     if (auto* transform = registry.try_get<de::TransformComponent>(entity))
     {
-        float x = transform->position.getX();
+        float x = transform->position.x;
         if (ImGui::InputFloat("X", &x))
         {
-            transform->position.setX(x);
+            transform->position.x = x;
         }
-        float y = transform->position.getY();
+        float y = transform->position.y;
         if (ImGui::InputFloat("Y", &y))
         {
-            transform->position.setY(y);
+            transform->position.y = y;
         }
     }
 

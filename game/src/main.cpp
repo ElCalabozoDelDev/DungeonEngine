@@ -1,88 +1,30 @@
 #define SDL_MAIN_HANDLED
 
-#include <cstdlib>
-#include <cstring>
 #include <engine/core/asset_paths.hpp>
 #include <engine/core/game_loop.hpp>
 #include <engine/loaders/config_loader.hpp>
 #include <engine/plugins/base_plugin.hpp>
 #include <engine/scene/scene_system.hpp>
+#include <game/command_line.hpp>
 #include <game/plugins/game_plugin.hpp>
 #include <game/scene/in_game_scene.hpp>
-#include <game/sim/sim_options.hpp>
 #include <game/sim/sim_plugin.hpp>
 #include <iostream>
 #include <memory>
-#include <string_view>
-
-namespace
-{
-struct Options
-{
-    int frames = 0;
-    bool skipMenu = false;
-    bool sim = false;
-    SimOptions simOptions;
-};
-
-constexpr std::string_view Usage =
-    "Usage: DungeonEngine [--frames N] [--level]\n"
-    "                     [--sim [--sim-out PATH] [--sim-steps N]\n"
-    "                            [--sim-seed N] [--sim-window]]\n";
-
-Options parseArguments(int argc, char* argv[])
-{
-    Options options;
-    for (int i = 1; i < argc; ++i)
-    {
-        const std::string_view argument = argv[i];
-        if (argument == "--frames" && i + 1 < argc)
-        {
-            options.frames = std::atoi(argv[++i]);
-        }
-        else if (argument == "--level")
-        {
-            options.skipMenu = true;
-        }
-        else if (argument == "--sim")
-        {
-            options.sim = true;
-        }
-        else if (argument == "--sim-out" && i + 1 < argc)
-        {
-            options.simOptions.csvPath = argv[++i];
-        }
-        else if (argument == "--sim-steps" && i + 1 < argc)
-        {
-            options.simOptions.maxSteps = std::atoi(argv[++i]);
-        }
-        else if (argument == "--sim-seed" && i + 1 < argc)
-        {
-            options.simOptions.seed =
-                static_cast<unsigned int>(std::atoi(argv[++i]));
-        }
-        else if (argument == "--sim-window")
-        {
-            options.simOptions.window = true;
-        }
-        else
-        {
-            std::cerr << "Unknown option: " << argument << "\n" << Usage;
-        }
-    }
-
-    if (options.sim)
-    {
-        options.skipMenu = true;
-    }
-    return options;
-}
-
-} // namespace
+#include <span>
 
 int main(int argc, char* argv[])
 {
-    const Options options = parseArguments(argc, argv);
+    const auto parsed = parseCommandLine(std::span<const char* const>(
+        argv + 1, static_cast<std::size_t>(argc - 1)));
+    if (!parsed)
+    {
+        // 2 for a bad command line, so a script can tell it from a run that
+        // started and failed (1).
+        std::cerr << parsed.error() << "\n" << CommandLineUsage;
+        return 2;
+    }
+    const CommandLine& options = *parsed;
 
     auto assets = de::AssetPaths::discover();
     if (!assets)

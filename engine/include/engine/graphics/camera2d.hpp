@@ -43,9 +43,8 @@ struct Camera2D
     SDL_Point worldToScreen(const Vector2D<float>& world) const
     {
         return SDL_Point{
-            static_cast<int>((world.getX() - position.getX()) * zoom +
-                             viewWidth / 2.0f),
-            static_cast<int>((world.getY() - position.getY()) * zoom +
+            static_cast<int>((world.x - position.x) * zoom + viewWidth / 2.0f),
+            static_cast<int>((world.y - position.y) * zoom +
                              viewHeight / 2.0f)};
     }
 
@@ -54,10 +53,9 @@ struct Camera2D
     Box<float> visibleWorld(float margin = 0.0f) const
     {
         const Vector2D<float> half = halfExtents();
-        return Box<float>(position.getX() - half.getX() - margin,
-                          position.getY() - half.getY() - margin,
-                          half.getX() * 2.0f + margin * 2.0f,
-                          half.getY() * 2.0f + margin * 2.0f);
+        return Box<float>(
+            position.x - half.x - margin, position.y - half.y - margin,
+            half.x * 2.0f + margin * 2.0f, half.y * 2.0f + margin * 2.0f);
     }
 };
 

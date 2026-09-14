@@ -14,7 +14,7 @@ Box<float> boxOf(entt::registry& registry, entt::entity entity)
 {
     const auto& transform = registry.get<TransformComponent>(entity);
     const auto& dimension = registry.get<DimensionComponent>(entity);
-    return Box<float>(transform.position.getX(), transform.position.getY(),
+    return Box<float>(transform.position.x, transform.position.y,
                       dimension.width, dimension.height);
 }
 
@@ -26,10 +26,10 @@ constexpr Layer SolidLayers[] = {Layer::Collision, Layer::Overlay};
 void CollisionSystem::resolveAABB(entt::registry& registry, entt::entity entity,
                                   Box<float>& box, const Box<float>& obstacle)
 {
-    const float overlapX = std::min(box.getRight(), obstacle.getRight()) -
-                           std::max(box.getLeft(), obstacle.getLeft());
-    const float overlapY = std::min(box.getBottom(), obstacle.getBottom()) -
-                           std::max(box.getTop(), obstacle.getTop());
+    const float overlapX = std::min(box.right(), obstacle.right()) -
+                           std::max(box.left(), obstacle.left());
+    const float overlapY = std::min(box.bottom(), obstacle.bottom()) -
+                           std::max(box.top(), obstacle.top());
 
     if (overlapX <= 0.0f || overlapY <= 0.0f)
     {
@@ -43,30 +43,27 @@ void CollisionSystem::resolveAABB(entt::registry& registry, entt::entity entity,
     // penetration, so it is the way the body came in.
     if (overlapX < overlapY)
     {
-        const float direction =
-            box.getLeft() < obstacle.getLeft() ? -1.0f : 1.0f;
-        transform.position.setX(transform.position.getX() +
-                                direction * overlapX);
+        const float direction = box.left() < obstacle.left() ? -1.0f : 1.0f;
+        transform.position.x = transform.position.x + direction * overlapX;
         if (velocity != nullptr)
         {
-            velocity->velocity.setX(0.0f);
+            velocity->velocity.x = 0.0f;
         }
     }
     else
     {
-        const float direction = box.getTop() < obstacle.getTop() ? -1.0f : 1.0f;
-        transform.position.setY(transform.position.getY() +
-                                direction * overlapY);
+        const float direction = box.top() < obstacle.top() ? -1.0f : 1.0f;
+        transform.position.y = transform.position.y + direction * overlapY;
         if (velocity != nullptr)
         {
-            velocity->velocity.setY(0.0f);
+            velocity->velocity.y = 0.0f;
         }
     }
 
     // Keep the working box in step, so the next obstacle this frame is tested
     // against the corrected position.
-    box.setLeft(transform.position.getX());
-    box.setTop(transform.position.getY());
+    box.x = transform.position.x;
+    box.y = transform.position.y;
 }
 
 void CollisionSystem::run(entt::registry& registry)
