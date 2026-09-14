@@ -38,6 +38,8 @@ target_include_directories(engine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+de_enable_warnings(engine)
+
 # PUBLIC: these appear in engine's public headers (SDL types, entt::registry,
 # nlohmann::json in tiled_loader, the imgui backends via debug.hpp).
 target_link_libraries(engine PUBLIC

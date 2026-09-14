@@ -60,6 +60,18 @@ function(de_copy_runtime_dlls target)
     endif()
 endfunction()
 
+# Warnings for first-party code only; third_party is compiled without them.
+# -Werror is opt-in so a newer compiler cannot break a consumer build, and CI
+# turns it on so no new warning lands.
+option(DE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+
+function(de_enable_warnings target)
+    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    if(DE_WARNINGS_AS_ERRORS)
+        target_compile_options(${target} PRIVATE -Werror)
+    endif()
+endfunction()
+
 # Three targets, in dependency order. The layering is the point:
 #
 #   third_party  vendored sources, compiled with warnings suppressed

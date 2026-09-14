@@ -10,9 +10,13 @@ Checks: >
   -readability-magic-numbers,
   -readability-identifier-length,
   -readability-braces-around-statements,
+  -readability-uppercase-literal-suffix,
+  -readability-math-missing-parentheses,
   clang-analyzer-*
+# Disabled for contradicting house style rather than finding bugs: the code
+# writes float literals as `0.0f`, and `a + b * c` needs no parentheses.
 WarningsAsErrors: ""
-HeaderFilterRegex: "game/(include|src)/.*"
+HeaderFilterRegex: "(engine|game)/(include|src)/.*"
 FormatStyle: file
 CheckOptions:
   - key: readability-identifier-naming.ClassCase

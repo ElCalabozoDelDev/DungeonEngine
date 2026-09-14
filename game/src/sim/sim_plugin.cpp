@@ -1,14 +1,18 @@
 #include <SDL.h>
 #include <array>
+#include <engine/components/transform_component.hpp>
 #include <engine/core/game_loop.hpp>
 #include <engine/input/action_map.hpp>
 #include <engine/input/input_state.hpp>
+#include <game/components/bat_component.hpp>
 #include <game/components/player_component.hpp>
 #include <game/components/snake_component.hpp>
 #include <game/rng.hpp>
 #include <game/sim/sim_plugin.hpp>
 #include <game/state.hpp>
+#include <iomanip>
 #include <iostream>
+#include <limits>
 
 using namespace de;
 
@@ -43,7 +47,12 @@ void SimPlugin::mount(de::GameLoop& gameLoop)
                 }
                 return;
             }
-            m_csv << "step,score,length,game_over\n";
+            // Positions are printed with enough digits to round-trip a float,
+            // so a before/after diff catches any change in the trajectories,
+            // not just in the score.
+            m_csv << std::setprecision(
+                std::numeric_limits<float>::max_digits10);
+            m_csv << "step,score,length,game_over,head_x,head_y,bat_x,bat_y\n";
         });
 
     gameLoop.addFrameBeginCallback(
@@ -81,14 +90,26 @@ void SimPlugin::mount(de::GameLoop& gameLoop)
                 score = state->score;
                 over = state->playState == PlayState::GameOver;
             }
+            Vector2D<float> head;
             for (auto entity : registry.view<PlayerComponent, SnakeComponent>())
             {
-                length = static_cast<int>(
-                    registry.get<SnakeComponent>(entity).segments.size());
+                const auto& snake = registry.get<SnakeComponent>(entity);
+                length = static_cast<int>(snake.segments.size());
+                if (!snake.segments.empty())
+                {
+                    head = snake.segments.front().to;
+                }
+            }
+            Vector2D<float> bat;
+            for (auto entity :
+                 registry.view<BatComponent, TransformComponent>())
+            {
+                bat = registry.get<TransformComponent>(entity).position;
             }
 
             m_csv << m_steps << ',' << score << ',' << length << ','
-                  << (over ? 1 : 0) << '\n';
+                  << (over ? 1 : 0) << ',' << head.getX() << ',' << head.getY()
+                  << ',' << bat.getX() << ',' << bat.getY() << '\n';
 
             if (over || m_steps >= m_options.maxSteps)
             {

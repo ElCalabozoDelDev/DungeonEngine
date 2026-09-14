@@ -136,7 +136,7 @@ void InGameScene::onEnter(entt::registry& registry)
     initializeDebug(registry, config.debug);
 }
 
-void InGameScene::onUpdate(entt::registry& registry) {}
+void InGameScene::onUpdate(entt::registry& /*registry*/) {}
 
 void InGameScene::onExit(entt::registry& registry)
 {

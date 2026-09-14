@@ -28,7 +28,7 @@ void OptionsScene::onEnter(entt::registry& registry)
     m_entities.push_back(entity);
 }
 
-void OptionsScene::onUpdate(entt::registry& registry) {}
+void OptionsScene::onUpdate(entt::registry& /*registry*/) {}
 
 void OptionsScene::onExit(entt::registry& registry)
 {

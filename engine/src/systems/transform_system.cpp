@@ -28,7 +28,6 @@ void TransformSystem::run(entt::registry& registry)
     {
         auto& trf = view.get<TransformComponent>(entity);
         auto& vel = view.get<VelocityComponent>(entity);
-        auto& spr = view.get<SpriteComponent>(entity);
         auto& dim = view.get<DimensionComponent>(entity);
 
         trf.position += vel.velocity * deltaTime.value;

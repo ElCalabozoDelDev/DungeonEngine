@@ -45,7 +45,7 @@ void TitleScene::onEnter(entt::registry& registry)
     m_entities.push_back(entity);
 }
 
-void TitleScene::onUpdate(entt::registry& registry) {}
+void TitleScene::onUpdate(entt::registry& /*registry*/) {}
 
 void TitleScene::onExit(entt::registry& registry)
 {

@@ -27,8 +27,10 @@ target_include_directories(game_lib PUBLIC
 )
 
 target_link_libraries(game_lib PUBLIC engine)
+de_enable_warnings(game_lib)
 
 add_executable(game src/main.cpp)
+de_enable_warnings(game)
 
 set_target_properties(game PROPERTIES
     OUTPUT_NAME ${PROJECT_NAME}
