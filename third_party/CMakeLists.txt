@@ -5,7 +5,6 @@
 # everything downstream.
 
 add_library(third_party STATIC
-    base64.cpp
     imgui/imgui_impl_sdl2.cpp
     imgui/imgui_impl_sdlrenderer2.cpp
 )

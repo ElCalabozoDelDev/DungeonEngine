@@ -5,7 +5,7 @@
 
 namespace de
 {
-/// The `type` attribute of a Tiled object, carried verbatim from the .tmx.
+/// The `type` attribute of a Tiled object, carried verbatim from the .tmj.
 ///
 /// The loader does not interpret it: a game decides what "Player" or "Enemy"
 /// mean and tags the entity with its own components after the level loads.

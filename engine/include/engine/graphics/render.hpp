@@ -33,7 +33,6 @@ struct RenderPass
 namespace render_order
 {
 constexpr int Bottom = 0;
-constexpr int Collision = 100;
 constexpr int Object = 200;
 constexpr int Overlay = 300;
 } // namespace render_order

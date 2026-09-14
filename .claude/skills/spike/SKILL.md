@@ -26,8 +26,8 @@ a new sprite, say exactly what.
 **4. Cost.** The concrete files it would touch, with paths. Flag the expensive
 shapes explicitly:
    - anything needing per-instance enemy or item values is blocked by
-     `ADR-0001` — the `.tmx` cannot override component defaults
-   - anything needing a second level is blocked by the hardcoded `"level1"` at
+     `ADR-0001` — the `.tmj` cannot override component defaults
+   - anything needing a second level is blocked by the hardcoded `"arena"` at
      `game/src/scene/in_game_scene.cpp:62`
    - a new gameplay rule that must not depend on frame rate goes in
      `addFixedSystem`, which is a different cost from a render-time effect

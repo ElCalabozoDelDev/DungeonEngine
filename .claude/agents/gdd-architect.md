@@ -49,4 +49,4 @@ marking the difference is worse than no document.
   those — they are the most useful things in the whole tree.
 
 Never invent numbers, level facts or mechanics. Anything measurable gets measured
-(the `tmx-level` skill shows how); anything unknown gets written down as unknown.
+(the `tiled-level` skill shows how); anything unknown gets written down as unknown.

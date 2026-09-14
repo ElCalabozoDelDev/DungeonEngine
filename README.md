@@ -26,12 +26,12 @@ than someone else's project to unpick.
 - **Quadtree spatial index** per layer, kept correct for moving entities.
 - **Input** as named actions with rebindable keys, not scancodes in systems.
 - **Dear ImGui** integration, an entity inspector, and a hook-based widget
-  layer (`use_state` / `use_callback` / `use_effect`).
+  layer (`use_state`).
 - **Sprite animation** with looping, ping-pong and single-shot runs, a speed
   multiplier and a hold at each end.
 - **Audio** through SDL2_mixer.
 - **Scenes** with deferred switching, and pausing handled by the loop.
-- **46 tests** on doctest, runnable headlessly, plus a GitHub Actions workflow
+- **Tests** on doctest, runnable headlessly, plus a GitHub Actions workflow
   that builds and tests a plain checkout on Windows.
 
 ## Requirements
@@ -166,12 +166,12 @@ subagents and hooks that keep design and code in step. See `.claude/README.md`.
 ## Architecture
 
 ```
-        third_party            vendored: imgui SDL2 backends, base64
+        third_party            vendored: imgui SDL2 backends, entity editor
              |                 headers exposed as SYSTEM includes
              v
           engine               static library, namespace de
              |                 loop, plugins, SDL, input, audio, textures,
-             |                 TMX loading, rendering, camera, quadtree,
+             |                 Tiled loading, rendering, camera, quadtree,
              v                 scenes, widgets
          game_lib              this game: components, systems, scenes, HUD
              |
@@ -182,7 +182,7 @@ subagents and hooks that keep design and code in step. See `.claude/README.md`.
 **`engine` does not have `game/include` on its include path.** An
 `#include <game/...>` from engine code is a compile error, not a convention
 somebody has to remember. When the engine needs to know something about the
-game, invert it: the TMX loader records Tiled's `type` string in
+game, invert it: the Tiled loader records Tiled's `type` string in
 `de::ObjectTypeComponent`, and `InGameScene::tagObjectsByType` is what turns
 `"Player"` into a `PlayerComponent`.
 
@@ -193,9 +193,9 @@ Rule of thumb for new code: **if it names a gameplay component, it belongs in
 
 ```
 frame begin   input (SDL events -> InputState)  ->  ImGui::NewFrame
-fixed steps   movement -> integration -> spatial sync -> collision -> combat
+fixed steps   spatial sync, then the game's systems (snake, bat)
               (zero or more times, each advancing DeltaTime::fixed)
-frame         animation, camera, scenes, debug
+frame         animation, grayscale fade, scenes, debug
 last          render passes in `order`, then the GUI
 frame end     present
 ```
@@ -227,7 +227,7 @@ struct ManaComponent
 #endif // GAME_COMPONENTS_MANA_COMPONENT_HPP
 ```
 
-Attach it where the entity is built — for objects coming from a `.tmx`, that is
+Attach it where the entity is built — for objects coming from a `.tmj`, that is
 `InGameScene::tagObjectsByType`.
 
 ### Add a system
@@ -320,18 +320,26 @@ engine/          reusable 2D engine, static library (namespace de)
 game/            the example game
   include/game/    headers
   src/             implementation, plus main.cpp
-tests/           doctest unit tests and .tmx fixtures
-third_party/     vendored sources: imgui SDL2 backends, base64
-assets/          textures, audio, Tiled (.tmx) levels and game.xml
+tests/           doctest unit tests, .tmj fixtures and sim references
+third_party/     vendored sources: imgui SDL2 backends, entity editor
+assets/          textures, audio, Tiled (.tmj) levels and game.json
 toolchain/       LLVM-MinGW CMake toolchain file and the vcpkg triplet
 ```
 
 ## Configuration
 
-`assets/game.xml` is read at startup. `<Screen>` is the window; `<Camera
-width/height>` is the logical resolution the game draws in, which SDL scales to
-the window, and `zoomLevel` is how many logical pixels one world unit takes.
-`vsync` is optional and defaults to on.
+`assets/game.json` is read at startup:
+
+| Key | |
+|---|---|
+| `title`, `fullScreen`, `screenWidth`, `screenHeight` | the window |
+| `logicalWidth`, `logicalHeight` | the resolution the game draws in, which SDL scales to the window |
+| `zoomLevel` | how many logical pixels one world unit takes |
+| `frameRate`, `vsync` | pacing: vsync, or a manual limiter at `frameRate` |
+| `debug` | opens the entity inspector |
+| `levels` | level name → `.tmj` path; the game loads `arena` |
+
+Every key but `levels` is optional.
 
 If the file is missing or malformed, the game exits with a message naming the
 problem rather than crashing.

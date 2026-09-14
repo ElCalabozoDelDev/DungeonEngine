@@ -5,6 +5,11 @@
 
 namespace de
 {
+/// Moves cameras that have a FollowComponent towards their target, clamped
+/// to their CameraBoundsComponent.
+///
+/// Opt-in: BasePlugin does not register it. A game with a follow camera adds
+/// it with addSystem().
 class CameraSystem final : public System
 {
 public:

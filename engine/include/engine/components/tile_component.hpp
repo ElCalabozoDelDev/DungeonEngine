@@ -8,7 +8,7 @@ namespace de
 {
 struct TileComponent
 {
-    /// Global tile id from the .tmx.
+    /// Global tile id from the .tmj.
     int tileId = 0;
 
     /// The tileset entity this tile is drawn from, resolved once by the

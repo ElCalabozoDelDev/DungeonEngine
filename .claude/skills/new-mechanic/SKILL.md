@@ -24,7 +24,7 @@ that is the enforcement, not a convention.
 
 The splitting rule: **if it names a gameplay component, it belongs in `game/`.**
 
-When the engine genuinely needs game knowledge, invert it, the way the TMX loader
+When the engine genuinely needs game knowledge, invert it, the way the Tiled loader
 does: the engine records Tiled's `type` string in `de::ObjectTypeComponent`, and
 `InGameScene::tagObjectsByType` decides that `"Player"` means `PlayerComponent`.
 The engine provides the generic hook; the game supplies the meaning.
@@ -35,7 +35,7 @@ The engine provides the generic hook; the game supplies the meaning.
 defaulted members. Header guard `GAME_COMPONENTS_<NAME>_COMPONENT_HPP`, classic
 `#ifndef`, never `#pragma once`. Unnamespaced.
 
-Defaults are the game's entire tuning surface (nothing in the `.tmx` overrides
+Defaults are the game's entire tuning surface (nothing in the `.tmj` overrides
 them), so any number you put here belongs in `docs/design/50-balance/tablas.md`
 and in `tests/test_balance.cpp` too.
 

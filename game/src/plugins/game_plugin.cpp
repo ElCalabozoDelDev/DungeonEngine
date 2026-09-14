@@ -5,7 +5,6 @@
 #include <engine/input/action_map.hpp>
 #include <engine/input/input_state.hpp>
 #include <engine/scene/scene_system.hpp>
-#include <engine/systems/camera_system.hpp>
 #include <engine/systems/debug_system.hpp>
 #include <game/play_state.hpp>
 #include <game/plugins/game_plugin.hpp>
@@ -104,7 +103,6 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
     gameLoop.addFixedSystem(std::make_shared<SnakeSystem>());
     gameLoop.addFixedSystem(std::make_shared<BatSystem>());
 
-    gameLoop.addSystem(std::make_shared<CameraSystem>());
     gameLoop.addSystem(std::make_shared<GrayscaleFadeSystem>());
     gameLoop.addSystem(sceneSystem);
     gameLoop.addSystem(debugSystem);

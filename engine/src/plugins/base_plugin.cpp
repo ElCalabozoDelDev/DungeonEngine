@@ -6,7 +6,6 @@
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/systems/render_system.hpp>
 #include <engine/systems/spatial_sync_system.hpp>
-#include <engine/systems/transform_system.hpp>
 #include <engine/systems/update_animation_system.hpp>
 #include <memory>
 
@@ -32,11 +31,11 @@ void BasePlugin::mount(GameLoop& gameLoop)
     gameLoop.addPlugin(std::make_unique<AudioPlugin>());
     gameLoop.addPlugin(std::make_unique<ImGuiPlugin>());
 
-    // Integration advances by a fixed step so movement does not depend on
-    // frame rate; animation and rendering follow the frame.
-    gameLoop.addFixedSystem(std::make_shared<TransformSystem>());
-    // Immediately after integration: whatever moved must be re-filed before
-    // anything queries the index.
+    // Movement is the game's to register: TransformSystem, CameraSystem and
+    // CollisionSystem are opt-in, since a game with its own movement rules
+    // (Dungeon Slime's grid snake) has no use for them.
+    //
+    // Whatever moved must be re-filed before anything queries the index.
     gameLoop.addFixedSystem(std::make_shared<SpatialSyncSystem>());
     gameLoop.addSystem(std::make_shared<UpdateAnimationSystem>());
     gameLoop.addSystemLast(std::make_shared<RenderSystem>());

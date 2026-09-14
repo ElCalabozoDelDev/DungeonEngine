@@ -4,7 +4,7 @@
 
 ## Claude Code only
 
-- **Hooks** in `.claude/settings.json` (clang-format on C++ edits, TMX/GDD
+- **Hooks** in `.claude/settings.json` (clang-format on C++ edits, Tiled/GDD
   validators, design-drift on Stop, pillars on SessionStart). Scripts are
   plain Node under `.claude/hooks/` — other agents can run the same files
   manually or via their own hook systems.

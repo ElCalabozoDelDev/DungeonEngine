@@ -13,6 +13,9 @@ namespace de
 /// SpatialSyncSystem has re-filed them. Resolution is the classic
 /// minimum-translation AABB push: the axis with the smaller overlap is the one
 /// the body came in through, so that is the one it gets pushed back along.
+///
+/// Opt-in: BasePlugin does not register it. A game with solid tiles adds it
+/// with addFixedSystem().
 class CollisionSystem final : public System
 {
 public:

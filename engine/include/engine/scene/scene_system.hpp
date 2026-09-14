@@ -29,8 +29,6 @@ public:
     /// switch, which is usually iterating a view at the time.
     void requestScene(std::unique_ptr<Scene> newScene);
 
-    bool hasPendingScene() const { return m_pendingScene != nullptr; }
-
 private:
     std::unique_ptr<Scene> m_currentScene;
     std::unique_ptr<Scene> m_pendingScene;
