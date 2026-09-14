@@ -5,6 +5,8 @@ estado: implementado
 pilares: [PILAR-01, PILAR-02]
 codigo:
   - game/src/systems/snake_system.cpp
+  - game/src/systems/snake_view_system.cpp
+  - game/src/prefabs.cpp
   - game/include/game/components/snake_component.hpp
 ---
 

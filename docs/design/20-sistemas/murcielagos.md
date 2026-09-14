@@ -5,6 +5,7 @@ estado: implementado
 pilares: [PILAR-01, PILAR-02]
 codigo:
   - game/src/systems/bat_system.cpp
+  - game/src/prefabs.cpp
   - game/include/game/components/bat_component.hpp
 ---
 

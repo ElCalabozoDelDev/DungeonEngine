@@ -15,6 +15,7 @@
 #include <game/state.hpp>
 #include <game/systems/bat_system.hpp>
 #include <game/systems/snake_system.hpp>
+#include <game/systems/snake_view_system.hpp>
 
 using namespace de;
 
@@ -64,8 +65,10 @@ struct World
 
     void step(int times = 1)
     {
+        // In GamePlugin's order.
         SnakeSystem snake;
         BatSystem bat;
+        SnakeViewSystem view;
         for (int i = 0; i < times; ++i)
         {
             // What GameLoop does: no fixed steps while paused. The systems
@@ -76,6 +79,7 @@ struct World
             }
             snake.run(registry);
             bat.run(registry);
+            view.run(registry);
         }
     }
 };

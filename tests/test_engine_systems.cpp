@@ -1,13 +1,17 @@
 #include <algorithm>
 #include <doctest/doctest.h>
+#include <engine/components/bottom_layer_component.hpp>
 #include <engine/components/camera_bounds_component.hpp>
 #include <engine/components/camera_component.hpp>
 #include <engine/components/dimension_component.hpp>
 #include <engine/components/follow_component.hpp>
+#include <engine/components/overlay_layer_component.hpp>
 #include <engine/components/sprite_component.hpp>
+#include <engine/components/tile_layer_component.hpp>
 #include <engine/components/transform_component.hpp>
 #include <engine/components/velocity_component.hpp>
 #include <engine/core/delta_time.hpp>
+#include <engine/spatial/level_spatial_index.hpp>
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/systems/camera_system.hpp>
 #include <engine/systems/spatial_sync_system.hpp>
@@ -112,4 +116,42 @@ TEST_CASE("SpatialSyncSystem re-files sprites that move without a velocity")
     const auto hits =
         index.query(Layer::Object, Box<float>(895.0f, 895.0f, 20.0f, 20.0f));
     CHECK(std::find(hits.begin(), hits.end(), mover) != hits.end());
+}
+
+TEST_CASE("buildLevelSpatialIndex files tile layers and sprites")
+{
+    entt::registry registry;
+    registry.ctx().emplace<SpatialIndex>();
+
+    const auto tileAt = [&registry](float x, float y)
+    {
+        auto tile = registry.create();
+        registry.emplace<TransformComponent>(tile, Vector2D<float>(x, y));
+        registry.emplace<DimensionComponent>(tile, 20.0f, 20.0f);
+        return tile;
+    };
+
+    auto bottom = registry.create();
+    registry.emplace<BottomLayerComponent>(bottom);
+    auto& bottomTiles = registry.emplace<TileLayerComponent>(bottom);
+    bottomTiles.tileEntities = {tileAt(0.0f, 0.0f), tileAt(20.0f, 0.0f)};
+
+    auto overlay = registry.create();
+    registry.emplace<OverlayLayerComponent>(overlay);
+    registry.emplace<TileLayerComponent>(overlay).tileEntities = {
+        tileAt(40.0f, 40.0f)};
+
+    auto sprite = tileAt(100.0f, 60.0f);
+    registry.emplace<SpriteComponent>(sprite, 0, 0, 0);
+
+    buildLevelSpatialIndex(registry, 320.0f, 180.0f);
+
+    const auto& index = registry.ctx().get<SpatialIndex>();
+    const Box<float> everything(0.0f, 0.0f, 320.0f, 180.0f);
+    CHECK(index.query(Layer::Bottom, everything).size() == 2);
+    CHECK(index.query(Layer::Overlay, everything).size() == 1);
+    CHECK(index.query(Layer::Collision, everything).empty());
+    const auto objects = index.query(Layer::Object, everything);
+    REQUIRE(objects.size() == 1);
+    CHECK(objects.front() == sprite);
 }

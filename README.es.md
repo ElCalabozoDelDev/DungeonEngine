@@ -191,7 +191,7 @@ Claude Code. Ver `.claude/README.md`.
 `#include <game/...>` desde código del motor es un error de compilación, no una
 convención que alguien deba recordar. Cuando el motor necesita saber algo del
 juego, se invierte: el cargador de Tiled guarda el `type` de Tiled en
-`de::ObjectTypeComponent`, y es `InGameScene::tagObjectsByType` quien convierte
+`de::ObjectTypeComponent`, y es `InGameScene::spawnPlayer` quien convierte
 `"Player"` en un `PlayerComponent`.
 
 Regla práctica para código nuevo: **si nombra un componente de gameplay, va en
@@ -201,7 +201,7 @@ Regla práctica para código nuevo: **si nombra un componente de gameplay, va en
 
 ```
 frame begin   input (eventos SDL -> InputState)  ->  ImGui::NewFrame
-pasos fijos   los sistemas del juego (serpiente, murciélago), luego sync espacial
+pasos fijos   los sistemas del juego (serpiente, murciélago, vista de la serpiente), luego sync espacial
               (cero o más veces, cada uno avanza DeltaTime::fixed)
 frame         animación, fundido a gris, escenas, debug
 last          passes de render por `order`, luego la GUI
@@ -237,8 +237,8 @@ struct ManaComponent
 #endif // GAME_COMPONENTS_MANA_COMPONENT_HPP
 ```
 
-Añádelo donde se construye la entidad — para objetos que vienen de un `.tmj`,
-eso es `InGameScene::tagObjectsByType`.
+Añádelo donde se construye la entidad: los prefabs de `game/src/prefabs.cpp`,
+que `InGameScene` usa tanto para objetos de Tiled como para lo que crea en código.
 
 ### Añadir un sistema
 

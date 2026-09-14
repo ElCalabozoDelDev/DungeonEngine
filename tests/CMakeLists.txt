@@ -14,6 +14,7 @@ add_executable(tests
     test_game_loop.cpp
     test_gameplay.cpp
     test_play_state.cpp
+    test_snake_rules.cpp
     test_spatial_index.cpp
     test_tiled_loader.cpp
     test_vector_2d.cpp

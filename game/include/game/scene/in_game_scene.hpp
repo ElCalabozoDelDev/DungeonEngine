@@ -21,13 +21,15 @@ private:
     std::vector<entt::entity> m_entities;
 
     static void fail(entt::registry& registry, const std::string& reason);
-    void tagObjectsByType(entt::registry& registry);
-    void spawnSnake(entt::registry& registry, float x, float y);
+
+    /// Loads the arena and records its size in GameState. False, with a
+    /// StartupError reported, when it cannot.
+    bool loadLevel(entt::registry& registry, const de::Config& config);
+    static void startMusic(entt::registry& registry);
+    /// The snake head: every Tiled "Player" object, or one at the room
+    /// centre when the map has none.
+    void spawnPlayer(entt::registry& registry);
     void spawnBat(entt::registry& registry);
-    void initializeQuadtrees(entt::registry& registry, float mapWidth,
-                             float mapHeight);
-    void populateTileQuadtree(entt::registry& registry);
-    void populateSpriteQuadtree(entt::registry& registry);
     void initializeCamera(entt::registry& registry, const de::Config& config);
     void initializeRenderers(entt::registry& registry);
     void initializeHud(entt::registry& registry);

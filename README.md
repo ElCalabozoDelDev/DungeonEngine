@@ -183,7 +183,7 @@ subagents and hooks that keep design and code in step. See `.claude/README.md`.
 `#include <game/...>` from engine code is a compile error, not a convention
 somebody has to remember. When the engine needs to know something about the
 game, invert it: the Tiled loader records Tiled's `type` string in
-`de::ObjectTypeComponent`, and `InGameScene::tagObjectsByType` is what turns
+`de::ObjectTypeComponent`, and `InGameScene::spawnPlayer` is what turns
 `"Player"` into a `PlayerComponent`.
 
 Rule of thumb for new code: **if it names a gameplay component, it belongs in
@@ -193,7 +193,7 @@ Rule of thumb for new code: **if it names a gameplay component, it belongs in
 
 ```
 frame begin   input (SDL events -> InputState)  ->  ImGui::NewFrame
-fixed steps   the game's systems (snake, bat), then spatial sync
+fixed steps   the game's systems (snake, bat, snake view), then spatial sync
               (zero or more times, each advancing DeltaTime::fixed)
 frame         animation, grayscale fade, scenes, debug
 last          render passes in `order`, then the GUI
@@ -229,8 +229,8 @@ struct ManaComponent
 #endif // GAME_COMPONENTS_MANA_COMPONENT_HPP
 ```
 
-Attach it where the entity is built — for objects coming from a `.tmj`, that is
-`InGameScene::tagObjectsByType`.
+Attach it where the entity is built: the prefabs in `game/src/prefabs.cpp`,
+which `InGameScene` uses for both Tiled objects and code-spawned entities.
 
 ### Add a system
 

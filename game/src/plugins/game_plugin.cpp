@@ -7,6 +7,7 @@
 #include <engine/input/input_state.hpp>
 #include <engine/scene/scene_system.hpp>
 #include <engine/systems/debug_system.hpp>
+#include <game/assets.hpp>
 #include <game/play_state.hpp>
 #include <game/plugins/game_plugin.hpp>
 #include <game/rng.hpp>
@@ -16,6 +17,7 @@
 #include <game/systems/bat_system.hpp>
 #include <game/systems/grayscale_fade_system.hpp>
 #include <game/systems/snake_system.hpp>
+#include <game/systems/snake_view_system.hpp>
 #include <game/ui/bitmap_font.hpp>
 #include <memory>
 
@@ -61,6 +63,7 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
             registry.ctx().emplace<SceneSystem&>(*sceneSystem);
             registry.ctx().emplace<DebugSystem&>(*debugSystem);
 
+            game::loadGameAssets(registry);
             sceneSystem->setScene(registry, std::make_unique<TitleScene>());
         });
 
@@ -105,6 +108,9 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
 
     gameLoop.addFixedSystem(std::make_shared<SnakeSystem>());
     gameLoop.addFixedSystem(std::make_shared<BatSystem>());
+    // Presentation after the simulation it draws, still inside the step so
+    // the spatial index sync that ends it sees the sprites' final positions.
+    gameLoop.addFixedSystem(std::make_shared<SnakeViewSystem>());
 
     gameLoop.addSystem(std::make_shared<GrayscaleFadeSystem>());
     gameLoop.addSystem(sceneSystem);
