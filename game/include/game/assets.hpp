@@ -9,8 +9,8 @@ namespace game
 /// current AudioSettings volumes. Called once at startup, so scenes only use
 /// assets and never (re)load them.
 ///
-/// Level tilesets are not included: TiledLoader loads those with the map.
-/// Menu chrome is loaded by game::ui::ensureLoaded.
+/// Includes the menu chrome and font (game::ui::loadUiAssets). Level tilesets
+/// are not included: TiledLoader loads those with the map.
 void loadGameAssets(entt::registry& registry);
 
 } // namespace game

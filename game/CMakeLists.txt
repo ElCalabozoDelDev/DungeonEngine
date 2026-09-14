@@ -18,6 +18,7 @@ add_library(game_lib STATIC
     src/systems/snake_system.cpp
     src/systems/snake_view_system.cpp
     src/ui/bitmap_font.cpp
+    src/ui/menu.cpp
     src/ui/ui_layout.cpp
     src/ui/ui_skin.cpp
     src/widgets/hud_widget.cpp

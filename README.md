@@ -25,8 +25,8 @@ than someone else's project to unpick.
   arena in logical 320×180 scaled to 1280×720 (no follow cam).
 - **Quadtree spatial index** per layer, kept correct for moving entities.
 - **Input** as named actions with rebindable keys, not scancodes in systems.
-- **Dear ImGui** integration, an entity inspector, and a hook-based widget
-  layer (`use_state`).
+- **Dear ImGui** integration, an entity inspector, and a widget layer: one
+  `render(registry)` per frame, state in the widget's own members.
 - **Sprite animation** with looping, ping-pong and single-shot runs, a speed
   multiplier and a hold at each end.
 - **Audio** through SDL2_mixer.

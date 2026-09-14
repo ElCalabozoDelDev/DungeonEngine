@@ -12,6 +12,7 @@
 #include <engine/widgets/gui.hpp>
 #include <game/play_state.hpp>
 #include <game/state.hpp>
+#include <game/ui/menu.hpp>
 #include <game/widgets/hud_widget.hpp>
 #include <imgui.h>
 #include <initializer_list>
@@ -57,9 +58,7 @@ void frame(entt::registry& registry, gui::WidgetComponent& widget,
     input.setKeyboard(keys.data(), SDL_NUM_SCANCODES);
 
     ImGui::NewFrame();
-    widget.frame_begin();
-    widget.frame_update(registry);
-    widget.frame_end();
+    widget.render(registry);
     ImGui::EndFrame();
 }
 
@@ -98,46 +97,12 @@ TEST_CASE("the camera inspector copes with a camera that has no bounds")
           doctest::Approx(1.0f));
 }
 
-TEST_CASE("use_state keeps every value on a widget's first frame")
-{
-    // Several use_state calls in the first frame each emplace a new slot; the
-    // values handed back must be the initial ones, not references into
-    // storage the next emplace may have moved.
-    struct TwoStates final : gui::WidgetComponent
-    {
-        int seenInt = 0;
-        float seenFloat = 0.0f;
-
-        void render(entt::registry& /*registry*/, gui::Hooks& h) override
-        {
-            auto [i, setI] = h.use_state(7);
-            auto [f, setF] = h.use_state(2.5f);
-            seenInt = i;
-            seenFloat = f;
-            setI(i + 1);
-        }
-    };
-
-    entt::registry registry;
-    TwoStates widget;
-    widget.frame_begin();
-    widget.frame_update(registry);
-    widget.frame_end();
-    CHECK(widget.seenInt == 7);
-    CHECK(widget.seenFloat == doctest::Approx(2.5f));
-
-    widget.frame_begin();
-    widget.frame_update(registry);
-    widget.frame_end();
-    CHECK(widget.seenInt == 8); // the setter applied at commit
-}
-
 TEST_CASE("the pause menu does not inherit the game over menu's focus")
 {
-    // Regression test. Both overlays declared their focus with use_state
-    // inside their own branch, so they shared one hook slot: moving to QUIT
-    // on Game Over left QUIT focused on the next pause, and Enter quit to the
-    // title instead of resuming.
+    // Regression test. Both overlays once declared their focus with a hook
+    // inside their own branch, so they shared one slot: moving to QUIT on
+    // Game Over left QUIT focused on the next pause, and Enter quit to the
+    // title instead of resuming. Each overlay now has its own MenuNav.
     ImGuiFrameContext imgui;
     entt::registry registry;
     registry.ctx().emplace<Paused>();
@@ -162,4 +127,63 @@ TEST_CASE("the pause menu does not inherit the game over menu's focus")
     frame(registry, hud, {SDL_SCANCODE_RETURN}); // RESUME is focused
 
     CHECK(registry.ctx().get<GameState>().playState == PlayState::Playing);
+}
+
+TEST_CASE("MenuNav moves focus with the actions it is given")
+{
+    entt::registry registry;
+    registry.ctx().emplace<InputState>();
+    auto& actions = registry.ctx().emplace<ActionMap>();
+    actions.bind("move_up", SDL_SCANCODE_UP);
+    actions.bind("move_down", SDL_SCANCODE_DOWN);
+
+    const auto press = [&registry](std::initializer_list<SDL_Scancode> held)
+    {
+        std::array<Uint8, SDL_NUM_SCANCODES> keys{};
+        for (auto key : held)
+        {
+            keys[static_cast<std::size_t>(key)] = 1;
+        }
+        auto& input = registry.ctx().get<InputState>();
+        input.beginFrame();
+        input.setKeyboard(keys.data(), SDL_NUM_SCANCODES);
+    };
+    const auto step = [&](game::ui::MenuNav& nav, SDL_Scancode key)
+    {
+        press({key});
+        nav.update(registry, {"move_up"}, {"move_down"});
+        press({}); // release, so the next press is a new one
+        nav.update(registry, {"move_up"}, {"move_down"});
+    };
+
+    SUBCASE("clamped at both ends")
+    {
+        game::ui::MenuNav nav(2, game::ui::MenuNav::Ends::Clamp);
+        CHECK(nav.focus() == 0);
+        step(nav, SDL_SCANCODE_UP);
+        CHECK(nav.focus() == 0);
+        step(nav, SDL_SCANCODE_DOWN);
+        CHECK(nav.focused(1));
+        step(nav, SDL_SCANCODE_DOWN);
+        CHECK(nav.focus() == 1);
+    }
+
+    SUBCASE("wrapping round")
+    {
+        game::ui::MenuNav nav(3, game::ui::MenuNav::Ends::Wrap);
+        step(nav, SDL_SCANCODE_UP);
+        CHECK(nav.focus() == 2);
+        step(nav, SDL_SCANCODE_DOWN);
+        CHECK(nav.focus() == 0);
+    }
+
+    SUBCASE("a held key moves once, not every frame")
+    {
+        game::ui::MenuNav nav(3, game::ui::MenuNav::Ends::Wrap);
+        press({SDL_SCANCODE_DOWN});
+        nav.update(registry, {"move_up"}, {"move_down"});
+        press({SDL_SCANCODE_DOWN});
+        nav.update(registry, {"move_up"}, {"move_down"});
+        CHECK(nav.focus() == 1);
+    }
 }

@@ -1,12 +1,10 @@
 #include <cstdio>
-#include <engine/core/delta_time.hpp>
-#include <engine/input/action_map.hpp>
-#include <engine/input/input_state.hpp>
 #include <engine/scene/scene_system.hpp>
 #include <game/play_state.hpp>
 #include <game/scene/in_game_scene.hpp>
 #include <game/scene/title_scene.hpp>
 #include <game/state.hpp>
+#include <game/ui/menu.hpp>
 #include <game/ui/ui_layout.hpp>
 #include <game/ui/ui_skin.hpp>
 #include <game/widgets/hud_widget.hpp>
@@ -14,142 +12,103 @@
 #include <memory>
 
 using namespace de;
+using namespace game::ui;
 
 namespace
 {
-void handleSideFocus(entt::registry& registry, const InputState* input,
-                     const ActionMap* actions,
-                     const de::gui::setter_fn_type<int>& setFocus)
+enum class Choice
 {
-    if (input == nullptr || actions == nullptr)
+    None,
+    Left,
+    Right
+};
+
+/// The pause and game-over overlay: a centred panel with a title and two
+/// buttons, focus moved with the arrows. Returns the button activated this
+/// frame, if any.
+Choice twoButtonPanel(entt::registry& registry, ImDrawList* draw, MenuNav& nav,
+                      const char* title, const char* leftLabel,
+                      const char* rightLabel)
+{
+    nav.update(registry, {"move_left", "move_up"}, {"move_right", "move_down"});
+
+    const ImVec2 canvas = canvasSize(registry);
+    const ImVec2 panel0((canvas.x - kPausePanelW) * 0.5f,
+                        (canvas.y - kPausePanelH) * 0.5f);
+    const ImVec2 panel1(panel0.x + kPausePanelW, panel0.y + kPausePanelH);
+    drawPanel(registry, draw, panel0, panel1);
+    drawText(registry, draw,
+             ImVec2(panel0.x + kPauseTitleInset, panel0.y + kPauseTitleInset),
+             title, kFontPanelTitle, IM_COL32_WHITE);
+
+    const bool confirm = pressed(registry, "confirm");
+    const ImVec2 leftSize = buttonSizeForLabel(registry, leftLabel);
+    const ImVec2 rightSize = buttonSizeForLabel(registry, rightLabel);
+    const float m = kPauseButtonMargin;
+
+    const bool left =
+        menuButton(registry, draw, leftLabel, leftLabel,
+                   ImVec2(panel0.x + m, panel1.y - m - leftSize.y),
+                   nav.focused(0), confirm);
+    const bool right = menuButton(
+        registry, draw, rightLabel, rightLabel,
+        ImVec2(panel1.x - m - rightSize.x, panel1.y - m - rightSize.y),
+        nav.focused(1), confirm);
+
+    if (left)
     {
-        return;
+        return Choice::Left;
     }
-    if (actions->wasPressedRaw(*input, "move_left") ||
-        actions->wasPressedRaw(*input, "move_up"))
-    {
-        setFocus(0);
-        game::ui::playUi(registry);
-    }
-    if (actions->wasPressedRaw(*input, "move_right") ||
-        actions->wasPressedRaw(*input, "move_down"))
-    {
-        setFocus(1);
-        game::ui::playUi(registry);
-    }
+    return right ? Choice::Right : Choice::None;
 }
 
-void drawPauseLikePanel(entt::registry& registry, ImDrawList* draw,
-                        const ImVec2& canvas, const char* title,
-                        const char* leftLabel, const char* rightLabel,
-                        int focus, double elapsed, bool confirm,
-                        bool& leftActivated, bool& rightActivated)
-{
-    const float panelW = game::ui::kPausePanelW;
-    const float panelH = game::ui::kPausePanelH;
-    const ImVec2 panel0((canvas.x - panelW) * 0.5f, (canvas.y - panelH) * 0.5f);
-    const ImVec2 panel1(panel0.x + panelW, panel0.y + panelH);
-    game::ui::drawPanel(registry, draw, panel0, panel1);
-
-    game::ui::drawText(registry, draw,
-                       ImVec2(panel0.x + game::ui::kPauseTitleInset,
-                              panel0.y + game::ui::kPauseTitleInset),
-                       title, game::ui::kFontPanelTitle, IM_COL32_WHITE);
-
-    const ImVec2 leftSize = game::ui::buttonSizeForLabel(registry, leftLabel);
-    const ImVec2 rightSize = game::ui::buttonSizeForLabel(registry, rightLabel);
-    const float m = game::ui::kPauseButtonMargin;
-    const ImVec2 left0(panel0.x + m, panel1.y - m - leftSize.y);
-    const ImVec2 right0(panel1.x - m - rightSize.x, panel1.y - m - rightSize.y);
-
-    game::ui::drawButton(registry, draw, left0, leftSize, focus == 0, elapsed);
-    game::ui::drawCenteredText(
-        registry, draw, left0,
-        ImVec2(left0.x + leftSize.x, left0.y + leftSize.y), leftLabel,
-        game::ui::kFontButton, game::ui::kButtonTextColor);
-    game::ui::drawButton(registry, draw, right0, rightSize, focus == 1,
-                         elapsed);
-    game::ui::drawCenteredText(
-        registry, draw, right0,
-        ImVec2(right0.x + rightSize.x, right0.y + rightSize.y), rightLabel,
-        game::ui::kFontButton, game::ui::kButtonTextColor);
-
-    leftActivated = game::ui::hitButton(leftLabel, left0, leftSize) ||
-                    (confirm && focus == 0);
-    rightActivated = game::ui::hitButton(rightLabel, right0, rightSize) ||
-                     (confirm && focus == 1);
-}
 } // namespace
 
-void HudWidget::render(entt::registry& registry, de::gui::Hooks& h)
+void HudWidget::render(entt::registry& registry)
 {
-    game::ui::ensureLoaded(registry);
-
-    // Hooks are matched by call order, so each menu's focus is declared on
-    // every frame, before any branch. Declaring one inside each branch gave
-    // both the same slot, and the focus left on Game Over carried into Pause.
-    auto [pauseFocus, setPauseFocus] = h.use_state(0);
-    auto [gameOverFocus, setGameOverFocus] = h.use_state(0);
-
     const auto& state = registry.ctx().get<GameState>();
-    const ImVec2 canvas = game::ui::canvasSize(registry);
-    const auto* input = registry.ctx().find<InputState>();
-    const auto* actions = registry.ctx().find<ActionMap>();
-    const double elapsed = registry.ctx().contains<DeltaTime>()
-                               ? registry.ctx().get<DeltaTime>().elapsed
-                               : 0.0;
     ImDrawList* draw = ImGui::GetForegroundDrawList();
 
     char scoreLabel[32];
     std::snprintf(scoreLabel, sizeof(scoreLabel), "SCORE: %06d", state.score);
-    game::ui::drawText(registry, draw,
-                       ImVec2(game::ui::kScoreX, game::ui::kScoreY), scoreLabel,
-                       game::ui::kFontScore, IM_COL32_WHITE);
-
-    const bool confirm = input != nullptr && actions != nullptr &&
-                         actions->wasPressedRaw(*input, "confirm");
+    drawText(registry, draw, ImVec2(kScoreX, kScoreY), scoreLabel, kFontScore,
+             IM_COL32_WHITE);
 
     if (state.playState == PlayState::Paused)
     {
-        handleSideFocus(registry, input, actions, setPauseFocus);
-
-        bool left = false;
-        bool right = false;
-        drawPauseLikePanel(registry, draw, canvas, "PAUSED", "RESUME", "QUIT",
-                           pauseFocus, elapsed, confirm, left, right);
-        if (left)
+        switch (twoButtonPanel(registry, draw, m_pauseNav, "PAUSED", "RESUME",
+                               "QUIT"))
         {
-            game::ui::playUi(registry);
-            setPlayState(registry, PlayState::Playing);
+            case Choice::Left:
+                playUi(registry);
+                setPlayState(registry, PlayState::Playing);
+                break;
+            case Choice::Right:
+                playUi(registry);
+                registry.ctx().get<SceneSystem>().requestScene(
+                    std::make_unique<TitleScene>());
+                break;
+            case Choice::None:
+                break;
         }
-        else if (right)
-        {
-            game::ui::playUi(registry);
-            registry.ctx().get<SceneSystem>().requestScene(
-                std::make_unique<TitleScene>());
-        }
-        return;
     }
-
-    if (state.playState == PlayState::GameOver)
+    else if (state.playState == PlayState::GameOver)
     {
-        handleSideFocus(registry, input, actions, setGameOverFocus);
-
-        bool left = false;
-        bool right = false;
-        drawPauseLikePanel(registry, draw, canvas, "GAME OVER", "RETRY", "QUIT",
-                           gameOverFocus, elapsed, confirm, left, right);
-        if (left)
+        switch (twoButtonPanel(registry, draw, m_gameOverNav, "GAME OVER",
+                               "RETRY", "QUIT"))
         {
-            game::ui::playUi(registry);
-            registry.ctx().get<SceneSystem>().requestScene(
-                std::make_unique<InGameScene>());
-        }
-        else if (right)
-        {
-            game::ui::playUi(registry);
-            registry.ctx().get<SceneSystem>().requestScene(
-                std::make_unique<TitleScene>());
+            case Choice::Left:
+                playUi(registry);
+                registry.ctx().get<SceneSystem>().requestScene(
+                    std::make_unique<InGameScene>());
+                break;
+            case Choice::Right:
+                playUi(registry);
+                registry.ctx().get<SceneSystem>().requestScene(
+                    std::make_unique<TitleScene>());
+                break;
+            case Choice::None:
+                break;
         }
     }
 }
