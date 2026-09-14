@@ -94,7 +94,7 @@ void createLayer(entt::registry& registry, Layer layer)
         {
             const auto& p = registry.get<TransformComponent>(entity).position;
             const auto& d = registry.get<DimensionComponent>(entity);
-            return Box<float>(p.getX(), p.getY(), d.width, d.height);
+            return Box<float>(p.x, p.y, d.width, d.height);
         },
         Box<float>(0.0f, 0.0f, 400.0f, 400.0f));
 }

@@ -132,7 +132,7 @@ TEST_CASE("snake dies outside room bounds")
     CHECK(world.state().playState == PlayState::GameOver);
     // Stays on the last floor cell (290), never steps onto the wall (310).
     CHECK(snake.movementProgress == doctest::Approx(1.0f));
-    CHECK(snake.segments.front().to.getX() == doctest::Approx(290.0f));
+    CHECK(snake.segments.front().to.x == doctest::Approx(290.0f));
 }
 
 TEST_CASE("eating a bat grows the snake and awards score")
@@ -173,8 +173,8 @@ TEST_CASE("bat reflects when leaving room bounds")
     batSystem.run(world.registry);
 
     const auto& after = world.registry.get<BatComponent>(bat);
-    CHECK(after.velocity.getX() > 0.0f);
-    CHECK(world.registry.get<TransformComponent>(bat).position.getX() >=
+    CHECK(after.velocity.x > 0.0f);
+    CHECK(world.registry.get<TransformComponent>(bat).position.x >=
           doctest::Approx(20.0f));
 }
 
@@ -219,10 +219,8 @@ TEST_CASE("the snake head is drawn by exactly one sprite")
                 world.registry.get<TransformComponent>(snake.segmentEntities[i])
                     .position;
             // Spawned segments start at rest (at == to), so no lerp.
-            CHECK(position.getX() ==
-                  doctest::Approx(segment.to.getX() - 10.0f));
-            CHECK(position.getY() ==
-                  doctest::Approx(segment.to.getY() - 10.0f));
+            CHECK(position.x == doctest::Approx(segment.to.x - 10.0f));
+            CHECK(position.y == doctest::Approx(segment.to.y - 10.0f));
         }
     }
 }

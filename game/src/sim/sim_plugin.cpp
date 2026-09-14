@@ -101,8 +101,8 @@ void SimPlugin::mount(de::GameLoop& gameLoop)
             }
 
             m_csv << m_steps << ',' << score << ',' << length << ','
-                  << (over ? 1 : 0) << ',' << head.getX() << ',' << head.getY()
-                  << ',' << bat.getX() << ',' << bat.getY() << '\n';
+                  << (over ? 1 : 0) << ',' << head.x << ',' << head.y << ','
+                  << bat.x << ',' << bat.y << '\n';
 
             if (over || m_steps >= m_options.maxSteps)
             {

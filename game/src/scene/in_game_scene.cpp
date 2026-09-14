@@ -142,8 +142,8 @@ void InGameScene::spawnPlayer(entt::registry& registry)
         }
         const Vector2D<float> pos =
             view.get<TransformComponent>(entity).position;
-        const int col = static_cast<int>(std::floor(pos.getX() / tile));
-        const int row = static_cast<int>(std::floor(pos.getY() / tile));
+        const int col = static_cast<int>(std::floor(pos.x / tile));
+        const int row = static_cast<int>(std::floor(pos.y / tile));
         const Vector2D<float> center(
             static_cast<float>(col) * tile + tile * 0.5f,
             static_cast<float>(row) * tile + tile * 0.5f);
@@ -154,8 +154,8 @@ void InGameScene::spawnPlayer(entt::registry& registry)
     if (registry.view<PlayerComponent>().empty())
     {
         const Vector2D<float> center(
-            state.roomBounds.getLeft() + state.roomBounds.getWidth() * 0.5f,
-            state.roomBounds.getTop() + state.roomBounds.getHeight() * 0.5f);
+            state.roomBounds.left() + state.roomBounds.width * 0.5f,
+            state.roomBounds.top() + state.roomBounds.height * 0.5f);
         game::prefab::makeSnakeHead(registry, track(registry.create()), center,
                                     tile);
     }

@@ -48,8 +48,8 @@ void makeSnakeHead(entt::registry& registry, entt::entity entity,
     attachSprite(registry, entity, SlimeStrip, size);
     // The transform is the sprite's top-left corner.
     registry.emplace_or_replace<TransformComponent>(
-        entity, Vector2D<float>(center.getX() - size * 0.5f,
-                                center.getY() - size * 0.5f));
+        entity,
+        Vector2D<float>(center.x - size * 0.5f, center.y - size * 0.5f));
 }
 
 entt::entity makeSegmentSprite(entt::registry& registry, float size)
@@ -63,10 +63,10 @@ entt::entity makeSegmentSprite(entt::registry& registry, float size)
 entt::entity makeBat(entt::registry& registry, const Box<float>& room,
                      std::mt19937& rng)
 {
-    std::uniform_real_distribution<float> xDist(room.getLeft(),
-                                                room.getRight() - kSegmentSize);
-    std::uniform_real_distribution<float> yDist(
-        room.getTop(), room.getBottom() - kSegmentSize);
+    std::uniform_real_distribution<float> xDist(room.left(),
+                                                room.right() - kSegmentSize);
+    std::uniform_real_distribution<float> yDist(room.top(),
+                                                room.bottom() - kSegmentSize);
 
     // Drawn in a fixed order -- heading, x, y -- so a seed gives the same bat
     // on every compiler. As two arguments of one call, the order of x and y

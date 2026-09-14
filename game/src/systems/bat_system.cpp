@@ -23,8 +23,8 @@ Circle<float> batCircle(const Vector2D<float>& topLeft, float width,
                         float height)
 {
     // Tutorial Bat.GetBounds: radius = Width * 0.25.
-    return Circle<float>{topLeft.getX() + width * 0.5f,
-                         topLeft.getY() + height * 0.5f, width * 0.25f};
+    return Circle<float>{topLeft.x + width * 0.5f, topLeft.y + height * 0.5f,
+                         width * 0.25f};
 }
 
 Circle<float> slimeHeadCircle(const SnakeComponent& snake)
@@ -32,19 +32,19 @@ Circle<float> slimeHeadCircle(const SnakeComponent& snake)
     const auto& head = snake.segments.front();
     const auto pos = lerp(head.at, head.to, snake.movementProgress);
     // Tutorial Slime.GetBounds: radius = Width * 0.5 around the visual centre.
-    return Circle<float>{pos.getX(), pos.getY(), game::kSegmentSize * 0.5f};
+    return Circle<float>{pos.x, pos.y, game::kSegmentSize * 0.5f};
 }
 
 void bounce(BatComponent& bat, Vector2D<float>& position, float width,
             float height, Vector2D<float> normal, AudioManager* audio)
 {
-    if (normal.getX() != 0.0f)
+    if (normal.x != 0.0f)
     {
-        position.setX(position.getX() + normal.getX() * (width * 0.1f));
+        position.x = position.x + normal.x * (width * 0.1f);
     }
-    if (normal.getY() != 0.0f)
+    if (normal.y != 0.0f)
     {
-        position.setY(position.getY() + normal.getY() * (height * 0.1f));
+        position.y = position.y + normal.y * (height * 0.1f);
     }
     bat.velocity = reflect(bat.velocity, normal);
     if (audio != nullptr)
@@ -59,8 +59,8 @@ void positionBatAwayFromSlime(Vector2D<float>& batPos, float batW, float batH,
                               const SnakeComponent& snake,
                               const Box<float>& room, std::mt19937& rng)
 {
-    const float roomCenterX = room.getLeft() + room.getWidth() * 0.5f;
-    const float roomCenterY = room.getTop() + room.getHeight() * 0.5f;
+    const float roomCenterX = room.left() + room.width * 0.5f;
+    const float roomCenterY = room.top() + room.height * 0.5f;
     const Circle<float> slime = slimeHeadCircle(snake);
     const float centerToSlimeX = slime.x - roomCenterX;
     const float centerToSlimeY = slime.y - roomCenterY;
@@ -70,31 +70,31 @@ void positionBatAwayFromSlime(Vector2D<float>& batPos, float batW, float batH,
     if (std::abs(centerToSlimeX) > std::abs(centerToSlimeY))
     {
         std::uniform_int_distribution<int> yDist(
-            static_cast<int>(room.getTop() + padding),
-            static_cast<int>(room.getBottom() - padding));
-        batPos.setY(static_cast<float>(yDist(rng)));
+            static_cast<int>(room.top() + padding),
+            static_cast<int>(room.bottom() - padding));
+        batPos.y = static_cast<float>(yDist(rng));
         if (centerToSlimeX > 0.0f)
         {
-            batPos.setX(room.getLeft() + padding);
+            batPos.x = room.left() + padding;
         }
         else
         {
-            batPos.setX(room.getRight() - padding * 2.0f);
+            batPos.x = room.right() - padding * 2.0f;
         }
     }
     else
     {
         std::uniform_int_distribution<int> xDist(
-            static_cast<int>(room.getLeft() + padding),
-            static_cast<int>(room.getRight() - padding));
-        batPos.setX(static_cast<float>(xDist(rng)));
+            static_cast<int>(room.left() + padding),
+            static_cast<int>(room.right() - padding));
+        batPos.x = static_cast<float>(xDist(rng));
         if (centerToSlimeY > 0.0f)
         {
-            batPos.setY(room.getTop() + padding);
+            batPos.y = room.top() + padding;
         }
         else
         {
-            batPos.setY(room.getBottom() - padding * 2.0f);
+            batPos.y = room.bottom() - padding * 2.0f;
         }
     }
 }
@@ -117,26 +117,26 @@ void fly(BatComponent& bat, Vector2D<float>& position,
         batCircle(position, dimension.width, dimension.height);
     Vector2D<float> normal(0.0f, 0.0f);
 
-    if (bounds.left() < room.getLeft())
+    if (bounds.left() < room.left())
     {
-        normal.setX(1.0f);
-        position.setX(room.getLeft());
+        normal.x = 1.0f;
+        position.x = room.left();
     }
-    else if (bounds.right() > room.getRight())
+    else if (bounds.right() > room.right())
     {
-        normal.setX(-1.0f);
-        position.setX(room.getRight() - dimension.width);
+        normal.x = -1.0f;
+        position.x = room.right() - dimension.width;
     }
 
-    if (bounds.top() < room.getTop())
+    if (bounds.top() < room.top())
     {
-        normal.setY(1.0f);
-        position.setY(room.getTop());
+        normal.y = 1.0f;
+        position.y = room.top();
     }
-    else if (bounds.bottom() > room.getBottom())
+    else if (bounds.bottom() > room.bottom())
     {
-        normal.setY(-1.0f);
-        position.setY(room.getBottom() - dimension.height);
+        normal.y = -1.0f;
+        position.y = room.bottom() - dimension.height;
     }
 
     if (normal.lengthSquared() > 0.0f)

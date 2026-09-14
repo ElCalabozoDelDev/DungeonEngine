@@ -16,8 +16,8 @@ namespace
 Vector2D<float> spriteCorner(const SlimeSegment& segment, float progress)
 {
     const auto center = lerp(segment.at, segment.to, progress);
-    return Vector2D<float>(center.getX() - game::kSegmentSize * 0.5f,
-                           center.getY() - game::kSegmentSize * 0.5f);
+    return Vector2D<float>(center.x - game::kSegmentSize * 0.5f,
+                           center.y - game::kSegmentSize * 0.5f);
 }
 
 /// One sprite entity per body segment. Segment 0 is drawn by the head entity

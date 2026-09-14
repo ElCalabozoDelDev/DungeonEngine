@@ -33,7 +33,7 @@ void buildLevelSpatialIndex(entt::registry& registry, float mapWidth,
     {
         const auto& transform = registry.get<TransformComponent>(entity);
         const auto& dimension = registry.get<DimensionComponent>(entity);
-        return Box<float>(transform.position.getX(), transform.position.getY(),
+        return Box<float>(transform.position.x, transform.position.y,
                           dimension.width, dimension.height);
     };
 

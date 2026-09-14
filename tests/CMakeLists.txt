@@ -9,6 +9,7 @@ add_executable(tests
     test_action_map.cpp
     test_animation.cpp
     test_balance.cpp
+    test_command_line.cpp
     test_config_loader.cpp
     test_engine_systems.cpp
     test_game_loop.cpp

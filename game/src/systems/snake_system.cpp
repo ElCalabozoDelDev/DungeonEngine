@@ -16,20 +16,20 @@ bool spriteOutsideRoom(const Vector2D<float>& center, float size,
                        const Box<float>& box)
 {
     const float half = size * 0.5f;
-    const float left = center.getX() - half;
-    const float right = center.getX() + half;
-    const float top = center.getY() - half;
-    const float bottom = center.getY() + half;
-    return left < box.getLeft() || right > box.getRight() ||
-           top < box.getTop() || bottom > box.getBottom();
+    const float left = center.x - half;
+    const float right = center.x + half;
+    const float top = center.y - half;
+    const float bottom = center.y + half;
+    return left < box.left() || right > box.right() || top < box.top() ||
+           bottom > box.bottom();
 }
 
 bool segmentsOverlap(const Vector2D<float>& a, const Vector2D<float>& b,
                      float size)
 {
     const float half = size * 0.5f;
-    const Box<float> aa(a.getX() - half, a.getY() - half, size, size);
-    const Box<float> bb(b.getX() - half, b.getY() - half, size, size);
+    const Box<float> aa(a.x - half, a.y - half, size, size);
+    const Box<float> bb(b.x - half, b.y - half, size, size);
     return aa.intersects(bb);
 }
 

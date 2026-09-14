@@ -45,20 +45,18 @@ void CameraSystem::run(entt::registry& registry)
         }
 
         // Extrapolate along the current velocity
-        predictedPosition.setX(predictedPosition.getX() +
-                               velocity.getX() * camera.predictionFactor * dt);
-        predictedPosition.setY(predictedPosition.getY() +
-                               velocity.getY() * camera.predictionFactor * dt);
+        predictedPosition.x =
+            predictedPosition.x + velocity.x * camera.predictionFactor * dt;
+        predictedPosition.y =
+            predictedPosition.y + velocity.y * camera.predictionFactor * dt;
 
         // Lerp towards the predicted position
-        transform.position.setX(
-            transform.position.getX() +
-            (predictedPosition.getX() - transform.position.getX()) *
-                camera.followSpeed * dt);
-        transform.position.setY(
-            transform.position.getY() +
-            (predictedPosition.getY() - transform.position.getY()) *
-                camera.followSpeed * dt);
+        transform.position.x = transform.position.x +
+                               (predictedPosition.x - transform.position.x) *
+                                   camera.followSpeed * dt;
+        transform.position.y = transform.position.y +
+                               (predictedPosition.y - transform.position.y) *
+                                   camera.followSpeed * dt;
 
         // Clamp the camera to the level bounds. The visible half-extents
         // come from Camera2D so this cannot drift from what is drawn.
@@ -68,14 +66,12 @@ void CameraSystem::run(entt::registry& registry)
         view.viewHeight = dimension.height;
         const Vector2D<float> half = view.halfExtents();
 
-        transform.position.setX(std::max(
-            half.getX(),
-            std::min(transform.position.getX(),
-                     static_cast<float>(bounds.levelWidth) - half.getX())));
-        transform.position.setY(std::max(
-            half.getY(),
-            std::min(transform.position.getY(),
-                     static_cast<float>(bounds.levelHeight) - half.getY())));
+        transform.position.x = std::max(
+            half.x, std::min(transform.position.x,
+                             static_cast<float>(bounds.levelWidth) - half.x));
+        transform.position.y = std::max(
+            half.y, std::min(transform.position.y,
+                             static_cast<float>(bounds.levelHeight) - half.y));
     }
 }
 
