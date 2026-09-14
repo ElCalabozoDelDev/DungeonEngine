@@ -16,11 +16,6 @@ void TitleScene::onEnter(entt::registry& registry)
     registry.ctx().get<SpatialIndex>().clear();
     resetRunPresentation(registry);
 
-    if (!registry.ctx().contains<AudioSettings>())
-    {
-        registry.ctx().emplace<AudioSettings>();
-    }
-
     const auto& assets = registry.ctx().get<AssetPaths>();
     if (auto* textures = registry.ctx().find<TextureCache>();
         textures != nullptr)

@@ -7,22 +7,12 @@ using namespace de;
 
 void setPlayState(entt::registry& registry, PlayState next)
 {
-    if (!registry.ctx().contains<GameState>())
-    {
-        registry.ctx().emplace<GameState>();
-    }
     registry.ctx().get<GameState>().playState = next;
-    if (auto* paused = registry.ctx().find<Paused>(); paused != nullptr)
-    {
-        paused->value = (next != PlayState::Playing);
-    }
+    registry.ctx().get<Paused>().value = (next != PlayState::Playing);
 }
 
 void resetRunPresentation(entt::registry& registry)
 {
     setPlayState(registry, PlayState::Playing);
-    if (auto* grade = registry.ctx().find<WorldColorGrade>(); grade != nullptr)
-    {
-        grade->colorAmount = 1.0f;
-    }
+    registry.ctx().get<WorldColorGrade>().colorAmount = 1.0f;
 }

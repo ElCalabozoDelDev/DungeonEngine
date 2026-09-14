@@ -1,4 +1,5 @@
 #include <doctest/doctest.h>
+#include <engine/core/math.hpp>
 #include <engine/core/vector_2d.hpp>
 
 using de::Vector2D;
@@ -50,4 +51,61 @@ TEST_CASE("Vector2D normalize")
         CHECK(zero.getX() == doctest::Approx(0.0f));
         CHECK(zero.getY() == doctest::Approx(0.0f));
     }
+}
+
+TEST_CASE("Vector2D dot and equality")
+{
+    const Vector2D<float> right(1.0f, 0.0f);
+    const Vector2D<float> up(0.0f, -1.0f);
+    CHECK(right.dot(up) == doctest::Approx(0.0f));
+    CHECK(right.dot(right * -1.0f) == doctest::Approx(-1.0f));
+    CHECK(Vector2D<float>(3.0f, 4.0f).dot(Vector2D<float>(2.0f, 1.0f)) ==
+          doctest::Approx(10.0f));
+
+    CHECK(right == Vector2D<float>(1.0f, 0.0f));
+    CHECK_FALSE(right == up);
+}
+
+TEST_CASE("lerp walks from one point to the other")
+{
+    const Vector2D<float> a(10.0f, 20.0f);
+    const Vector2D<float> b(30.0f, 60.0f);
+    CHECK(de::lerp(a, b, 0.0f) == a);
+    CHECK(de::lerp(a, b, 1.0f) == b);
+    CHECK(de::lerp(a, b, 0.25f).getX() == doctest::Approx(15.0f));
+    CHECK(de::lerp(a, b, 0.25f).getY() == doctest::Approx(30.0f));
+}
+
+TEST_CASE("reflect mirrors a velocity off a surface")
+{
+    // Hitting a left wall (normal pointing right) flips x and keeps y.
+    const auto bounced =
+        de::reflect(Vector2D<float>(-3.0f, 2.0f), Vector2D<float>(1.0f, 0.0f));
+    CHECK(bounced.getX() == doctest::Approx(3.0f));
+    CHECK(bounced.getY() == doctest::Approx(2.0f));
+
+    SUBCASE("with a normal that is not unit length")
+    {
+        const auto same = de::reflect(Vector2D<float>(-3.0f, 2.0f),
+                                      Vector2D<float>(5.0f, 0.0f));
+        CHECK(same.getX() == doctest::Approx(3.0f));
+    }
+
+    SUBCASE("off a corner, both axes flip")
+    {
+        const auto corner = de::reflect(Vector2D<float>(-1.0f, -1.0f),
+                                        Vector2D<float>(1.0f, 1.0f));
+        CHECK(corner.getX() == doctest::Approx(1.0f));
+        CHECK(corner.getY() == doctest::Approx(1.0f));
+    }
+}
+
+TEST_CASE("circles intersect only when they overlap")
+{
+    const de::Circle<float> a{0.0f, 0.0f, 5.0f};
+    CHECK(a.intersects(de::Circle<float>{8.0f, 0.0f, 4.0f}));
+    CHECK_FALSE(a.intersects(de::Circle<float>{9.0f, 0.0f, 4.0f})); // touching
+    CHECK_FALSE(a.intersects(de::Circle<float>{20.0f, 0.0f, 4.0f}));
+    CHECK(a.left() == doctest::Approx(-5.0f));
+    CHECK(a.bottom() == doctest::Approx(5.0f));
 }

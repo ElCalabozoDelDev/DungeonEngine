@@ -4,7 +4,7 @@
 #include <engine/components/dimension_component.hpp>
 #include <engine/components/transform_component.hpp>
 #include <engine/core/delta_time.hpp>
-#include <engine/core/paused.hpp>
+#include <engine/core/math.hpp>
 #include <game/components/bat_component.hpp>
 #include <game/components/player_component.hpp>
 #include <game/components/snake_component.hpp>
@@ -19,51 +19,20 @@ using namespace de;
 
 namespace
 {
-struct Circle
-{
-    float x = 0.0f;
-    float y = 0.0f;
-    float radius = 0.0f;
-
-    float left() const { return x - radius; }
-    float right() const { return x + radius; }
-    float top() const { return y - radius; }
-    float bottom() const { return y + radius; }
-
-    bool intersects(const Circle& other) const
-    {
-        const float dx = x - other.x;
-        const float dy = y - other.y;
-        const float radii = radius + other.radius;
-        return (dx * dx + dy * dy) < (radii * radii);
-    }
-};
-
-float dot(const Vector2D<float>& a, const Vector2D<float>& b)
-{
-    return a.getX() * b.getX() + a.getY() * b.getY();
-}
-
-/// v' = v - 2 * dot(v, n) * n  (n must be unit length).
-Vector2D<float> reflect(const Vector2D<float>& velocity, Vector2D<float> normal)
-{
-    normal.normalize();
-    return velocity - normal * (2.0f * dot(velocity, normal));
-}
-
-Circle batCircle(const Vector2D<float>& topLeft, float width, float height)
+Circle<float> batCircle(const Vector2D<float>& topLeft, float width,
+                        float height)
 {
     // Tutorial Bat.GetBounds: radius = Width * 0.25.
-    return Circle{topLeft.getX() + width * 0.5f, topLeft.getY() + height * 0.5f,
-                  width * 0.25f};
+    return Circle<float>{topLeft.getX() + width * 0.5f,
+                         topLeft.getY() + height * 0.5f, width * 0.25f};
 }
 
-Circle slimeHeadCircle(const SnakeComponent& snake)
+Circle<float> slimeHeadCircle(const SnakeComponent& snake)
 {
     const auto& head = snake.segments.front();
-    const auto pos = game::lerp(head.at, head.to, snake.movementProgress);
+    const auto pos = lerp(head.at, head.to, snake.movementProgress);
     // Tutorial Slime.GetBounds: radius = Width * 0.5 around the visual centre.
-    return Circle{pos.getX(), pos.getY(), game::kSegmentSize * 0.5f};
+    return Circle<float>{pos.getX(), pos.getY(), game::kSegmentSize * 0.5f};
 }
 
 void randomizeVelocity(BatComponent& bat, std::mt19937& rng)
@@ -97,11 +66,11 @@ void bounce(BatComponent& bat, Vector2D<float>& position, float width,
 /// (MonoGame GameScene.PositionBatAwayFromSlime).
 void positionBatAwayFromSlime(Vector2D<float>& batPos, float batW, float batH,
                               const SnakeComponent& snake,
-                              const Rectangle& room, std::mt19937& rng)
+                              const Box<float>& room, std::mt19937& rng)
 {
-    const float roomCenterX = room.x + room.w * 0.5f;
-    const float roomCenterY = room.y + room.h * 0.5f;
-    const Circle slime = slimeHeadCircle(snake);
+    const float roomCenterX = room.getLeft() + room.getWidth() * 0.5f;
+    const float roomCenterY = room.getTop() + room.getHeight() * 0.5f;
+    const Circle<float> slime = slimeHeadCircle(snake);
     const float centerToSlimeX = slime.x - roomCenterX;
     const float centerToSlimeY = slime.y - roomCenterY;
 
@@ -110,31 +79,31 @@ void positionBatAwayFromSlime(Vector2D<float>& batPos, float batW, float batH,
     if (std::abs(centerToSlimeX) > std::abs(centerToSlimeY))
     {
         std::uniform_int_distribution<int> yDist(
-            static_cast<int>(room.top() + padding),
-            static_cast<int>(room.bottom() - padding));
+            static_cast<int>(room.getTop() + padding),
+            static_cast<int>(room.getBottom() - padding));
         batPos.setY(static_cast<float>(yDist(rng)));
         if (centerToSlimeX > 0.0f)
         {
-            batPos.setX(room.left() + padding);
+            batPos.setX(room.getLeft() + padding);
         }
         else
         {
-            batPos.setX(room.right() - padding * 2.0f);
+            batPos.setX(room.getRight() - padding * 2.0f);
         }
     }
     else
     {
         std::uniform_int_distribution<int> xDist(
-            static_cast<int>(room.left() + padding),
-            static_cast<int>(room.right() - padding));
+            static_cast<int>(room.getLeft() + padding),
+            static_cast<int>(room.getRight() - padding));
         batPos.setX(static_cast<float>(xDist(rng)));
         if (centerToSlimeY > 0.0f)
         {
-            batPos.setY(room.top() + padding);
+            batPos.setY(room.getTop() + padding);
         }
         else
         {
-            batPos.setY(room.bottom() - padding * 2.0f);
+            batPos.setY(room.getBottom() - padding * 2.0f);
         }
     }
 }
@@ -143,23 +112,17 @@ void positionBatAwayFromSlime(Vector2D<float>& batPos, float batW, float batH,
 
 void BatSystem::run(entt::registry& registry)
 {
-    auto* state = registry.ctx().find<GameState>();
-    auto* paused = registry.ctx().find<Paused>();
-    if (state == nullptr || state->playState != PlayState::Playing)
-    {
-        return;
-    }
-    if (paused != nullptr && paused->value)
+    // No pause check: the loop does not step fixed systems while de::Paused
+    // is set. The one thing to guard against is the snake having died earlier
+    // in this same step -- the bat must not be eaten by a dead snake.
+    auto& state = registry.ctx().get<GameState>();
+    if (state.playState != PlayState::Playing)
     {
         return;
     }
 
     const auto& dt = registry.ctx().get<DeltaTime>();
     auto* audio = registry.ctx().find<AudioManager>();
-    if (!registry.ctx().contains<GameRng>())
-    {
-        registry.ctx().emplace<GameRng>();
-    }
     auto& rng = registry.ctx().get<GameRng>().engine;
 
     auto snakes = registry.view<PlayerComponent, SnakeComponent>();
@@ -181,29 +144,30 @@ void BatSystem::run(entt::registry& registry)
         // let TransformSystem clamp against the full map instead of the room.
         transform += batComp.velocity * dt.fixed;
 
-        Circle bounds = batCircle(transform, dimension.width, dimension.height);
+        Circle<float> bounds =
+            batCircle(transform, dimension.width, dimension.height);
         Vector2D<float> normal(0.0f, 0.0f);
 
-        if (bounds.left() < state->roomBounds.left())
+        if (bounds.left() < state.roomBounds.getLeft())
         {
             normal.setX(1.0f);
-            transform.setX(state->roomBounds.left());
+            transform.setX(state.roomBounds.getLeft());
         }
-        else if (bounds.right() > state->roomBounds.right())
+        else if (bounds.right() > state.roomBounds.getRight())
         {
             normal.setX(-1.0f);
-            transform.setX(state->roomBounds.right() - dimension.width);
+            transform.setX(state.roomBounds.getRight() - dimension.width);
         }
 
-        if (bounds.top() < state->roomBounds.top())
+        if (bounds.top() < state.roomBounds.getTop())
         {
             normal.setY(1.0f);
-            transform.setY(state->roomBounds.top());
+            transform.setY(state.roomBounds.getTop());
         }
-        else if (bounds.bottom() > state->roomBounds.bottom())
+        else if (bounds.bottom() > state.roomBounds.getBottom())
         {
             normal.setY(-1.0f);
-            transform.setY(state->roomBounds.bottom() - dimension.height);
+            transform.setY(state.roomBounds.getBottom() - dimension.height);
         }
 
         if (normal.lengthSquared() > 0.0f)
@@ -228,14 +192,14 @@ void BatSystem::run(entt::registry& registry)
             }
 
             ++snake.pendingGrowth;
-            state->score += SnakeComponent::scorePerBat;
+            state.score += SnakeComponent::scorePerBat;
             if (audio != nullptr)
             {
                 audio->playSound("collect");
             }
 
             positionBatAwayFromSlime(transform, dimension.width,
-                                     dimension.height, snake, state->roomBounds,
+                                     dimension.height, snake, state.roomBounds,
                                      rng);
             randomizeVelocity(batComp, rng);
             bounds = batCircle(transform, dimension.width, dimension.height);

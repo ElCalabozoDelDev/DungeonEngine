@@ -51,13 +51,9 @@ void InGameScene::onEnter(entt::registry& registry)
     const auto& config = registry.ctx().get<Config>();
     const auto& assets = registry.ctx().get<AssetPaths>();
 
-    registry.ctx().insert_or_assign<GameState>(GameState{});
+    // A new run: reset the state GamePlugin installed, rather than creating it.
+    registry.ctx().get<GameState>() = GameState{};
     setPlayState(registry, PlayState::Playing);
-
-    if (!registry.ctx().contains<AudioSettings>())
-    {
-        registry.ctx().emplace<AudioSettings>();
-    }
 
     auto level = config.levels.find("arena");
     if (level == config.levels.end())
@@ -81,10 +77,10 @@ void InGameScene::onEnter(entt::registry& registry)
     state.mapRows = loader.getHeight();
     // One-tile inset playable room, matching the MonoGame tutorial.
     state.roomBounds =
-        Rectangle{static_cast<float>(state.tileWidth),
-                  static_cast<float>(state.tileHeight),
-                  static_cast<float>((state.mapColumns - 2) * state.tileWidth),
-                  static_cast<float>((state.mapRows - 2) * state.tileHeight)};
+        Box<float>(static_cast<float>(state.tileWidth),
+                   static_cast<float>(state.tileHeight),
+                   static_cast<float>((state.mapColumns - 2) * state.tileWidth),
+                   static_cast<float>((state.mapRows - 2) * state.tileHeight));
 
     auto& textures = registry.ctx().get<TextureCache>();
     // Horizontal strips: slime 2x20, bat 3x20. AnimationComponent walks
@@ -117,8 +113,10 @@ void InGameScene::onEnter(entt::registry& registry)
     // If the map had no Player object, spawn at the room centre.
     if (registry.view<PlayerComponent>().empty())
     {
-        spawnSnake(registry, state.roomBounds.x + state.roomBounds.w * 0.5f,
-                   state.roomBounds.y + state.roomBounds.h * 0.5f);
+        spawnSnake(
+            registry,
+            state.roomBounds.getLeft() + state.roomBounds.getWidth() * 0.5f,
+            state.roomBounds.getTop() + state.roomBounds.getHeight() * 0.5f);
     }
 
     spawnBat(registry);
@@ -243,15 +241,13 @@ void InGameScene::spawnSnake(entt::registry& registry, float x, float y)
 void InGameScene::spawnBat(entt::registry& registry)
 {
     const auto& state = registry.ctx().get<GameState>();
-    if (!registry.ctx().contains<GameRng>())
-    {
-        registry.ctx().emplace<GameRng>();
-    }
     auto& rng = registry.ctx().get<GameRng>().engine;
-    std::uniform_real_distribution<float> dx(
-        state.roomBounds.left(), state.roomBounds.right() - game::kSegmentSize);
-    std::uniform_real_distribution<float> dy(
-        state.roomBounds.top(), state.roomBounds.bottom() - game::kSegmentSize);
+    std::uniform_real_distribution<float> dx(state.roomBounds.getLeft(),
+                                             state.roomBounds.getRight() -
+                                                 game::kSegmentSize);
+    std::uniform_real_distribution<float> dy(state.roomBounds.getTop(),
+                                             state.roomBounds.getBottom() -
+                                                 game::kSegmentSize);
     std::uniform_real_distribution<float> angleDist(
         0.0f, 2.0f * std::numbers::pi_v<float>);
 

@@ -76,8 +76,12 @@ Headers are not listed anywhere.
 ## 6. Test it, then document it
 
 Tests link `game_lib` and need no window. Follow `tests/test_gameplay.cpp`: an
-anonymous-namespace `World` fixture that emplaces `DeltaTime`, `GameState` and a
-`SpatialIndex`, then calls `system.run(registry)` directly. `TEST_CASE` names are
+anonymous-namespace `World` fixture that emplaces every context resource the
+systems read (`DeltaTime`, `GameState`, `Paused`, `GameRng`, input) — the
+game installs them once in `GamePlugin`, and systems `get` them rather than
+creating them — then calls `system.run(registry)` directly. Its `step()`
+skips fixed systems while `Paused` is set, as the loop does; a new fixed
+system must not check for pause itself. `TEST_CASE` names are
 lowercase English sentences.
 
 Then update `docs/design/20-sistemas/<name>.md` — including its `codigo:` list,

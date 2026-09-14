@@ -36,10 +36,6 @@ void OptionsWidget::render(entt::registry& registry, de::gui::Hooks& h)
 {
     game::ui::ensureLoaded(registry);
 
-    if (!registry.ctx().contains<AudioSettings>())
-    {
-        registry.ctx().emplace<AudioSettings>();
-    }
     auto& settings = registry.ctx().get<AudioSettings>();
     const ImVec2 canvas = game::ui::canvasSize(registry);
     auto [focus, setFocus] = h.use_state(0);

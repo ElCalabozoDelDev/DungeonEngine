@@ -11,6 +11,7 @@
 #include <game/components/player_component.hpp>
 #include <game/components/snake_component.hpp>
 #include <game/play_state.hpp>
+#include <game/rng.hpp>
 #include <game/state.hpp>
 #include <game/systems/bat_system.hpp>
 #include <game/systems/snake_system.hpp>
@@ -29,11 +30,12 @@ struct World
             DeltaTime{1.0f / 60.0f, 1.0f / 60.0f, 0.0f, 0.0});
         registry.ctx().emplace<Paused>();
         auto& state = registry.ctx().emplace<GameState>();
-        state.roomBounds = Rectangle{20.0f, 20.0f, 280.0f, 140.0f};
+        state.roomBounds = Box<float>(20.0f, 20.0f, 280.0f, 140.0f);
         state.playState = PlayState::Playing;
 
         registry.ctx().emplace<InputState>();
         registry.ctx().emplace<ActionMap>();
+        registry.ctx().emplace<GameRng>().engine.seed(1);
     }
 
     GameState& state() { return registry.ctx().get<GameState>(); }
@@ -66,6 +68,12 @@ struct World
         BatSystem bat;
         for (int i = 0; i < times; ++i)
         {
+            // What GameLoop does: no fixed steps while paused. The systems
+            // rely on it rather than checking the pause themselves.
+            if (registry.ctx().get<Paused>().value)
+            {
+                break;
+            }
             snake.run(registry);
             bat.run(registry);
         }
@@ -213,4 +221,30 @@ TEST_CASE("the snake head is drawn by exactly one sprite")
                   doctest::Approx(segment.to.getY() - 10.0f));
         }
     }
+}
+
+TEST_CASE("a snake that dies in a step does not eat in the same step")
+{
+    // BatSystem runs after SnakeSystem in each fixed step. The loop stops
+    // stepping once the game is over, but only from the next step on, so
+    // BatSystem still has to notice a death earlier in its own step.
+    World world;
+    auto entity = world.spawnSnake(290.0f, 80.0f, 1);
+    auto& snake = world.registry.get<SnakeComponent>(entity);
+    snake.nextDirection = Vector2D<float>(1.0f, 0.0f);
+    snake.movementTimer = SnakeComponent::movementInterval; // steps now
+
+    auto bat = world.registry.create();
+    BatComponent batComp;
+    batComp.velocity = Vector2D<float>(0.0f, 0.0f);
+    world.registry.emplace<BatComponent>(bat, batComp);
+    world.registry.emplace<TransformComponent>(bat,
+                                               Vector2D<float>(280.0f, 70.0f));
+    world.registry.emplace<DimensionComponent>(bat, 20.0f, 20.0f);
+
+    world.step();
+
+    REQUIRE(world.state().playState == PlayState::GameOver);
+    CHECK(world.state().score == 0);
+    CHECK(snake.pendingGrowth == 0);
 }
