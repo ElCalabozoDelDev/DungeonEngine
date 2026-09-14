@@ -122,6 +122,11 @@ or the example already in the code is their answer, recorded in
   passed through as-is. It asks the question if the file is missing, and
   a hook (`.claude/hooks/greenfield-guard.mjs`) keeps it out of the
   example's code until the answer is `existente`.
+- **Relaying the interview**: the subagent runs a fixed budget (at most 4
+  rounds, 12 questions, written to the drafts after every round). Show
+  each round to the user unchanged, send the answer back to the *same*
+  agent (`SendMessage`) rather than launching a new one, and add no
+  questions of your own.
 - **Turning the design into code** follows the `implement-design` skill.
   For a new game it first retires the example from `game/`, `tests/` and
   `assets/`, and only then flips the file to `existente`.

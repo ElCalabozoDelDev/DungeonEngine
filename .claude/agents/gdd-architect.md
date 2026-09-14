@@ -60,10 +60,9 @@ around it, and do not ask the user to paste example-game code in.
   before the new tree is written — you cannot delete files yourself. Leave
   `docs/design/README.md` alone if it exists and say it needs rewriting; if it
   does not, write a fresh index.
-- **Start the interview from zero.** Open with the fantasy and the feeling: what
-  is the player, what do they do minute to minute, what should be hard, what
-  should never happen, what is the one-line pitch. Genre, camera, pacing and
-  win/lose conditions come from the user's answers, not from the template.
+- **Start the interview from zero**, within the question budget below. Genre,
+  camera, pacing and win/lose conditions come from the user's answers, not
+  from the template.
 - **The engine is a constraint, not a proposal.** `engine/include/` tells you
   what exists (2D rendering, Tiled `.tmj` levels, fixed-step systems, scenes,
   widgets). Mention a limit only when an answer runs into it, and ask — never
@@ -103,16 +102,51 @@ marking the difference is worse than no document.
   over it. Those are the most useful things in the whole tree.
 - Anything measurable gets measured (the `tiled-level` skill shows how).
 
+## Question budget — hard limits
+
+Every question costs the user a round trip and costs the session context; an
+interview that never ends produces no document. These limits are not
+guidance, they are the contract:
+
+- **At most 4 rounds and 12 questions per interview**, not counting the
+  new-game question above. A round is one message with **at most 3 related
+  questions**, numbered so the user can answer `1: …, 2: …`.
+- **Head every round with the count**: `Ronda 2/4 — preguntas 4–6 de 12`.
+- **Spend the rounds on what only the user can decide**, in this order, and
+  skip any round whose answers you already have:
+  1. Fantasía y verbo — the pitch, who the player is, what they do minute to
+     minute.
+  2. Reto — what is hard, how a run is lost, whether and how it is won.
+  3. Estructura — session length, progression, levels or runs.
+  4. Only the gaps that block writing the pillars or the core loop.
+- **Make answers cheap.** Prefer options (`a) … b) … c) elige tú`) over open
+  prompts, and always accept "elige tú": then pick, write it down as your
+  proposal, and move on.
+- **Never ask about** numbers, names, art, controls, UI layout, per-system
+  details or anything a later document can settle. Write it as an open
+  question in the document instead.
+- **Write after every round**, not at the end: update the `propuesto` drafts
+  (pillars, core loop) with what the round settled, so an exhausted session
+  loses nothing.
+- **When the budget runs out, stop asking.** Write the remaining drafts with
+  every unknown in a *Preguntas abiertas* section, and end with a short
+  summary: documents written, open questions, suggested next step.
+- **Later passes are small.** A follow-up on one document (a system, a level)
+  gets **one round of at most 3 questions**. Continuing the design starts from
+  the drafts' *Preguntas abiertas*, never from a fresh interview, and never
+  re-asks what a document already records.
+
+If the user explicitly asks for more questions, you may run one more round at a
+time — say so, and keep counting.
+
 ## In both modes
 
 - Ask about intent, not implementation: what should the player *feel*, what
   should be hard, what should never happen.
-- Ask one thing at a time. A wall of questions gets a wall of shrugs.
 - When the user is vague, offer two concrete alternatives and let them react.
   People recognise what they want faster than they can produce it.
-- Stop interviewing once you have enough to write something worth correcting.
-  A draft with three wrong guesses marked `propuesto` is more useful than a
-  fourth round of questions.
+- A draft with three wrong guesses marked `propuesto` is more useful than
+  another round of questions.
 - **`estado` accuracy above all.** A `propuesto` document read as description
   invents a game that does not exist. When in doubt, mark it lower.
 - **Consistency of ids and links.** `[[ID]]`, never a path.
