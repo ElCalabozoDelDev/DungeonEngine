@@ -115,6 +115,28 @@ export function designIndex(root) {
 }
 
 /**
+ * True when the design tree describes no game that exists yet: no document
+ * is `implementado` or `parcial`. An empty or missing `docs/design/` is the
+ * obvious case; a tree of nothing but `propuesto` drafts is the same one
+ * mid-interview, and must stay so -- otherwise writing the first pillar would
+ * unlock the example game's code halfway through a fresh design.
+ */
+export function isGreenfield(root) {
+    for (const file of designFiles(root)) {
+        let meta;
+        try {
+            meta = frontMatter(readFileSync(file, "utf8"));
+        } catch {
+            continue;
+        }
+        if (meta?.estado === "implementado" || meta?.estado === "parcial") {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * Emits an advisory line and exits cleanly. These hooks never block an edit:
  * `systemMessage` surfaces the warning to the user without failing the tool
  * call, which is the whole contract they were set up under.

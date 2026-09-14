@@ -34,6 +34,7 @@ unless a tool stops reading `.claude/skills/`.
 |---|---|
 | `agents/` | Subagent prompts (pillar-guard, level-designer, …) |
 | `hooks/` + `settings.json` | Post-edit validators, Stop drift check, SessionStart pillars |
+| `hooks/greenfield-guard.mjs` | Wired in `gdd-architect`'s frontmatter, not `settings.json`: while no design doc is `implementado`/`parcial`, blocks that agent's reads of the example game (`game/`, `assets/`, `tests/`, `.git/`, …) |
 
 The hook scripts are plain Node and safe to run from any agent or CI:
 

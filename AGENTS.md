@@ -108,8 +108,17 @@ in `game/`.
 loop, systems, levels, balance, ADRs. It is written in **Spanish**; code,
 comments and agent tooling stay in English. This file and the READMEs
 remain the technical reference; design docs never document the engine.
-The worked example is **Dungeon Slime** (grid snake); config is
-`assets/game.json`, maps are `.tmj`.
+The repository is a template, and **Dungeon Slime** (grid snake) is
+only its worked example; config is `assets/game.json`, maps are `.tmj`.
+
+**New-project mode.** When `docs/design/` is empty or missing, or none of
+its documents is `implementado` or `parcial`, the code, levels, tests,
+READMEs and git history describe the example, not the game the user is
+designing. Treat design questions as a blank slate: do not research the
+repository or `git log` first, and delegate to the `gdd-architect`
+subagent (Claude Code) with the user's request passed through as-is — no
+summary of the existing code. The subagent enforces this with a hook
+(`.claude/hooks/greenfield-guard.mjs`).
 
 Each document declares an `estado` (`implementado`, `parcial`,
 `propuesto`, `descartado`) and a `codigo:` list of the files that
