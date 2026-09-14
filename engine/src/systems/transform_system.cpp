@@ -30,7 +30,9 @@ void TransformSystem::run(entt::registry& registry)
         auto& vel = view.get<VelocityComponent>(entity);
         auto& dim = view.get<DimensionComponent>(entity);
 
-        trf.position += vel.velocity * deltaTime.value;
+        // A fixed system: one step is DeltaTime::fixed long, however long the
+        // frame that ran it was.
+        trf.position += vel.velocity * deltaTime.fixed;
 
         const int levelWidth = camera.levelWidth;
         const int levelHeight = camera.levelHeight;

@@ -23,13 +23,26 @@ void CameraSystem::run(entt::registry& registry)
         auto& follow = view.get<FollowComponent>(entity);
         auto& bounds = view.get<CameraBoundsComponent>(entity);
         auto& transform = view.get<TransformComponent>(entity);
-        auto& targetTransform = registry.get<TransformComponent>(follow.target);
-        auto& targetVelocity = registry.get<VelocityComponent>(follow.target);
         auto& dimension = view.get<DimensionComponent>(entity);
 
-        // Predict where the target is heading
-        Vector2D<float> predictedPosition = targetTransform.position;
-        Vector2D<float> velocity = targetVelocity.velocity;
+        const auto* targetTransform =
+            registry.valid(follow.target)
+                ? registry.try_get<TransformComponent>(follow.target)
+                : nullptr;
+        if (targetTransform == nullptr)
+        {
+            continue;
+        }
+
+        // Predict where the target is heading. A target that does not move
+        // by velocity is simply not extrapolated.
+        Vector2D<float> predictedPosition = targetTransform->position;
+        Vector2D<float> velocity;
+        if (const auto* targetVelocity =
+                registry.try_get<VelocityComponent>(follow.target))
+        {
+            velocity = targetVelocity->velocity;
+        }
 
         // Extrapolate along the current velocity
         predictedPosition.setX(predictedPosition.getX() +

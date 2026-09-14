@@ -193,7 +193,7 @@ Rule of thumb for new code: **if it names a gameplay component, it belongs in
 
 ```
 frame begin   input (SDL events -> InputState)  ->  ImGui::NewFrame
-fixed steps   spatial sync, then the game's systems (snake, bat)
+fixed steps   the game's systems (snake, bat), then spatial sync
               (zero or more times, each advancing DeltaTime::fixed)
 frame         animation, grayscale fade, scenes, debug
 last          render passes in `order`, then the GUI
@@ -202,6 +202,8 @@ frame end     present
 
 Systems that must not depend on frame rate go in `addFixedSystem`. Everything
 else goes in `addSystem`, and rendering in `addSystemLast`.
+`addFixedSystemLast` runs after every fixed system in each step, for
+bookkeeping that must see the step's final positions (the spatial index sync).
 
 ---
 

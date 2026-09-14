@@ -35,7 +35,8 @@ espacio lógico. ImGui `DisplaySize` y el ratón se mapean a ese espacio.
 - **Options** — label `(10,10)`, sliders MUSIC/SFX (panel 264×55 en Y 30/93),
   BACK margen 28 / 10. Todo en BackgroundDrawList.
 - **Pause / Game Over** — panel 264×70 centrado (Foreground). El escenario
-  desatura con `WorldColorGrade` (`colorAmount` 1→0 a `0.02`/frame).
+  desatura con `WorldColorGrade` (`colorAmount` 1→0 a `1.2`/s, el `0.02` por
+  frame del tutorial a 60 Hz; no depende de la frecuencia del monitor).
 - **SCORE** — `(20, 5)`, FontScale 0.25.
 
 Chrome desde `assets/ui.tsj`. Texto UI/título: BMFont `04b_30.fnt` +

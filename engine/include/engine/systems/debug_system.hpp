@@ -24,7 +24,7 @@ private:
     Editor m_editor;
 
     std::set<Editor::ComponentTypeID> m_components_filter;
-    entt::entity m_current_entity;
+    entt::entity m_current_entity = entt::null;
 
     bool m_open{false};
 };

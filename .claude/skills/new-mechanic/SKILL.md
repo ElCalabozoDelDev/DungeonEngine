@@ -52,6 +52,7 @@ Movement → EnemyAI → Collision → Combat.
 | Use | For |
 |---|---|
 | `addFixedSystem` | Anything that must not depend on frame rate: movement, physics, collision, damage. Runs 0–5 times per frame at `DeltaTime::fixed` (1/60 s). |
+| `addFixedSystemLast` | Engine bookkeeping that must follow every fixed system in the step (the spatial index sync). Rarely needed by gameplay. |
 | `addSystem` | Once per frame, at `DeltaTime::value`: cameras, scene updates, animation. |
 | `addSystemLast` | Rendering only. |
 

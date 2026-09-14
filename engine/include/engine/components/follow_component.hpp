@@ -6,7 +6,8 @@ namespace de
 {
 struct FollowComponent
 {
-    entt::entity target; // Entity the camera follows
+    /// Entity the camera follows; null follows nothing.
+    entt::entity target = entt::null;
 };
 
 } // namespace de

@@ -1,6 +1,8 @@
 #ifndef DE_CORE_HOOK_HPP
 #define DE_CORE_HOOK_HPP
 #include <functional>
+#include <utility>
+#include <vector>
 
 namespace de
 {
@@ -19,11 +21,11 @@ public:
     {
         if (front)
         {
-            m_callbacks.insert(m_callbacks.begin(), callback);
+            m_callbacks.insert(m_callbacks.begin(), std::move(callback));
         }
         else
         {
-            m_callbacks.push_back(callback);
+            m_callbacks.push_back(std::move(callback));
         }
     }
 

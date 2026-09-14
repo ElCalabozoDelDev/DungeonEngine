@@ -14,8 +14,12 @@ namespace gui
 template <typename T>
 using setter_fn_type = std::function<void(const T&)>;
 
+/// The value is a copy, not a reference into the hook storage: the next
+/// use_state() in the same frame may emplace and rehash that storage, which
+/// left an earlier reference dangling on a widget's first frame. Setters are
+/// deferred to commit(), so a copy never goes stale within the frame.
 template <typename T>
-using state_pair_type = std::pair<const T&, setter_fn_type<T>>;
+using state_pair_type = std::pair<T, setter_fn_type<T>>;
 
 class Hooks
 {
@@ -50,8 +54,8 @@ public:
             m_state.emplace_as<T>(key, initial_value);
         }
 
-        // we get the current value
-        const T& value = m_state.get<T>(key);
+        // we copy the current value (see state_pair_type)
+        T value = m_state.get<T>(key);
         // and generate a setter function
         auto update_fn = [this, key](const T& new_value) -> void
         {

@@ -81,7 +81,8 @@ in `game/`.
 - Source lists in the `CMakeLists.txt` files are explicit — add new files
   there.
 - Systems that must not depend on frame rate go in `addFixedSystem`; the
-  rest in `addSystem`, rendering in `addSystemLast`.
+  rest in `addSystem`, rendering in `addSystemLast`. `addFixedSystemLast`
+  is for per-step bookkeeping after all movement (spatial index sync).
 
 ## Design documents
 

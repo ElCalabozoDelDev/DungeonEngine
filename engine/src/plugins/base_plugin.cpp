@@ -35,8 +35,9 @@ void BasePlugin::mount(GameLoop& gameLoop)
     // CollisionSystem are opt-in, since a game with its own movement rules
     // (Dungeon Slime's grid snake) has no use for them.
     //
-    // Whatever moved must be re-filed before anything queries the index.
-    gameLoop.addFixedSystem(std::make_shared<SpatialSyncSystem>());
+    // Whatever moved must be re-filed before anything queries the index. Last
+    // in the step: the game's movement systems are mounted after this plugin.
+    gameLoop.addFixedSystemLast(std::make_shared<SpatialSyncSystem>());
     gameLoop.addSystem(std::make_shared<UpdateAnimationSystem>());
     gameLoop.addSystemLast(std::make_shared<RenderSystem>());
 }

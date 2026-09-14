@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <engine/core/delta_time.hpp>
 #include <engine/graphics/world_color_grade.hpp>
 #include <game/state.hpp>
 #include <game/systems/grayscale_fade_system.hpp>
@@ -7,8 +8,10 @@ using namespace de;
 
 namespace
 {
-/// Matches DungeonSlime GameScene.FADE_SPEED (per Update frame, not dt).
-constexpr float kFadeSpeed = 0.02f;
+/// Colour removed per second. DungeonSlime's GameScene.FADE_SPEED is 0.02 per
+/// Update at a fixed 60 Hz; applying it per rendered frame made the fade 2.4x
+/// faster on a 144 Hz display, so it is scaled by the frame delta instead.
+constexpr float kFadePerSecond = 0.02f * 60.0f;
 } // namespace
 
 void GrayscaleFadeSystem::run(entt::registry& registry)
@@ -44,5 +47,7 @@ void GrayscaleFadeSystem::run(entt::registry& registry)
         return;
     }
 
-    grade.colorAmount = std::max(0.0f, grade.colorAmount - kFadeSpeed);
+    const float delta = registry.ctx().get<DeltaTime>().value;
+    grade.colorAmount =
+        std::max(0.0f, grade.colorAmount - kFadePerSecond * delta);
 }

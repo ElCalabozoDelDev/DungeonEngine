@@ -51,10 +51,16 @@ bool segmentsOverlap(const Vector2D<float>& a, const Vector2D<float>& b,
     return aa.intersects(bb);
 }
 
+/// One sprite entity per body segment. Segment 0 is drawn by the head entity
+/// itself (syncPlayerTransform), so it gets none: giving it one as well drew
+/// the head twice, one sprite on top of the other.
 void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
                         std::vector<entt::entity>& segmentEntities)
 {
-    while (segmentEntities.size() < snake.segments.size())
+    const std::size_t bodyCount =
+        snake.segments.empty() ? 0 : snake.segments.size() - 1;
+
+    while (segmentEntities.size() < bodyCount)
     {
         auto entity = registry.create();
         registry.emplace<TransformComponent>(entity, Vector2D<float>{});
@@ -74,7 +80,7 @@ void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
         segmentEntities.push_back(entity);
     }
 
-    while (segmentEntities.size() > snake.segments.size())
+    while (segmentEntities.size() > bodyCount)
     {
         auto entity = segmentEntities.back();
         segmentEntities.pop_back();
@@ -89,9 +95,9 @@ void syncSegmentSprites(entt::registry& registry, SnakeComponent& snake,
         }
     }
 
-    for (std::size_t i = 0; i < snake.segments.size(); ++i)
+    for (std::size_t i = 0; i < bodyCount; ++i)
     {
-        const auto& segment = snake.segments[i];
+        const auto& segment = snake.segments[i + 1];
         const auto pos =
             game::lerp(segment.at, segment.to, snake.movementProgress);
         auto& transform =

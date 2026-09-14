@@ -9,27 +9,48 @@
 #include <imgui_entt_entity_editor.hpp>
 
 // Inspector widgets for the engine's own components. Games add their own by
-// specializing MM::ComponentEditorWidget for their component types; see
-// game/include/game/debug/player_editor.hpp for an example.
+// specializing MM::ComponentEditorWidget for their component types, and
+// registering them with DebugSystem::register_component.
 namespace MM
 {
+/// The editor only guarantees the entity has a CameraComponent. The transform
+/// and the bounds are optional -- Dungeon Slime's fixed camera has no bounds,
+/// and asking for them unconditionally crashed the inspector -- and edits are
+/// written back rather than made to copies.
 template <>
 inline void
 ComponentEditorWidget<de::CameraComponent>(entt::registry& registry,
                                            entt::registry::entity_type entity)
 {
-    auto& trf = registry.get<de::TransformComponent>(entity);
-    auto& bounds = registry.get<de::CameraBoundsComponent>(entity);
-    float x = trf.position.getX();
-    ImGui::InputFloat("X: ", &x);
-    float y = trf.position.getY();
-    ImGui::InputFloat("Y: ", &y);
-    ImGui::InputFloat("Follow Speed: ",
-                      &registry.get<de::CameraComponent>(entity).followSpeed);
-    float levelWidth = static_cast<float>(bounds.levelWidth);
-    ImGui::InputFloat("Level Width: ", &levelWidth);
-    float levelHeight = static_cast<float>(bounds.levelHeight);
-    ImGui::InputFloat("Level Height: ", &levelHeight);
+    auto& camera = registry.get<de::CameraComponent>(entity);
+
+    if (auto* transform = registry.try_get<de::TransformComponent>(entity))
+    {
+        float x = transform->position.getX();
+        if (ImGui::InputFloat("X", &x))
+        {
+            transform->position.setX(x);
+        }
+        float y = transform->position.getY();
+        if (ImGui::InputFloat("Y", &y))
+        {
+            transform->position.setY(y);
+        }
+    }
+
+    ImGui::InputFloat("Follow Speed", &camera.followSpeed);
+    // Camera2D divides by the zoom, so a zero typed here must not stick.
+    float zoom = camera.zoomLevel;
+    if (ImGui::InputFloat("Zoom", &zoom) && zoom > 0.0f)
+    {
+        camera.zoomLevel = zoom;
+    }
+
+    if (auto* bounds = registry.try_get<de::CameraBoundsComponent>(entity))
+    {
+        ImGui::InputInt("Level Width", &bounds->levelWidth);
+        ImGui::InputInt("Level Height", &bounds->levelHeight);
+    }
 }
 
 } // namespace MM

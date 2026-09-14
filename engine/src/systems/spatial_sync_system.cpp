@@ -1,5 +1,3 @@
-#include <engine/components/transform_component.hpp>
-#include <engine/components/velocity_component.hpp>
 #include <engine/spatial/spatial_index.hpp>
 #include <engine/systems/spatial_sync_system.hpp>
 
@@ -13,12 +11,11 @@ void SpatialSyncSystem::run(entt::registry& registry)
         return;
     }
 
-    // Only entities that can move are worth checking; update() itself costs a
-    // box comparison for those that did not actually move.
-    for (auto entity : registry.view<TransformComponent, VelocityComponent>())
-    {
-        spatial->update(entity);
-    }
+    // Every entity in the Object layer, not just those with a
+    // VelocityComponent: a game that moves sprites itself (the snake steps
+    // by stride, the bat integrates its own velocity) left them filed where
+    // they spawned. Tile layers do not move and are not re-checked.
+    spatial->updateLayer(registry, Layer::Object);
 }
 
 } // namespace de
