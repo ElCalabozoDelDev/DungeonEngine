@@ -61,8 +61,8 @@ TEST_CASE("a valid game.json parses")
     CHECK(config->screenHeight == 720);
     CHECK(config->vsync == true);
     CHECK(config->debug == false);
-    CHECK(config->cameraWidth == doctest::Approx(320.0f));
-    CHECK(config->cameraHeight == doctest::Approx(180.0f));
+    CHECK(config->logicalWidth == doctest::Approx(320.0f));
+    CHECK(config->logicalHeight == doctest::Approx(180.0f));
     CHECK(config->zoomLevel == doctest::Approx(1.0f));
     CHECK(config->levels.at("arena") == "tilemap.tmj");
 }

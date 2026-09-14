@@ -1,12 +1,10 @@
 #include <SDL.h>
 #include <engine/core/game_loop.hpp>
 #include <engine/core/paused.hpp>
-#include <engine/core/startup_error.hpp>
 #include <engine/graphics/world_color_grade.hpp>
 #include <engine/input/action_map.hpp>
 #include <engine/input/input_state.hpp>
 #include <engine/scene/scene_system.hpp>
-#include <engine/systems/debug_system.hpp>
 #include <game/assets.hpp>
 #include <game/play_state.hpp>
 #include <game/plugins/game_plugin.hpp>
@@ -25,17 +23,9 @@ using namespace de;
 
 void GamePlugin::mount(de::GameLoop& gameLoop)
 {
-    auto debugSystem = std::make_shared<DebugSystem>();
-    auto sceneSystem = std::make_shared<SceneSystem>();
-
     gameLoop.addSetupCallback(
-        [sceneSystem, debugSystem](entt::registry& registry)
+        [](entt::registry& registry)
         {
-            if (registry.ctx().contains<StartupError>())
-            {
-                return;
-            }
-
             auto& actions = registry.ctx().get<ActionMap>();
             actions.bind("move_up", SDL_SCANCODE_UP);
             actions.bind("move_up", SDL_SCANCODE_W);
@@ -60,11 +50,10 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
             registry.ctx().emplace<GameRng>();
             registry.ctx().emplace<WorldColorGrade>();
 
-            registry.ctx().emplace<SceneSystem&>(*sceneSystem);
-            registry.ctx().emplace<DebugSystem&>(*debugSystem);
-
             game::loadGameAssets(registry);
-            sceneSystem->setScene(registry, std::make_unique<TitleScene>());
+            // SceneSystem comes from BasePlugin, mounted before this plugin.
+            registry.ctx().get<SceneSystem>().setScene(
+                registry, std::make_unique<TitleScene>());
         });
 
     // Destroy BMFont textures before SDL tears down the renderer.
@@ -113,6 +102,4 @@ void GamePlugin::mount(de::GameLoop& gameLoop)
     gameLoop.addFixedSystem(std::make_shared<SnakeViewSystem>());
 
     gameLoop.addSystem(std::make_shared<GrayscaleFadeSystem>());
-    gameLoop.addSystem(sceneSystem);
-    gameLoop.addSystem(debugSystem);
 }

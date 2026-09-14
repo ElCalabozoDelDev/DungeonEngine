@@ -1,5 +1,4 @@
 #include <SDL.h>
-#include <engine/core/startup_error.hpp>
 #include <engine/input/action_map.hpp>
 #include <engine/input/input_state.hpp>
 #include <engine/plugins/input_plugin.hpp>
@@ -13,10 +12,6 @@ void InputPlugin::mount(GameLoop& gameLoop)
     gameLoop.addSetupCallback(
         [](entt::registry& registry)
         {
-            if (registry.ctx().contains<StartupError>())
-            {
-                return;
-            }
             registry.ctx().emplace<InputState>();
             registry.ctx().emplace<ActionMap>();
         });

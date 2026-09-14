@@ -5,8 +5,8 @@ namespace de
 {
 struct CameraBoundsComponent
 {
-    int levelWidth;
-    int levelHeight;
+    int levelWidth = 0;
+    int levelHeight = 0;
 };
 
 } // namespace de

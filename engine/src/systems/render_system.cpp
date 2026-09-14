@@ -4,7 +4,6 @@
 #include <engine/graphics/render.hpp>
 #include <engine/graphics/sdl_resources.hpp>
 #include <engine/graphics/world_color_grade.hpp>
-#include <engine/graphics/world_color_grade_pass.hpp>
 #include <engine/systems/render_system.hpp>
 #include <engine/widgets/widget.hpp>
 #include <imgui.h>
@@ -35,11 +34,7 @@ void RenderSystem::renderGraphics(entt::registry& registry)
     const int logicalW = static_cast<int>(logicalWf);
     const int logicalH = static_cast<int>(logicalHf);
 
-    if (!registry.ctx().contains<WorldColorGradePass>())
-    {
-        registry.ctx().emplace<WorldColorGradePass>();
-    }
-    auto& pass = registry.ctx().get<WorldColorGradePass>();
+    auto& pass = m_gradePass;
 
     const bool useTarget =
         gradeActive && pass.ensure(renderer, logicalW, logicalH);

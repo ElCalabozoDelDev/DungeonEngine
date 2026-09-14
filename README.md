@@ -266,40 +266,35 @@ gameLoop.addFixedSystem(std::make_shared<ManaRegenSystem>());
 
 ### Add a scene
 
-Implement `de::Scene`: `onEnter` builds the entities, `onExit` destroys them.
+Implement `de::Scene`. `onEnter` builds the entities and hands each to
+`track()`; the scene system destroys every tracked entity when the scene
+exits, so there is no clean-up loop to write. `onUpdate` and `onExit` are
+optional.
 
 ```cpp
 class ShopScene : public de::Scene
 {
 public:
-    void onEnter(entt::registry& registry) override;
-    void onUpdate(entt::registry& registry) override;
-    void onExit(entt::registry& registry) override;
-
-private:
-    std::vector<entt::entity> m_entities;
-};
-```
-
-Two things `onExit` must do, both learned the hard way:
-
-```cpp
-void ShopScene::onExit(entt::registry& registry)
-{
-    // The spatial trees hold entity handles. Clear them first, or the next
-    // query hands back destroyed entities.
-    registry.ctx().get<de::SpatialIndex>().clear();
-
-    for (auto entity : m_entities)
+    void onEnter(entt::registry& registry) override
     {
-        // Checked: gameplay may already have destroyed some of them.
-        if (registry.valid(entity))
+        auto counter = track(registry.create());
+        registry.emplace<de::Widget>(counter, std::make_unique<ShopWidget>());
+
+        // A level: the loader reports every entity it created.
+        auto level = de::TiledLoader().load(registry, path);
+        if (level)
         {
-            registry.destroy(entity);
+            track(level->entities);
         }
     }
-    m_entities.clear();
-}
+
+    void onExit(entt::registry& registry) override
+    {
+        // The spatial trees hold entity handles, and tracked entities are
+        // destroyed right after this returns: clear the index here.
+        registry.ctx().get<de::SpatialIndex>().clear();
+    }
+};
 ```
 
 Switch to it with `requestScene`, which applies between frames:

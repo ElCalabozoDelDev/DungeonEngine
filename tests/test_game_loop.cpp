@@ -2,6 +2,7 @@
 #include <engine/core/delta_time.hpp>
 #include <engine/core/game_loop.hpp>
 #include <engine/core/paused.hpp>
+#include <engine/scene/scene_system.hpp>
 #include <memory>
 #include <string>
 #include <utility>
@@ -49,12 +50,9 @@ private:
 void runLoop(GameLoop& loop, int frames, int steps)
 {
     loop.setFrameDelta(DeltaTime{}.fixed * static_cast<float>(steps));
-    loop.addSetupCallback(
-        [](entt::registry& registry)
-        {
-            registry.ctx().emplace<DeltaTime>();
-            registry.ctx().emplace<Paused>();
-        });
+    // No DeltaTime here: the loop publishes its own.
+    loop.addSetupCallback([](entt::registry& registry)
+                          { registry.ctx().emplace<Paused>(); });
     loop.addFrameEndCallback(
         [remaining = frames](entt::registry& registry) mutable
         {
@@ -93,4 +91,79 @@ TEST_CASE("a step that pauses is the last one in its frame")
     runLoop(loop, 3, 4);
 
     CHECK(runs == 1);
+}
+
+TEST_CASE("switching scenes destroys the entities the old scene tracked")
+{
+    /// Reports through a struct outside the scene, which SceneSystem destroys
+    /// when it switches.
+    struct Report
+    {
+        entt::entity tracked = entt::null;
+        entt::entity untracked = entt::null;
+        bool trackedAliveInOnExit = false;
+    };
+
+    struct Tracking final : de::Scene
+    {
+        explicit Tracking(Report& report) : m_report(report) {}
+
+        void onEnter(entt::registry& registry) override
+        {
+            m_report.tracked = track(registry.create());
+            m_report.untracked = registry.create();
+        }
+        void onExit(entt::registry& registry) override
+        {
+            m_report.trackedAliveInOnExit = registry.valid(m_report.tracked);
+        }
+
+    private:
+        Report& m_report;
+    };
+
+    struct Empty final : de::Scene
+    {
+        void onEnter(entt::registry& /*registry*/) override {}
+    };
+
+    entt::registry registry;
+    Report report;
+    SceneSystem scenes;
+    scenes.setScene(registry, std::make_unique<Tracking>(report));
+    REQUIRE(registry.valid(report.tracked));
+
+    scenes.requestScene(std::make_unique<Empty>());
+    scenes.run(registry);
+
+    CHECK(report.trackedAliveInOnExit);
+    CHECK_FALSE(registry.valid(report.tracked));
+    CHECK(registry.valid(report.untracked)); // not the scene's to destroy
+}
+
+TEST_CASE("setup stops at the first callback that reports a startup error")
+{
+    // Every plugin used to check for StartupError at the top of its own setup
+    // callback; one that forgot ran on without a window.
+    std::vector<std::string> log;
+    GameLoop loop;
+    loop.addSetupCallback(
+        [&log](entt::registry& registry)
+        {
+            log.push_back(registry.ctx().contains<DeltaTime>() ? "delta"
+                                                               : "no delta");
+        });
+    loop.addSetupCallback(
+        [&log](entt::registry& registry)
+        {
+            log.push_back("fails");
+            registry.ctx().emplace<StartupError>(StartupError{"no window"});
+        });
+    loop.addSetupCallback([&log](entt::registry& /*registry*/)
+                          { log.push_back("never"); });
+    loop.addTeardownCallback([&log](entt::registry& /*registry*/)
+                             { log.push_back("teardown"); });
+
+    CHECK_FALSE(loop.run());
+    CHECK(log == std::vector<std::string>{"delta", "fails", "teardown"});
 }

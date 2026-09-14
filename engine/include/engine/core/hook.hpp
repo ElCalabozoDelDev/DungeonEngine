@@ -36,6 +36,21 @@ public:
             callback(args...);
         }
     }
+
+    /// Like publish(), but checks `stop` before each callback and returns as
+    /// soon as it is true.
+    template <typename Stop>
+    void publishUntil(Stop stop, Args... args)
+    {
+        for (auto& callback : m_callbacks)
+        {
+            if (stop())
+            {
+                return;
+            }
+            callback(args...);
+        }
+    }
 };
 
 } // namespace de

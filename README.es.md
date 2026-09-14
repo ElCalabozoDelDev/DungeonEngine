@@ -274,41 +274,35 @@ gameLoop.addFixedSystem(std::make_shared<ManaRegenSystem>());
 
 ### Añadir una escena
 
-Implementa `de::Scene`: `onEnter` construye las entidades, `onExit` las
-destruye.
+Implementa `de::Scene`. `onEnter` construye las entidades y pasa cada una
+a `track()`; el sistema de escenas destruye todas las registradas cuando la
+escena sale, así que no hay bucle de limpieza que escribir. `onUpdate` y
+`onExit` son opcionales.
 
 ```cpp
 class ShopScene : public de::Scene
 {
 public:
-    void onEnter(entt::registry& registry) override;
-    void onUpdate(entt::registry& registry) override;
-    void onExit(entt::registry& registry) override;
-
-private:
-    std::vector<entt::entity> m_entities;
-};
-```
-
-Dos cosas que `onExit` debe hacer, ambas aprendidas por las malas:
-
-```cpp
-void ShopScene::onExit(entt::registry& registry)
-{
-    // Los árboles espaciales guardan handles de entidades. Límpialos primero,
-    // o la siguiente consulta devolverá entidades destruidas.
-    registry.ctx().get<de::SpatialIndex>().clear();
-
-    for (auto entity : m_entities)
+    void onEnter(entt::registry& registry) override
     {
-        // Comprobado: el gameplay puede haber destruido alguna ya.
-        if (registry.valid(entity))
+        auto counter = track(registry.create());
+        registry.emplace<de::Widget>(counter, std::make_unique<ShopWidget>());
+
+        // Un nivel: el cargador devuelve todas las entidades que creó.
+        auto level = de::TiledLoader().load(registry, path);
+        if (level)
         {
-            registry.destroy(entity);
+            track(level->entities);
         }
     }
-    m_entities.clear();
-}
+
+    void onExit(entt::registry& registry) override
+    {
+        // Los árboles espaciales guardan handles de entidades, y las
+        // registradas se destruyen justo al volver de aquí: limpia el índice.
+        registry.ctx().get<de::SpatialIndex>().clear();
+    }
+};
 ```
 
 Cambia a ella con `requestScene`, que se aplica entre frames:

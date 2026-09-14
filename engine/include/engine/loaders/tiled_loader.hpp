@@ -1,7 +1,6 @@
 #ifndef DE_LOADERS_TILED_LOADER_HPP
 #define DE_LOADERS_TILED_LOADER_HPP
 
-#include <entt/entity/fwd.hpp>
 #include <entt/entt.hpp>
 #include <expected>
 #include <filesystem>
@@ -11,31 +10,54 @@
 
 namespace de
 {
+/// Which tile layers are drawn where, by name.
+///
+/// A map with a single tile layer draws it under the objects whatever it is
+/// called, so a fresh Tiled map works without renaming anything.
+struct TiledLayerNames
+{
+    /// Tagged BottomLayerComponent: drawn under the objects.
+    std::vector<std::string> bottom{"Bottom", "Collision"};
+    /// Tagged OverlayLayerComponent: drawn over the objects.
+    std::vector<std::string> overlay{"Overlay"};
+};
+
+/// What a successful load produced.
+struct LoadedLevel
+{
+    /// Every entity the load created -- tilesets, layers, tiles, objects and
+    /// the level itself. Whoever loads the level owns them.
+    std::vector<entt::entity> entities;
+
+    /// Map size in tiles, and the size of one tile in world units.
+    int width = 0;
+    int height = 0;
+    int tileWidth = 0;
+    int tileHeight = 0;
+};
+
 /// Loads a Tiled JSON (.tmj) map into the registry: textures, tilesets, tile
 /// layers and object layers.
 ///
 /// Paths inside the file (tileset images, external .tsj sources) are resolved
 /// relative to the .tmj itself.
 ///
-/// Objects are tagged with ObjectTypeComponent carrying their Tiled `type`
-/// string; turning "Player" into gameplay components is the game's job.
+/// Objects get a transform, a sprite and ObjectTypeComponent carrying their
+/// Tiled `type` string; turning "Player" into gameplay components -- movement
+/// included -- is the game's job.
 class TiledLoader
 {
 public:
-    explicit TiledLoader(std::vector<entt::entity>* entities)
-        : m_pEntities(entities)
-    {
-    }
+    explicit TiledLoader(TiledLayerNames names = {});
 
-    std::expected<void, std::string>
-    loadLevel(entt::registry& registry, const std::filesystem::path& levelFile);
-
-    int getTileWidth() const { return m_tilewidth; }
-    int getTileHeight() const { return m_tileheight; }
-    int getWidth() const { return m_width; }
-    int getHeight() const { return m_height; }
+    /// On failure, every entity created before the error is destroyed again,
+    /// so a bad map leaves nothing behind.
+    std::expected<LoadedLevel, std::string>
+    load(entt::registry& registry, const std::filesystem::path& levelFile);
 
 private:
+    std::expected<void, std::string>
+    loadInto(entt::registry& registry, const std::filesystem::path& levelFile);
     std::expected<void, std::string>
     loadExternalTileset(entt::registry& registry, int firstGid,
                         const std::filesystem::path& sourcePath);
@@ -49,13 +71,11 @@ private:
                                                    int tileLayerCount);
 
     entt::entity tilesetFor(entt::registry& registry, int gid) const;
+    entt::entity create(entt::registry& registry);
 
+    TiledLayerNames m_names;
     std::filesystem::path m_levelDir;
-    int m_tilewidth = 0;
-    int m_tileheight = 0;
-    int m_width = 0;
-    int m_height = 0;
-    std::vector<entt::entity>* m_pEntities;
+    LoadedLevel m_level;
     std::vector<entt::entity> m_tilesets;
     std::vector<entt::entity> m_layers;
 };

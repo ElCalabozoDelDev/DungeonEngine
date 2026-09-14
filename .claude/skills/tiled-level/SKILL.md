@@ -8,19 +8,25 @@ The loader is `engine/src/loaders/tiled_loader.cpp`. It reads **Tiled JSON**
 
 ## Layers
 
-Only these tile-layer names are special:
+Tile layers are placed by name, through `de::TiledLayerNames` (the
+defaults below; a game can pass its own to `TiledLoader`):
 
 | Name | Effect |
 |---|---|
-| `Bottom` | Drawn under objects |
+| `Bottom`, `Collision` | Drawn under objects |
 | `Overlay` | Drawn over objects |
-| `Collision` | Optional; Dungeon Slime uses `roomBounds` instead |
+| anything else | Not drawn — unless it is the map's only tile layer, which is drawn under objects whatever its name |
+
+Dungeon Slime does not collide with tiles; the snake is bounded by
+`roomBounds`.
 
 Tile `data` is a flat JSON array of global tile ids, length `width * height`.
 
 ## Objects
 
-Recognised `type` strings (recorded as `ObjectTypeComponent`):
+Every object gets a transform, a sprite and its `type` string as
+`ObjectTypeComponent` — no velocity or other movement; that is the game's to
+add. Recognised `type` strings:
 
 - `Player` — slime spawn; `InGameScene` turns it into the snake head.
 

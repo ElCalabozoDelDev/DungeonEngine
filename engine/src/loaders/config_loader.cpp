@@ -4,6 +4,25 @@
 
 namespace de
 {
+namespace
+{
+using TypeCheck = bool (nlohmann::json::*)() const noexcept;
+
+/// Copies `root[key]` into `out` when it is present and passes `isType`;
+/// otherwise `out` keeps its default. A value of the wrong type is ignored
+/// rather than rejected, as a missing one is.
+template <typename T>
+void readOptional(const nlohmann::json& root, const char* key, TypeCheck isType,
+                  T& out)
+{
+    if (auto it = root.find(key); it != root.end() && ((*it).*isType)())
+    {
+        out = it->get<T>();
+    }
+}
+
+} // namespace
+
 std::expected<Config, std::string>
 ConfigLoader::load(const std::filesystem::path& path)
 {
@@ -29,51 +48,20 @@ ConfigLoader::load(const std::filesystem::path& path)
         return std::unexpected("config root must be a JSON object");
     }
 
+    using json = nlohmann::json;
     Config result;
-
-    if (root.contains("title") && root["title"].is_string())
-    {
-        result.title = root["title"].get<std::string>();
-    }
-    if (root.contains("fullScreen") && root["fullScreen"].is_boolean())
-    {
-        result.fullScreen = root["fullScreen"].get<bool>();
-    }
-    if (root.contains("screenWidth") && root["screenWidth"].is_number_integer())
-    {
-        result.screenWidth = root["screenWidth"].get<int>();
-    }
-    if (root.contains("screenHeight") &&
-        root["screenHeight"].is_number_integer())
-    {
-        result.screenHeight = root["screenHeight"].get<int>();
-    }
-    if (root.contains("frameRate") && root["frameRate"].is_number_integer())
-    {
-        result.frameRate = root["frameRate"].get<int>();
-    }
-    if (root.contains("vsync") && root["vsync"].is_boolean())
-    {
-        result.vsync = root["vsync"].get<bool>();
-    }
-    if (root.contains("debug") && root["debug"].is_boolean())
-    {
-        result.debug = root["debug"].get<bool>();
-    }
-
-    // logicalWidth/Height map onto cameraWidth/Height for SDL logical size.
-    if (root.contains("logicalWidth") && root["logicalWidth"].is_number())
-    {
-        result.cameraWidth = root["logicalWidth"].get<float>();
-    }
-    if (root.contains("logicalHeight") && root["logicalHeight"].is_number())
-    {
-        result.cameraHeight = root["logicalHeight"].get<float>();
-    }
-    if (root.contains("zoomLevel") && root["zoomLevel"].is_number())
-    {
-        result.zoomLevel = root["zoomLevel"].get<float>();
-    }
+    readOptional(root, "title", &json::is_string, result.title);
+    readOptional(root, "fullScreen", &json::is_boolean, result.fullScreen);
+    readOptional(root, "screenWidth", &json::is_number_integer,
+                 result.screenWidth);
+    readOptional(root, "screenHeight", &json::is_number_integer,
+                 result.screenHeight);
+    readOptional(root, "frameRate", &json::is_number_integer, result.frameRate);
+    readOptional(root, "vsync", &json::is_boolean, result.vsync);
+    readOptional(root, "debug", &json::is_boolean, result.debug);
+    readOptional(root, "logicalWidth", &json::is_number, result.logicalWidth);
+    readOptional(root, "logicalHeight", &json::is_number, result.logicalHeight);
+    readOptional(root, "zoomLevel", &json::is_number, result.zoomLevel);
 
     if (root.contains("levels"))
     {

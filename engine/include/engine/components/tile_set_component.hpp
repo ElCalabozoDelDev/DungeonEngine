@@ -5,11 +5,11 @@ namespace de
 {
 struct TileSetComponent
 {
-    int firstGridID;
-    int spacing;
-    int margin;
-    int numColumns;
-    int tileCount;
+    int firstGridID = 1;
+    int spacing = 0;
+    int margin = 0;
+    int numColumns = 0;
+    int tileCount = 0;
 };
 
 } // namespace de

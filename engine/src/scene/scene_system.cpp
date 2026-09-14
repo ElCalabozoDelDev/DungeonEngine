@@ -25,6 +25,7 @@ void SceneSystem::setScene(entt::registry& registry,
     if (m_currentScene)
     {
         m_currentScene->onExit(registry);
+        m_currentScene->destroyTracked(registry);
     }
 
     m_currentScene = std::move(newScene);

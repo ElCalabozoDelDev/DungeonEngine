@@ -21,21 +21,6 @@ void TitleScene::onEnter(entt::registry& registry)
         audio->playMusic("theme", true);
     }
 
-    auto entity = registry.create();
+    auto entity = track(registry.create());
     registry.emplace<Widget>(entity, std::make_unique<TitleWidget>());
-    m_entities.push_back(entity);
-}
-
-void TitleScene::onUpdate(entt::registry& /*registry*/) {}
-
-void TitleScene::onExit(entt::registry& registry)
-{
-    for (auto entity : m_entities)
-    {
-        if (registry.valid(entity))
-        {
-            registry.destroy(entity);
-        }
-    }
-    m_entities.clear();
 }

@@ -1,4 +1,4 @@
-#include <SDL.h>
+#include <algorithm>
 #include <cstdint>
 #include <engine/components/animation_component.hpp>
 #include <engine/components/bottom_layer_component.hpp>
@@ -12,22 +12,21 @@
 #include <engine/components/tile_layer_component.hpp>
 #include <engine/components/tile_set_component.hpp>
 #include <engine/components/transform_component.hpp>
-#include <engine/components/velocity_component.hpp>
 #include <engine/core/vector_2d.hpp>
 #include <engine/graphics/texture_cache.hpp>
 #include <engine/loaders/tiled_loader.hpp>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <utility>
 
 namespace de
 {
 namespace
 {
-bool isBottomName(const std::string& name)
+bool contains(const std::vector<std::string>& names, const std::string& name)
 {
-    return name == "Bottom" || name == "Collision" ||
-           name == "Capa de patrones 1";
+    return std::find(names.begin(), names.end(), name) != names.end();
 }
 
 int jsonInt(const nlohmann::json& j, const char* key, int fallback = 0)
@@ -50,9 +49,41 @@ std::string jsonString(const nlohmann::json& j, const char* key)
 
 } // namespace
 
+TiledLoader::TiledLoader(TiledLayerNames names) : m_names(std::move(names)) {}
+
+std::expected<LoadedLevel, std::string>
+TiledLoader::load(entt::registry& registry,
+                  const std::filesystem::path& levelFile)
+{
+    m_level = LoadedLevel{};
+    m_tilesets.clear();
+    m_layers.clear();
+
+    if (auto result = loadInto(registry, levelFile); !result)
+    {
+        for (auto entity : m_level.entities)
+        {
+            if (registry.valid(entity))
+            {
+                registry.destroy(entity);
+            }
+        }
+        m_level = LoadedLevel{};
+        return std::unexpected(result.error());
+    }
+    return std::move(m_level);
+}
+
+entt::entity TiledLoader::create(entt::registry& registry)
+{
+    auto entity = registry.create();
+    m_level.entities.push_back(entity);
+    return entity;
+}
+
 std::expected<void, std::string>
-TiledLoader::loadLevel(entt::registry& registry,
-                       const std::filesystem::path& levelFile)
+TiledLoader::loadInto(entt::registry& registry,
+                      const std::filesystem::path& levelFile)
 {
     std::ifstream in(levelFile);
     if (!in)
@@ -73,14 +104,13 @@ TiledLoader::loadLevel(entt::registry& registry,
     }
 
     m_levelDir = levelFile.parent_path();
-    m_tilesets.clear();
-    m_layers.clear();
 
-    m_tilewidth = jsonInt(root, "tilewidth");
-    m_tileheight = jsonInt(root, "tileheight");
-    m_width = jsonInt(root, "width");
-    m_height = jsonInt(root, "height");
-    if (m_tilewidth <= 0 || m_tileheight <= 0 || m_width <= 0 || m_height <= 0)
+    m_level.tileWidth = jsonInt(root, "tilewidth");
+    m_level.tileHeight = jsonInt(root, "tileheight");
+    m_level.width = jsonInt(root, "width");
+    m_level.height = jsonInt(root, "height");
+    if (m_level.tileWidth <= 0 || m_level.tileHeight <= 0 ||
+        m_level.width <= 0 || m_level.height <= 0)
     {
         return std::unexpected(
             "level '" + levelFile.string() +
@@ -126,13 +156,12 @@ TiledLoader::loadLevel(entt::registry& registry,
         }
     }
 
-    int tileLayerCount = 0;
     if (root.contains("layers") && root["layers"].is_array())
     {
+        int tileLayerCount = 0;
         for (const auto& layer : root["layers"])
         {
-            const std::string type = jsonString(layer, "type");
-            if (type == "tilelayer")
+            if (jsonString(layer, "type") == "tilelayer")
             {
                 ++tileLayerCount;
             }
@@ -157,11 +186,10 @@ TiledLoader::loadLevel(entt::registry& registry,
         }
     }
 
-    auto levelEntity = registry.create();
+    auto levelEntity = create(registry);
     auto& levelComponent = registry.emplace<LevelComponent>(levelEntity);
     levelComponent.tilesets = m_tilesets;
     levelComponent.layers = m_layers;
-    m_pEntities->push_back(levelEntity);
 
     return {};
 }
@@ -208,27 +236,27 @@ TiledLoader::loadInlineTileset(entt::registry& registry,
         return {};
     }
 
-    auto tileSetEntity = registry.create();
+    auto tileSetEntity = create(registry);
     auto& set = registry.emplace<TileSetComponent>(tileSetEntity);
     auto& dimension = registry.emplace<DimensionComponent>(tileSetEntity);
     registry.emplace<TextureComponent>(tileSetEntity, name);
 
     const int imageWidth = jsonInt(tileset, "imagewidth");
     set.firstGridID = firstGid;
-    dimension.width = jsonInt(tileset, "tilewidth");
-    dimension.height = jsonInt(tileset, "tileheight");
+    dimension.width = static_cast<float>(jsonInt(tileset, "tilewidth"));
+    dimension.height = static_cast<float>(jsonInt(tileset, "tileheight"));
     set.spacing = jsonInt(tileset, "spacing");
     set.margin = jsonInt(tileset, "margin");
     set.tileCount = jsonInt(tileset, "tilecount");
-    set.numColumns = dimension.width + set.spacing > 0
-                         ? imageWidth / (dimension.width + set.spacing)
+    const int tileWidth = jsonInt(tileset, "tilewidth");
+    set.numColumns = tileWidth + set.spacing > 0
+                         ? imageWidth / (tileWidth + set.spacing)
                          : 0;
 
     registry.ctx().get<TextureCache>().load(
         name, (m_levelDir / image).lexically_normal().string());
 
     m_tilesets.push_back(tileSetEntity);
-    m_pEntities->push_back(tileSetEntity);
     return {};
 }
 
@@ -258,7 +286,7 @@ void TiledLoader::loadObjectLayer(entt::registry& registry,
 
     for (const auto& object : objectGroup["objects"])
     {
-        auto entity = registry.create();
+        auto entity = create(registry);
 
         int numFrames = 1;
         int spriteRow = 0;
@@ -314,9 +342,9 @@ void TiledLoader::loadObjectLayer(entt::registry& registry,
 
         registry.emplace<TransformComponent>(entity, Vector2D<float>(x, y));
         registry.emplace<TextureComponent>(entity, textureID);
-        registry.emplace<DimensionComponent>(entity, width, height);
+        registry.emplace<DimensionComponent>(entity, static_cast<float>(width),
+                                             static_cast<float>(height));
         registry.emplace<SpriteComponent>(entity, spriteRow, spriteCol, 0);
-        registry.emplace<VelocityComponent>(entity, Vector2D<float>(0, 0));
 
         AnimationComponent animation;
         animation.currentFrame = 0;
@@ -325,7 +353,6 @@ void TiledLoader::loadObjectLayer(entt::registry& registry,
         registry.emplace<AnimationComponent>(entity, animation);
         registry.emplace<ObjectTypeComponent>(entity, type);
 
-        m_pEntities->push_back(entity);
         m_layers.push_back(entity);
     }
 }
@@ -339,8 +366,8 @@ TiledLoader::loadTileLayer(entt::registry& registry,
         return std::unexpected("a tile layer has no data array");
     }
 
-    const std::size_t expectedCount =
-        static_cast<std::size_t>(m_width) * static_cast<std::size_t>(m_height);
+    const std::size_t expectedCount = static_cast<std::size_t>(m_level.width) *
+                                      static_cast<std::size_t>(m_level.height);
     if (layer["data"].size() != expectedCount)
     {
         return std::unexpected(
@@ -362,29 +389,28 @@ TiledLoader::loadTileLayer(entt::registry& registry,
 
     const std::string name = jsonString(layer, "name");
 
-    auto layerEntity = registry.create();
+    auto layerEntity = create(registry);
     auto& tileLayer = registry.emplace<TileLayerComponent>(layerEntity);
     tileLayer.tileSetEntities = m_tilesets;
 
-    const bool soleLayer = tileLayerCount == 1;
-    if (name == "Bottom" || soleLayer || isBottomName(name))
-    {
-        registry.emplace<BottomLayerComponent>(layerEntity);
-    }
-    if (name == "Overlay")
+    if (contains(m_names.overlay, name))
     {
         registry.emplace<OverlayLayerComponent>(layerEntity);
     }
+    else if (tileLayerCount == 1 || contains(m_names.bottom, name))
+    {
+        registry.emplace<BottomLayerComponent>(layerEntity);
+    }
 
     bool reportedMissingTileset = false;
-    for (int rows = 0; rows < m_height; rows++)
+    for (int row = 0; row < m_level.height; ++row)
     {
-        for (int cols = 0; cols < m_width; cols++)
+        for (int col = 0; col < m_level.width; ++col)
         {
-            const int tileId =
-                static_cast<int>(gids[static_cast<std::size_t>(rows) *
-                                          static_cast<std::size_t>(m_width) +
-                                      static_cast<std::size_t>(cols)]);
+            const int tileId = static_cast<int>(
+                gids[static_cast<std::size_t>(row) *
+                         static_cast<std::size_t>(m_level.width) +
+                     static_cast<std::size_t>(col)]);
             if (tileId == 0)
             {
                 continue;
@@ -404,25 +430,21 @@ TiledLoader::loadTileLayer(entt::registry& registry,
                 continue;
             }
 
-            auto tileEntity = registry.create();
-            const int tileX = cols * m_tilewidth;
-            const int tileY = rows * m_tileheight;
-
+            auto tileEntity = create(registry);
             registry.emplace<TileComponent>(tileEntity, tileId, tileset);
             registry.emplace<TransformComponent>(
-                tileEntity, Vector2D<float>(static_cast<float>(tileX),
-                                            static_cast<float>(tileY)));
-            registry.emplace<DimensionComponent>(tileEntity, m_tilewidth,
-                                                 m_tileheight);
+                tileEntity,
+                Vector2D<float>(static_cast<float>(col * m_level.tileWidth),
+                                static_cast<float>(row * m_level.tileHeight)));
+            registry.emplace<DimensionComponent>(
+                tileEntity, static_cast<float>(m_level.tileWidth),
+                static_cast<float>(m_level.tileHeight));
 
             tileLayer.tileEntities.push_back(tileEntity);
-            m_pEntities->push_back(tileEntity);
         }
     }
 
     m_layers.push_back(layerEntity);
-    m_pEntities->push_back(layerEntity);
-
     return {};
 }
 

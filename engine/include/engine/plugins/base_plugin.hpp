@@ -9,8 +9,9 @@
 
 namespace de
 {
-/// The engine's default bundle: window and renderer, input, Dear ImGui, the
-/// widget layer, and the systems every 2D game here needs.
+/// The engine's default bundle: window and renderer, input, audio, Dear ImGui,
+/// the widget layer, scene switching (SceneSystem) and the entity inspector
+/// (DebugSystem), and the systems every 2D game here needs.
 ///
 /// Takes an already-validated Config rather than a path to parse: loading can
 /// fail, and a constructor cannot report that. main() loads the config and

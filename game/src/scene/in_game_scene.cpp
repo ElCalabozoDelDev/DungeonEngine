@@ -6,10 +6,8 @@
 #include <engine/components/transform_component.hpp>
 #include <engine/core/asset_paths.hpp>
 #include <engine/core/startup_error.hpp>
+#include <engine/graphics/layer_passes.hpp>
 #include <engine/graphics/render.hpp>
-#include <engine/graphics/render_bottom.hpp>
-#include <engine/graphics/render_object.hpp>
-#include <engine/graphics/render_overlay.hpp>
 #include <engine/loaders/tiled_loader.hpp>
 #include <engine/spatial/level_spatial_index.hpp>
 #include <engine/spatial/spatial_index.hpp>
@@ -63,13 +61,14 @@ void InGameScene::onEnter(entt::registry& registry)
     initializeDebug(registry, config.debug);
 }
 
-void InGameScene::onUpdate(entt::registry& /*registry*/) {}
-
 void InGameScene::onExit(entt::registry& registry)
 {
+    // The index holds handles to the entities about to be destroyed.
     registry.ctx().get<SpatialIndex>().clear();
     resetRunPresentation(registry);
 
+    // Body sprites belong to SnakeViewSystem, not to this scene, so they are
+    // not tracked; everything the scene made is destroyed after this returns.
     for (auto entity : registry.view<PlayerComponent, SnakeComponent>())
     {
         auto& snake = registry.get<SnakeComponent>(entity);
@@ -82,15 +81,6 @@ void InGameScene::onExit(entt::registry& registry)
         }
         snake.segmentEntities.clear();
     }
-
-    for (auto entity : m_entities)
-    {
-        if (registry.valid(entity))
-        {
-            registry.destroy(entity);
-        }
-    }
-    m_entities.clear();
 }
 
 bool InGameScene::loadLevel(entt::registry& registry, const Config& config)
@@ -103,19 +93,19 @@ bool InGameScene::loadLevel(entt::registry& registry, const Config& config)
     }
 
     const auto& assets = registry.ctx().get<AssetPaths>();
-    TiledLoader loader(&m_entities);
-    if (auto loaded = loader.loadLevel(registry, assets.resolve(level->second));
-        !loaded)
+    auto loaded = TiledLoader().load(registry, assets.resolve(level->second));
+    if (!loaded)
     {
         fail(registry, loaded.error());
         return false;
     }
+    track(loaded->entities);
 
     auto& state = registry.ctx().get<GameState>();
-    state.tileWidth = loader.getTileWidth();
-    state.tileHeight = loader.getTileHeight();
-    state.mapColumns = loader.getWidth();
-    state.mapRows = loader.getHeight();
+    state.tileWidth = loaded->tileWidth;
+    state.tileHeight = loaded->tileHeight;
+    state.mapColumns = loaded->width;
+    state.mapRows = loaded->height;
     // One-tile inset playable room, matching the MonoGame tutorial.
     state.roomBounds =
         Box<float>(static_cast<float>(state.tileWidth),
@@ -166,9 +156,8 @@ void InGameScene::spawnPlayer(entt::registry& registry)
         const Vector2D<float> center(
             state.roomBounds.getLeft() + state.roomBounds.getWidth() * 0.5f,
             state.roomBounds.getTop() + state.roomBounds.getHeight() * 0.5f);
-        auto entity = registry.create();
-        game::prefab::makeSnakeHead(registry, entity, center, tile);
-        m_entities.push_back(entity);
+        game::prefab::makeSnakeHead(registry, track(registry.create()), center,
+                                    tile);
     }
 }
 
@@ -176,44 +165,46 @@ void InGameScene::spawnBat(entt::registry& registry)
 {
     const auto& state = registry.ctx().get<GameState>();
     auto& rng = registry.ctx().get<GameRng>().engine;
-    m_entities.push_back(
-        game::prefab::makeBat(registry, state.roomBounds, rng));
+    track(game::prefab::makeBat(registry, state.roomBounds, rng));
 }
 
 void InGameScene::initializeCamera(entt::registry& registry,
                                    const Config& config)
 {
     // Fixed camera covering the full logical view; no FollowComponent.
-    auto cameraEntity = registry.create();
-    registry.emplace<DimensionComponent>(cameraEntity, config.cameraWidth,
-                                         config.cameraHeight);
+    auto cameraEntity = track(registry.create());
+    registry.emplace<DimensionComponent>(cameraEntity, config.logicalWidth,
+                                         config.logicalHeight);
     auto& camera = registry.emplace<CameraComponent>(cameraEntity);
     camera.zoomLevel = config.zoomLevel;
     registry.emplace<TransformComponent>(
-        cameraEntity,
-        Vector2D<float>(config.cameraWidth * 0.5f, config.cameraHeight * 0.5f));
-    m_entities.push_back(cameraEntity);
+        cameraEntity, Vector2D<float>(config.logicalWidth * 0.5f,
+                                      config.logicalHeight * 0.5f));
 }
 
 void InGameScene::initializeRenderers(entt::registry& registry)
 {
     const auto addPass = [&](std::unique_ptr<Render> pass, int order)
     {
-        auto entity = registry.create();
+        auto entity = track(registry.create());
         registry.emplace<RenderPass>(entity, std::move(pass), order);
-        m_entities.push_back(entity);
     };
 
-    addPass(std::make_unique<RenderOverlay>(), render_order::Overlay);
-    addPass(std::make_unique<RenderObject>(), render_order::Object);
-    addPass(std::make_unique<RenderBottom>(), render_order::Bottom);
+    // A tile's size is margin enough: nothing drawn is larger than a tile.
+    const float margin =
+        static_cast<float>(registry.ctx().get<GameState>().tileWidth);
+    addPass(std::make_unique<TileLayerPass>(Layer::Bottom, margin),
+            render_order::Bottom);
+    addPass(std::make_unique<SpriteLayerPass>(Layer::Object, margin),
+            render_order::Object);
+    addPass(std::make_unique<TileLayerPass>(Layer::Overlay, margin),
+            render_order::Overlay);
 }
 
 void InGameScene::initializeHud(entt::registry& registry)
 {
-    auto hudEntity = registry.create();
+    auto hudEntity = track(registry.create());
     registry.emplace<Widget>(hudEntity, std::make_unique<HudWidget>());
-    m_entities.push_back(hudEntity);
 }
 
 void InGameScene::initializeDebug(entt::registry& registry, bool open)

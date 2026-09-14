@@ -4,8 +4,9 @@
 #include <engine/core/game_loop.hpp>
 #include <engine/plugins/plugin.hpp>
 
-/// Everything specific to this game: event pumping, input-driven movement,
-/// the camera, the scene stack and the debug inspector.
+/// Everything specific to this game: key bindings, shared state and assets,
+/// the snake and bat systems, pause handling, and the first scene. Mount it
+/// after BasePlugin, whose systems and context it relies on.
 class GamePlugin : public de::Plugin
 {
 public:

@@ -14,12 +14,9 @@ public:
     ~InGameScene() override = default;
 
     void onEnter(entt::registry& registry) override;
-    void onUpdate(entt::registry& registry) override;
     void onExit(entt::registry& registry) override;
 
 private:
-    std::vector<entt::entity> m_entities;
-
     static void fail(entt::registry& registry, const std::string& reason);
 
     /// Loads the arena and records its size in GameState. False, with a
