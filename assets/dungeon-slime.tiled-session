@@ -4,6 +4,7 @@
         ".",
         "images"
     ],
+    "file.lastUsedOpenFilter": "Todos los archivos (*)",
     "fileStates": {
         "atlas.tsj": {
             "dynamicWrapping": true,
@@ -24,8 +25,8 @@
             "scale": 1.5,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 451.33333333333326,
-                "y": 231.66666666666666
+                "x": 627.3333333333333,
+                "y": 311.66666666666663
             }
         },
         "ui.tsj": {
