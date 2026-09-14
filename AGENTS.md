@@ -111,14 +111,20 @@ remain the technical reference; design docs never document the engine.
 The repository is a template, and **Dungeon Slime** (grid snake) is
 only its worked example; config is `assets/game.json`, maps are `.tmj`.
 
-**New-project mode.** When `docs/design/` is empty or missing, or none of
-its documents is `implementado` or `parcial`, the code, levels, tests,
-READMEs and git history describe the example, not the game the user is
-designing. Treat design questions as a blank slate: do not research the
-repository or `git log` first, and delegate to the `gdd-architect`
-subagent (Claude Code) with the user's request passed through as-is — no
-summary of the existing code. The subagent enforces this with a hook
-(`.claude/hooks/greenfield-guard.mjs`).
+**New game or existing one.** Whether the user is designing a new game
+or the example already in the code is their answer, recorded in
+`docs/design/proyecto.json` as `{ "modo": "nuevo" }` or
+`{ "modo": "existente" }`. Never infer it.
+- **Missing or `nuevo`**: the code, levels, tests, READMEs and git
+  history describe the example, not the game being designed. For design
+  questions, do not research the repository or `git log` first; delegate
+  to the `gdd-architect` subagent (Claude Code) with the user's request
+  passed through as-is. It asks the question if the file is missing, and
+  a hook (`.claude/hooks/greenfield-guard.mjs`) keeps it out of the
+  example's code until the answer is `existente`.
+- **Turning the design into code** follows the `implement-design` skill.
+  For a new game it first retires the example from `game/`, `tests/` and
+  `assets/`, and only then flips the file to `existente`.
 
 Each document declares an `estado` (`implementado`, `parcial`,
 `propuesto`, `descartado`) and a `codigo:` list of the files that

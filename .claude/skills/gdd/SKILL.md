@@ -58,6 +58,7 @@ to a section rather than to a file of its own. The validating hook rejects any
 | A level's intent | `40-niveles/<level-name>.md` |
 | A tuning number | `50-balance/tablas.md` — and `tests/test_balance.cpp` |
 | A decision with alternatives | `90-decisiones/NNNN-<slug>.md` |
+| Whether this is a new game or the template's example | `proyecto.json` — `{ "modo": "nuevo" }` or `{ "modo": "existente" }`; the user's answer, never inferred (see `AGENTS.md`) |
 
 Start from `_plantillas/`. Never invent a new top-level folder.
 

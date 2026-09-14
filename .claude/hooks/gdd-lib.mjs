@@ -115,25 +115,26 @@ export function designIndex(root) {
 }
 
 /**
- * True when the design tree describes no game that exists yet: no document
- * is `implementado` or `parcial`. An empty or missing `docs/design/` is the
- * obvious case; a tree of nothing but `propuesto` drafts is the same one
- * mid-interview, and must stay so -- otherwise writing the first pillar would
- * unlock the example game's code halfway through a fresh design.
+ * Where the user's answer to "is this a new game?" is recorded:
+ * `{ "modo": "nuevo" }` or `{ "modo": "existente" }`. The gdd-architect asks
+ * and writes it; the implement-design skill flips it to `existente` once the
+ * template's example game has been retired from the code.
  */
-export function isGreenfield(root) {
-    for (const file of designFiles(root)) {
-        let meta;
-        try {
-            meta = frontMatter(readFileSync(file, "utf8"));
-        } catch {
-            continue;
-        }
-        if (meta?.estado === "implementado" || meta?.estado === "parcial") {
-            return false;
-        }
+export const PROJECT_FILE = `${DESIGN_DIR}/proyecto.json`;
+export const MODOS = ["nuevo", "existente"];
+
+/**
+ * The recorded project mode, or null when the question has not been answered
+ * (missing file, unreadable JSON, or an unknown value -- all of which mean
+ * "ask", never "guess").
+ */
+export function projectMode(root) {
+    try {
+        const { modo } = JSON.parse(readFileSync(join(root, PROJECT_FILE), "utf8"));
+        return MODOS.includes(modo) ? modo : null;
+    } catch {
+        return null;
     }
-    return true;
 }
 
 /**
